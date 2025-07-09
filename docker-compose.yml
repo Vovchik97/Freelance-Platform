@@ -1,0 +1,6 @@
+﻿services:
+  freelanceplatform:
+    image: freelanceplatform
+    build:
+      context: .
+      dockerfile: Dockerfile

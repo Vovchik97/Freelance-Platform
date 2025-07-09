@@ -1,0 +1,9 @@
+﻿.dockerignore
+.env
+.git/
+.gitignore
+.idea/
+bin/
+obj/
+LICENSE
+README.md
