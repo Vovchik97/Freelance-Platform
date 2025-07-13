@@ -1,6 +1,9 @@
 using FreelancePlatform.Context;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +11,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddControllers();
 builder.Services.AddRazorPages();
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
@@ -37,18 +41,60 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.User.RequireUniqueEmail = true;
 });
 
-builder.Services.ConfigureApplicationCookie(optinons =>
+builder.Services.ConfigureApplicationCookie(options =>
 {
     // Cookie settings
-    optinons.Cookie.HttpOnly = true;
-    optinons.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
 
-    optinons.LoginPath = "/Identity/Account/Login";
-    optinons.AccessDeniedPath = "/Identity/Account/AccessDenied";
-    optinons.SlidingExpiration = true;
+    options.LoginPath = "/Identity/Account/Login";
+    options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+    options.SlidingExpiration = true;
 });
 
-builder.Services.AddSwaggerGen();
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = IdentityConstants.ApplicationScheme;
+})
+.AddJwtBearer("Bearer", options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateIssuerSigningKey = true,
+        ValidateLifetime = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString()))
+    };
+});
+
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please enter JWT with Bearer into field",
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 var app = builder.Build();
 
@@ -105,6 +151,7 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapControllers();
 app.MapRazorPages();
 
 app.Run();
