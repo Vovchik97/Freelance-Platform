@@ -1,13 +1,11 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using FreelancePlatform.Areas.Identity.Pages.Account;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 
-namespace FreelancePlatform.Controllers;
+namespace FreelancePlatform.Controllers.Api;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -50,23 +48,23 @@ public class AuthController : ControllerBase
         return Unauthorized();
     }
     
-    private string GenerateJwtToken(IdentityUser user, IList<string> roles = null)
+    private string GenerateJwtToken(IdentityUser user, IList<string>? roles = null)
     {
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Email, user.Email ?? throw new InvalidOperationException("Email is null")),
         };
 
         if (roles != null)
         {
             foreach (var role in roles)
             {
-                claims.Append(new Claim(ClaimTypes.Role, role));
+                claims.Add(new Claim(ClaimTypes.Role, role));
             }
         }
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Guid.NewGuid().ToString()));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
@@ -83,13 +81,13 @@ public class AuthController : ControllerBase
 
 public class RegisterModel
 {
-    public string Email { get; set; }
-    public string Password { get; set; }
-    public string Role { get; set; }
+    public required string Email { get; set; }
+    public required string Password { get; set; }
+    public required string Role { get; set; }
 }
 
 public class LoginModel
 {
-    public string Email { get; set; }
-    public string Password { get; set; }
+    public required string Email { get; set; }
+    public required string Password { get; set; }
 }
