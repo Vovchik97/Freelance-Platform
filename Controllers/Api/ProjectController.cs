@@ -40,8 +40,8 @@ public class ProjectController : ControllerBase
     [Authorize(AuthenticationSchemes = "Bearer", Roles = "Client")]
     public async Task<ActionResult<Project>> CreateProject([FromBody] CreateProjectDto dto)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) 
-                     ?? throw new InvalidOperationException("user is not authenticated");
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? 
+                     throw new InvalidOperationException("user is not authenticated");
 
         var project = new Project
         {

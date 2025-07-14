@@ -9,7 +9,7 @@ public class Project
     public required string Description { get; set; }
     public decimal Budget { get; set; }
     public required string ClientId { get; set; }
-    public IdentityUser Client { get; set; }
+    public IdentityUser? Client { get; set; }
     public DateTime CreatedAt { get; set; }
     public ProjectStatus Status { get; set; }
 }
