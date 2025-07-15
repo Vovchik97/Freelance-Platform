@@ -60,6 +60,24 @@ public class BidController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
                      throw new InvalidOperationException("user is not authenticated");
+        
+        var project = await _context.Projects
+            .Include(p => p.Client)
+            .FirstOrDefaultAsync(p => p.Id == dto.ProjectId);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+        
+        var duplicate = await _context.Bids
+            .AnyAsync(b => b.ProjectId == dto.ProjectId && b.FreelancerId == userId);
+
+        if (duplicate)
+        {
+            return Conflict("You have already applied for this project.");
+        }
+        
         var bid = new Bid
         {
             ProjectId = dto.ProjectId,

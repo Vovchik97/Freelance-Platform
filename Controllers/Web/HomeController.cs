@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using FreelancePlatform.Models;
 
-namespace FreelancePlatform.Controllers;
+namespace FreelancePlatform.Controllers.Web;
 
 public class HomeController : Controller
 {

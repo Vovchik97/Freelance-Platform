@@ -19,9 +19,43 @@ public class ProjectController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Project>>> ListProjects()
+    public async Task<ActionResult<IEnumerable<Project>>> ListProjects([FromQuery] string? search,
+        [FromQuery] string? status,
+        [FromQuery] decimal? minBudget,
+        [FromQuery] decimal? maxBudget,
+        [FromQuery] string? sort)
     {
-        return await _context.Projects.Include(p => p.Client).ToListAsync();
+        var query = _context.Projects.Include(p => p.Client).AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(p => p.Title.Contains(search) || p.Description.Contains(search));
+        }
+
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<ProjectStatus>(status, out var parsedStatus))
+        {
+            query = query.Where(p => p.Status == parsedStatus);
+        }
+
+        if (minBudget.HasValue)
+        {
+            query = query.Where(p => p.Budget >= minBudget);
+        }
+
+        if (maxBudget.HasValue)
+        {
+            query = query.Where(p => p.Budget <= maxBudget);
+        }
+
+        // Сортировка
+        if (sort == "budget_desc")
+            query = query.OrderByDescending(p => p.Budget);
+        else if (sort == "budget_asc")
+            query = query.OrderBy(p => p.Budget);
+        else
+            query = query.OrderByDescending(p => p.CreatedAt);
+        
+        return await query.Include(p => p.Client).ToListAsync();
     }
 
     [HttpGet("{id}")]
