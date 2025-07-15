@@ -1,21 +1,21 @@
 ﻿@model IEnumerable<FreelancePlatform.Models.Project>
 @{
-    ViewData["Title"] = "Проекты";
+    ViewData["Title"] = "Каталог проектов";
 }
 
-<h2>Проекты</h2>
+<h2 class="mb-4">Каталог проектов</h2>
 
 <form method="get" class="mb-4">
-    <div class="row g-2">
+    <div class="row g-3 align-items-center">
         <div class="col-md-3">
-            <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Поиск по названию или описанию" />
+            <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Поиск..." />
         </div>
         <div class="col-md-2">
             <select name="status" class="form-select">
                 <option value="">Все статусы</option>
-                <option value="Open" selected="@(ViewBag.Status == "Open" ? "selected" : null)">Открыт</option>
-                <option value="InProgress" selected="@(ViewBag.Status == "InProgress" ? "selected" : null)">В работе</option>
-                <option value="Closed" selected="@(ViewBag.Status == "Closed" ? "selected" : null)">Закрыт</option>
+                <option value="Open" selected="@(ViewBag.Status == "Open")">Открыт</option>
+                <option value="InProgress" selected="@(ViewBag.Status == "InProgress")">В работе</option>
+                <option value="Closed" selected="@(ViewBag.Status == "Closed")">Закрыт</option>
             </select>
         </div>
         <div class="col-md-2">
@@ -26,25 +26,25 @@
         </div>
         <div class="col-md-2">
             <select name="sort" class="form-select">
-                <option value="" selected="@(string.IsNullOrEmpty(ViewBag.Sort))">По дате (по умолчанию)</option>
+                <option value="" selected="@(string.IsNullOrEmpty(ViewBag.Sort))">Дата (новые)</option>
                 <option value="budget_asc" selected="@(ViewBag.Sort == "budget_asc")">Бюджет ↑</option>
                 <option value="budget_desc" selected="@(ViewBag.Sort == "budget_desc")">Бюджет ↓</option>
             </select>
         </div>
-        <div class="col-md-1">
-            <button type="submit" class="btn btn-primary w-100">Поиск</button>
+        <div class="col-md-1 d-grid">
+            <button type="submit" class="btn btn-primary">Найти</button>
         </div>
     </div>
 </form>
 
-<table class="table table-bordered table-striped">
-    <thead>
+<table class="table table-bordered table-striped table-hover align-middle">
+    <thead class="table-light">
         <tr>
             <th>Название</th>
-            <th>Описание</th>
             <th>Бюджет</th>
             <th>Статус</th>
             <th>Клиент</th>
+            <th style="width: 160px;"></th>
         </tr>
     </thead>
     <tbody>
@@ -52,10 +52,20 @@
         {
             <tr>
                 <td>@project.Title</td>
-                <td>@project.Description</td>
                 <td>@project.Budget.ToString("C")</td>
-                <td>@project.Status</td>
+                <td><span class="badge bg-secondary">@project.Status</span></td>
                 <td>@project.Client?.Email</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@project.Id" class="btn btn-sm btn-info me-1">Подробнее</a>
+                    @* Проверка: текущий пользователь — владелец проекта *@
+                    @if (User.Identity?.IsAuthenticated == true && User.Identity.Name == project.Client?.UserName)
+                    {
+                        <a asp-action="Edit" asp-route-id="@project.Id" class="btn btn-sm btn-warning me-1">Редактировать</a>
+                        <form asp-action="Delete" asp-route-id="@project.Id" method="post" class="d-inline" onsubmit="return confirm('Удалить проект?');">
+                            <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                        </form>
+                    }
+                </td>
             </tr>
         }
     </tbody>

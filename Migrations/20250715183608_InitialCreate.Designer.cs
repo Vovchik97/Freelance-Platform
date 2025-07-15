@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FreelancePlatform.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250714184029_InitialCreate")]
+    [Migration("20250715183608_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -335,7 +335,7 @@ namespace FreelancePlatform.Migrations
                         .IsRequired();
 
                     b.HasOne("FreelancePlatform.Models.Project", "Project")
-                        .WithMany()
+                        .WithMany("Bids")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -405,6 +405,11 @@ namespace FreelancePlatform.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("FreelancePlatform.Models.Project", b =>
+                {
+                    b.Navigation("Bids");
                 });
 #pragma warning restore 612, 618
         }

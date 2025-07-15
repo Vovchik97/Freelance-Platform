@@ -12,4 +12,5 @@ public class Project
     public IdentityUser? Client { get; set; }
     public DateTime CreatedAt { get; set; }
     public ProjectStatus Status { get; set; }
+    public List<Bid> Bids { get; set; } = new List<Bid>();
 }

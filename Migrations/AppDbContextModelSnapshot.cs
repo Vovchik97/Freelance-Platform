@@ -332,7 +332,7 @@ namespace FreelancePlatform.Migrations
                         .IsRequired();
 
                     b.HasOne("FreelancePlatform.Models.Project", "Project")
-                        .WithMany()
+                        .WithMany("Bids")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -402,6 +402,11 @@ namespace FreelancePlatform.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("FreelancePlatform.Models.Project", b =>
+                {
+                    b.Navigation("Bids");
                 });
 #pragma warning restore 612, 618
         }

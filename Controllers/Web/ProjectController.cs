@@ -1,5 +1,8 @@
-﻿using FreelancePlatform.Context;
+﻿using System.Security.Claims;
+using FreelancePlatform.Context;
+using FreelancePlatform.Controllers.Api;
 using FreelancePlatform.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +16,8 @@ public class ProjectController : Controller
     {
         _context = context;
     }
-
+    
+    [AllowAnonymous]
     public async Task<IActionResult> Index(string? search, string? status, decimal? minBudget, decimal? maxBudget, string sort)
     {
         var query = _context.Projects.Include(p => p.Client).AsQueryable();
@@ -54,5 +58,137 @@ public class ProjectController : Controller
         ViewBag.Sort = sort;
         
         return View(projects);
+    }
+    
+    [AllowAnonymous]
+    public async Task<IActionResult> Details(int id)
+    {
+        var project = await _context.Projects
+            .Include(p => p.Client)
+            .Include(p => p.Bids)
+                .ThenInclude(b => b.Freelancer)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+        
+        return View(project);
+    }
+
+    [Authorize(Roles = "Client")]
+    public IActionResult Create()
+    {
+        return View();
+    }
+    
+    [HttpPost]
+    [Authorize(Roles = "Client")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(CreateProjectDto dto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(dto);
+        }
+
+        var project = new Project
+        {
+            Title = dto.Title,
+            Description = dto.Description,
+            Budget = dto.Budget,
+            Status = dto.Status,
+            ClientId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+            CreatedAt = DateTime.UtcNow  // <--- Используй UTC здесь!
+        };
+        
+        await _context.Projects.AddAsync(project);
+        await _context.SaveChangesAsync();
+        
+        return RedirectToAction(nameof(MyProjects));
+    }
+    
+    [Authorize(Roles = "Client")]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
+        
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        var dto = new UpdateProjectDto
+        {
+            Title = project.Title,
+            Description = project.Description,
+            Budget = project.Budget,
+            Status = project.Status
+        };
+        
+        return View(dto);
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Client")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, UpdateProjectDto dto)
+    {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            // Можно временно показать ошибки пользователю, например:
+            ViewBag.Errors = errors;
+            return View(dto);
+        }
+        
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+        
+        project.Title = dto.Title;
+        project.Description = dto.Description;
+        project.Budget = dto.Budget;
+        project.Status = dto.Status;
+
+        await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(MyProjects));
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Client")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        _context.Projects.Remove(project);
+        await _context.SaveChangesAsync();
+        
+        return RedirectToAction(nameof(MyProjects));
+    }
+
+    [Authorize(Roles = "Client")]
+    public async Task<IActionResult> MyProjects()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var myProjects = await _context.Projects
+            .Where(p => p.ClientId == userId)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+
+        return View(myProjects);
     }
 }

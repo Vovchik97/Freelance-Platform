@@ -1,0 +1,36 @@
+﻿@model IEnumerable<FreelancePlatform.Models.Project>
+@{
+ViewData["Title"] = "Мои проекты";
+}
+
+<h2>Мои проекты</h2>
+
+<a asp-action="Create" class="btn btn-success mb-3">Создать новый проект</a>
+
+<table class="table table-bordered table-striped table-hover align-middle">
+    <thead class="table-light">
+    <tr>
+        <th>Название</th>
+        <th>Бюджет</th>
+        <th>Статус</th>
+        <th style="width: 140px;"></th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var project in Model)
+    {
+    <tr>
+        <td>@project.Title</td>
+        <td>@project.Budget.ToString("C")</td>
+        <td><span class="badge bg-secondary">@project.Status</span></td>
+        <td>
+            <a asp-action="Details" asp-route-id="@project.Id" class="btn btn-sm btn-info me-1">Подробнее</a>
+            <a asp-action="Edit" asp-route-id="@project.Id" class="btn btn-sm btn-warning me-1">Редактировать</a>
+            <form asp-action="Delete" asp-route-id="@project.Id" method="post" class="d-inline" onsubmit="return confirm('Удалить проект?');">
+                <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+            </form>
+        </td>
+    </tr>
+    }
+    </tbody>
+</table>
