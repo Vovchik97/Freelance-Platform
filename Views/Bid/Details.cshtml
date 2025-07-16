@@ -1,0 +1,18 @@
+﻿@model FreelancePlatform.Models.Bid
+@{
+ViewData["Title"] = "Заявка";
+}
+
+<h2>Заявка</h2>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Проект: @Model.Project.Title</h5>
+        <h6 class="card-subtitle mb-2 text-muted">Фрилансер: @Model.Freelancer.UserName</h6>
+
+        <p class="card-text"><strong>Сумма:</strong> @Model.Amount ₽</p>
+        <p class="card-text"><strong>Срок выполнения:</strong> @Model.DurationInDays дней</p>
+        <p class="card-text"><strong>Комментарий:</strong> @Model.Comment</p>
+        <p class="card-text"><strong>Создана:</strong> @Model.CreatedAt.ToLocalTime().ToString("g")</p>
+    </div>
+</div>

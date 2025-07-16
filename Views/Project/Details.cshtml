@@ -1,6 +1,6 @@
 ﻿@model FreelancePlatform.Models.Project
 @{
-    ViewData["Title"] = "Дктали проекта";
+    ViewData["Title"] = "Детали проекта";
 }
 
 <div class="card mb-4">
@@ -31,9 +31,15 @@
             @foreach (var bid in Model.Bids)
             {
                 <tr>
-                    <td>@bid.Freelancer?.Email</td>
+                    <td>@bid.Freelancer.UserName</td>
                     <td>@bid.Amount.ToString("C")</td>
+                    <td>@bid.DurationInDays</td>
                     <td>@bid.Comment</td>
+                    <td>
+                        <a asp-controller="Bid" asp-action="Details" asp-route-id="@bid.Id" class="btn btn-sm btn-outline-primary">
+                            Посмотреть
+                        </a>
+                    </td>
                 </tr>
             }
         </tbody>
@@ -42,4 +48,11 @@
 else
 {
     <p class="text-muted">Заявок пока нет.</p>
+}
+
+@if (User.IsInRole("Freelancer"))
+{
+    <a class="btn btn-primary mt-3" asp-controller="Bid" asp-action="Create" asp-route-projectId="@Model.Id">
+        Откликнуться на проект
+    </a>
 }

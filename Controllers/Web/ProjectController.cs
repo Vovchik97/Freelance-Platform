@@ -100,7 +100,7 @@ public class ProjectController : Controller
             Budget = dto.Budget,
             Status = dto.Status,
             ClientId = User.FindFirstValue(ClaimTypes.NameIdentifier),
-            CreatedAt = DateTime.UtcNow  // <--- Используй UTC здесь!
+            CreatedAt = DateTime.UtcNow
         };
         
         await _context.Projects.AddAsync(project);
@@ -138,9 +138,6 @@ public class ProjectController : Controller
     {
         if (!ModelState.IsValid)
         {
-            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-            // Можно временно показать ошибки пользователю, например:
-            ViewBag.Errors = errors;
             return View(dto);
         }
         

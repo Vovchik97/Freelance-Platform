@@ -1,0 +1,39 @@
+﻿@model List<FreelancePlatform.Models.Bid>
+@{
+ViewData["Title"] = "Мои заявки";
+}
+
+<h2>Мои заявки</h2>
+
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>Проект</th>
+        <th>Сумма</th>
+        <th>Срок (дн.)</th>
+        <th>Комментарий</th>
+        <th>Дата</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var bid in Model)
+    {
+    <tr>
+        <td>@bid.Project?.Title</td>
+        <td>@bid.Amount ₽</td>
+        <td>@bid.DurationInDays</td>
+        <td>@bid.Comment</td>
+        <td>@bid.CreatedAt.ToLocalTime().ToString("g")</td>
+        <td>
+            <a class="btn btn-sm btn-info" asp-action="Details" asp-route-id="@bid.Id">Детали</a>
+            <a class="btn btn-sm btn-warning" asp-action="Edit" asp-route-id="@bid.Id">Редактировать</a>
+            <form asp-action="Delete" asp-route-id="@bid.Id" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Удалить заявку?')">Удалить</button>
+            </form>
+        </td>
+    </tr>
+    }
+    </tbody>
+</table>

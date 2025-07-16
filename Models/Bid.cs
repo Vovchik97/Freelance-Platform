@@ -5,7 +5,7 @@ namespace FreelancePlatform.Models;
 public class Bid
 {
     public int Id { get; set; }
-    public int ProjectId { get; set; }
+    public required int ProjectId { get; set; }
     public Project? Project { get; set; }
     public required string FreelancerId { get; set; }
     public IdentityUser? Freelancer { get; set; }
