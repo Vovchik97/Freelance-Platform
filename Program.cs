@@ -1,4 +1,5 @@
 using FreelancePlatform.Context;
+using FreelancePlatform.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -136,6 +137,9 @@ using (var scope = app.Services.CreateScope())
             await userManager.AddToRoleAsync(adminUser, "Admin");
         }
     }
+    
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await DbSeeder.SeedAsync(db, userManager, roleManager);
 }
 
 // Configure the HTTP request pipeline.
