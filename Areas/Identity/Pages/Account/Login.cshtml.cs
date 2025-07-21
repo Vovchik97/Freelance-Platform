@@ -67,15 +67,16 @@ namespace FreelancePlatform.Areas.Identity.Pages.Account
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Required]
-            [EmailAddress]
+            [Required(ErrorMessage = "Введите email")]
+            [EmailAddress(ErrorMessage = "Неверный email")]
+            [RegularExpression(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", ErrorMessage = "Email должен быть с доменом")]
             public string Email { get; set; }
 
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Required]
+            [Required(ErrorMessage = "Введите пароль")]
             [DataType(DataType.Password)]
             public string Password { get; set; }
 
@@ -140,6 +141,7 @@ namespace FreelancePlatform.Areas.Identity.Pages.Account
 
                         return LocalRedirect(returnUrl);
                     }
+                    
 
                     if (result.RequiresTwoFactor)
                     {
@@ -152,11 +154,14 @@ namespace FreelancePlatform.Areas.Identity.Pages.Account
                         _logger.LogWarning("User account locked out.");
                         return RedirectToPage("./Lockout");
                     }
-                    else
-                    {
-                        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                        return Page();
-                    }
+                    
+                    ModelState.AddModelError(string.Empty, "Неверный email или пароль.");
+                    return Page();
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, "Пользователь не найден");
+                    return Page();
                 }
             }
 

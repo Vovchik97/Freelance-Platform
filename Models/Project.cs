@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Identity;
 
 namespace FreelancePlatform.Models;
 
@@ -13,4 +14,9 @@ public class Project
     public DateTime CreatedAt { get; set; }
     public ProjectStatus Status { get; set; }
     public List<Bid> Bids { get; set; } = new List<Bid>();
+    
+    public string? SelectedFreelancerId { get; set; }
+
+    [ForeignKey("SelectedFreelancerId")]
+    public IdentityUser? SelectedFreelancer { get; set; }
 }

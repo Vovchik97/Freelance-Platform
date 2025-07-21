@@ -8,6 +8,29 @@ public static class DbSeeder
 {
     public static async Task SeedAsync(AppDbContext context, UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
     {
+        // Create roles
+        string[] rolesName = { "Client", "Freelancer", "Admin" };
+        foreach (var roleName in rolesName)
+        {
+            if (!await roleManager.RoleExistsAsync(roleName))
+            {
+                await roleManager.CreateAsync(new IdentityRole(roleName));
+            }
+        }
+    
+        // Create admin
+        var adminEmail = "admin@example.com";
+        var adminUser = await userManager.FindByEmailAsync(adminEmail);
+        if (adminUser == null)
+        {
+            adminUser = new IdentityUser { UserName = adminEmail, Email = adminEmail };
+            var result = await userManager.CreateAsync(adminUser, "Admin123!");
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(adminUser, "Admin");
+            }
+        }
+        
         string defaultPasswordClient = "Client123!";
         string defaultPasswordFreelancer = "Freelancer123!";
         string[] clientIds = { "client1", "client2", "client3", "client4", "client5" };

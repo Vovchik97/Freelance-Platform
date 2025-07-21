@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using FreelancePlatform.Context;
+using FreelancePlatform.Dto.Bids;
 using FreelancePlatform.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -163,19 +164,4 @@ public class BidController : ControllerBase
         
         return NoContent();
     }
-}
-
-public class CreateBidDto
-{
-    public int ProjectId { get; set; }
-    public decimal Amount { get; set; }
-    public string? Comment { get; set; }
-    public int DurationInDays { get; set; }
-}
-
-public class UpdateBidDto
-{
-    public decimal Amount { get; set; }
-    public string? Comment { get; set; }
-    public int DurationInDays { get; set; }
 }

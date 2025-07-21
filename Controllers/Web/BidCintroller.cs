@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 using FreelancePlatform.Context;
-using FreelancePlatform.Controllers.Api;
+using FreelancePlatform.Dto.Bids;
 using FreelancePlatform.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -153,6 +153,7 @@ public class BidController : Controller
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var myBids = await _context.Bids
+            .Include(b => b.Project)
             .Where(b => b.FreelancerId == userId)
             .OrderByDescending(b => b.CreatedAt)
             .ToListAsync();

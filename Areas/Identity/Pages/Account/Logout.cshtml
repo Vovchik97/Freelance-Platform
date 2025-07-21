@@ -1,0 +1,29 @@
+﻿@page
+@model LogoutModel
+@{
+    ViewData["Title"] = "Выход";
+}
+
+<div class="container mt-5 d-flex justify-content-center">
+    <div class="filters-card p-4 text-center">
+        <h2 class="mb-3">Выход из аккаунта</h2>
+
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <p class="mb-3 text-secondary">Вы действительно хотите выйти из системы?</p>
+
+            <form asp-area="Identity" asp-page="/Account/Logout"
+                  asp-route-returnUrl="@Url.Page("/", new { area = "" })"
+                  method="post">
+                <button type="submit" class="btn btn-danger w-100">Выйти</button>
+            </form>
+        }
+        else
+        {
+            <div class="alert alert-success" role="alert">
+                <strong>Вы успешно вышли из аккаунта.</strong>
+            </div>
+            <a class="btn btn-primary w-100" asp-page="/Account/Login">Войти снова</a>
+        }
+    </div>
+</div>

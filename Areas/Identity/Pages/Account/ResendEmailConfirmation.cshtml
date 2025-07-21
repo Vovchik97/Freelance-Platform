@@ -1,0 +1,28 @@
+﻿@page
+@model ResendEmailConfirmationModel
+@{
+ViewData["Title"] = "Повторная отправка подтверждения";
+}
+
+<div class="container mt-5 d-flex justify-content-center">
+    <div class="filters-card p-4" style="min-width: 400px; max-width: 600px;">
+        <h2 class="mb-2">Подтвердите почту</h2>
+        <p class="text-secondary mb-4">Введите адрес электронной почты, и мы отправим повторное письмо с подтверждением.</p>
+
+        <form method="post">
+            <div asp-validation-summary="All" class="text-danger mb-3" role="alert"></div>
+
+            <div class="input-group mb-3">
+                <label asp-for="Input.Email" class="form-label">Email</label>
+                <input asp-for="Input.Email" class="form-input" placeholder="name@example.com"/>
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Отправить письмо повторно</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+}

@@ -134,7 +134,7 @@ namespace FreelancePlatform.Areas.Identity.Pages.Account.Manage
             }
 
             await _signInManager.RefreshSignInAsync(user);
-            StatusMessage = "Your profile has been updated";
+            StatusMessage = "Ваш профиль был обновлён";
             return RedirectToPage();
         }
     }

@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using FreelancePlatform.Dto.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -22,13 +23,13 @@ public class AuthController : ControllerBase
     }
     
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterModel model)
+    public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
-        var user = new IdentityUser { UserName = model.Email, Email = model.Email };
-        var result = await _userManager.CreateAsync(user, model.Password);
+        var user = new IdentityUser { UserName = dto.Email, Email = dto.Email };
+        var result = await _userManager.CreateAsync(user, dto.Password);
         if (result.Succeeded)
         {
-            await _userManager.AddToRoleAsync(user, model.Role);
+            await _userManager.AddToRoleAsync(user, dto.Role);
             return Ok(new { token = GenerateJwtToken(user) });
         }
 
@@ -36,10 +37,10 @@ public class AuthController : ControllerBase
     }
     
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginModel model)
+    public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
-        var user = await _userManager.FindByEmailAsync(model.Email);
-        if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+        var user = await _userManager.FindByEmailAsync(dto.Email);
+        if (user != null && await _userManager.CheckPasswordAsync(user, dto.Password))
         {
             var roles = await _userManager.GetRolesAsync(user);
             return Ok(new { token = GenerateJwtToken(user, roles) });
@@ -78,17 +79,4 @@ public class AuthController : ControllerBase
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-}
-
-public class RegisterModel
-{
-    public required string Email { get; set; }
-    public required string Password { get; set; }
-    public required string Role { get; set; }
-}
-
-public class LoginModel
-{
-    public required string Email { get; set; }
-    public required string Password { get; set; }
 }

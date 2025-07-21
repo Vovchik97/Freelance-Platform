@@ -3,16 +3,67 @@
 ViewData["Title"] = "Заявка";
 }
 
-<h2>Заявка</h2>
+<div class="container mt-5" style="max-width: 700px;">
+    <div class="filters-card mx-auto">
+        <h2 class="filters-title mb-3">Заявка на проект</h2>
 
-<div class="card">
-    <div class="card-body">
-        <h5 class="card-title">Проект: @Model.Project.Title</h5>
-        <h6 class="card-subtitle mb-2 text-muted">Фрилансер: @Model.Freelancer.UserName</h6>
+        <div class="mb-3">
+            <strong>Проект:</strong> @Model.Project.Title
+        </div>
+        <div class="mb-3 text-secondary">
+            <strong>Фрилансер:</strong> @Model.Freelancer.UserName
+        </div>
+        <div class="mb-3">
+            <strong>Сумма:</strong> <span class="text-success">@Model.Amount ₽</span>
+        </div>
+        <div class="mb-3">
+            <strong>Срок выполнения:</strong> @Model.DurationInDays дней
+        </div>
+        <div class="mb-3">
+            <strong>Комментарий:</strong> @Model.Comment
+        </div>
+        <div class="mb-3">
+            <strong>Создана:</strong> @Model.CreatedAt.ToLocalTime().ToString("g")
+        </div>
+        <div class="mb-4">
+            <strong>Статус заявки:</strong>
+            @switch (Model.Status)
+            {
+            case BidStatus.Accepted:
+            <span class="status-badge status-completed">Одобрена</span>
+            break;
+            case BidStatus.Rejected:
+            <span class="status-badge status-cancelled">Отклонена</span>
+            break;
+            default:
+            <span class="status-badge status-inprogress">Рассматривается</span>
+            break;
+            }
+        </div>
 
-        <p class="card-text"><strong>Сумма:</strong> @Model.Amount ₽</p>
-        <p class="card-text"><strong>Срок выполнения:</strong> @Model.DurationInDays дней</p>
-        <p class="card-text"><strong>Комментарий:</strong> @Model.Comment</p>
-        <p class="card-text"><strong>Создана:</strong> @Model.CreatedAt.ToLocalTime().ToString("g")</p>
+        <div class="d-flex flex-wrap gap-2">
+            @if (Model.Status == BidStatus.Pending && User.Identity?.Name == Model.Freelancer.UserName)
+            {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Редактировать</a>
+            <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Удалить заявку?')">Удалить</button>
+            </form>
+            }
+
+            @if (Model.Status == BidStatus.Pending && User.Identity?.Name == Model.Project.Client?.UserName)
+            {
+            <form method="post" asp-controller="Project" asp-action="AcceptBid" asp-route-projectId="@Model.Project.Id" asp-route-bidId="@Model.Id" class="d-inline">
+                <button type="submit" class="btn btn-success">Одобрить</button>
+            </form>
+            <form method="post" asp-controller="Project" asp-action="RejectBid" asp-route-bidId="@Model.Id" class="d-inline ms-1">
+                <button type="submit" class="btn btn-outline-danger">Отклонить</button>
+            </form>
+            }
+        </div>
+
+        <a class="btn btn-primary mt-4" asp-controller="Project" asp-action="Details" asp-route-id="@Model.Project.Id">
+            Перейти к проекту
+        </a>
     </div>
 </div>

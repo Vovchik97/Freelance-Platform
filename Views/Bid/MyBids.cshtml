@@ -4,37 +4,94 @@
 ViewData["Title"] = "Мои заявки";
 }
 
-<h2>Мои заявки</h2>
+<div class="container mt-5">
+    <div class="header">
+        <h1>Мои заявки</h1>
+    </div>
 
-<table class="table table-striped">
-    <thead>
-    <tr>
-        <th>Проект</th>
-        <th>Сумма</th>
-        <th>Срок (дн.)</th>
-        <th>Комментарий</th>
-        <th>Дата</th>
-        <th></th>
-    </tr>
-    </thead>
-    <tbody>
-    @foreach (var bid in Model)
+    @if (Model.Any())
     {
-    <tr>
-        <td>@bid.Project?.Title</td>
-        <td>@bid.Amount ₽</td>
-        <td>@bid.DurationInDays</td>
-        <td>@bid.Comment</td>
-        <td>@bid.CreatedAt.ToLocalTime().ToString("g")</td>
-        <td>
-            <a class="btn btn-sm btn-info" asp-action="Details" asp-route-id="@bid.Id">Детали</a>
-            <a class="btn btn-sm btn-warning" asp-action="Edit" asp-route-id="@bid.Id">Редактировать</a>
-            <form asp-action="Delete" asp-route-id="@bid.Id" method="post" class="d-inline">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Удалить заявку?')">Удалить</button>
-            </form>
-        </td>
-    </tr>
+    <div class="custom-table-container">
+        <table class="custom-table">
+            <thead>
+            <tr>
+                <th>Проект</th>
+                <th>Сумма</th>
+                <th>Срок (дн.)</th>
+                <th>Комментарий</th>
+                <th>Дата</th>
+                <th>Статус</th>
+                <th>Действия</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var bid in Model)
+            {
+            <tr>
+                <td>@bid.Project.Title</td>
+                <td>@bid.Amount ₽</td>
+                <td>@bid.DurationInDays</td>
+                <td>@bid.Comment</td>
+                <td>@bid.CreatedAt.ToLocalTime().ToString("g")</td>
+                <td>
+                    <span class="status-badge @GetStatusClass(bid.Status.ToString())">
+                        @GetStatusText(bid.Status.ToString())
+                    </span>
+                </td>
+                <td>
+                    <div class="d-flex flex-column gap-1">
+                        <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@bid.Id">Детали</a>
+                        <a asp-controller="Project" asp-action="Details" asp-route-id="@bid.Project.Id" class="btn btn-sm btn-outline-secondary">Проект</a>
+
+                        @if (bid.Status == BidStatus.Pending)
+                        {
+                        <a class="btn btn-sm btn-warning" asp-action="Edit" asp-route-id="@bid.Id">Редактировать</a>
+                        <form asp-action="Delete" asp-route-id="@bid.Id" method="post" class="d-grid">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Удалить заявку?')">Удалить</button>
+                        </form>
+                        }
+                        else
+                        {
+                        <span class="text-muted">Нельзя изменить</span>
+                        }
+                    </div>
+                </td>
+            </tr>
+            }
+            </tbody>
+        </table>
+    </div>
     }
-    </tbody>
-</table>
+    else
+    {
+    <div class="alert alert-info">
+        У вас пока нет заявок. <a asp-controller="Project" asp-action="Index">Посмотрите проекты</a>, чтобы откликнуться.
+    </div>
+
+    }
+</div>
+
+@functions {
+    private string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            "Pending" => "status-pending",
+            "Accepted" => "status-accepted",
+            "Rejected" => "status-rejected",
+            _ => "status-pending"
+        };
+    }
+
+    private string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "Pending" => "Рассматривается",
+            "Accepted" => "Одобрена",
+            "Rejected" => "Отклонена",
+            _ => "Неизвестно"
+        };
+    }
+}

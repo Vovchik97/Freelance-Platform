@@ -49,6 +49,9 @@ namespace FreelancePlatform.Migrations
                     b.Property<int>("ProjectId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("FreelancerId");
@@ -109,6 +112,9 @@ namespace FreelancePlatform.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("SelectedFreelancerId")
+                        .HasColumnType("text");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -119,6 +125,8 @@ namespace FreelancePlatform.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId");
+
+                    b.HasIndex("SelectedFreelancerId");
 
                     b.ToTable("Projects");
                 });
@@ -350,7 +358,13 @@ namespace FreelancePlatform.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "SelectedFreelancer")
+                        .WithMany()
+                        .HasForeignKey("SelectedFreelancerId");
+
                     b.Navigation("Client");
+
+                    b.Navigation("SelectedFreelancer");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

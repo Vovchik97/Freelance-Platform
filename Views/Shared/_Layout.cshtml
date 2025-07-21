@@ -9,7 +9,8 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
     <link rel="stylesheet" href="~/FreelancePlatform.styles.css" asp-append-version="true"/>
 </head>
-<body>
+<body сlass="min-vh-100">
+
 <header>
     <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
         <div class="container-fluid">
@@ -30,21 +31,58 @@
                         <a class="nav-link" asp-controller="Project" asp-action="Index">Каталог проектов</a>
                     </li>
                 </ul>
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    @if (User.IsInRole("Client"))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Project" asp-action="MyProjects">Мои проекты</a>
+                        </li>
+                    }
+
+                    @if (User.IsInRole("Freelancer"))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Bid" asp-action="MyBids">Мои отклики</a>
+                        </li>
+                    }
+                </ul>
+                <ul class="navbar-nav">
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="Identity" asp-page="/Account/Manage/Index">Профиль</a>
+                        </li>
+                        <li class="nav-item">
+                            <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" method="post">
+                                <button type="submit" class="nav-link btn btn-link">Выход</button>
+                            </form>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="Identity" asp-page="/Account/Login">Вход</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="Identity" asp-page="/Account/Register">Регистрация</a>
+                        </li>
+                    }
+                </ul>
             </div>
         </div>
     </nav>
 </header>
-<div class="container">
-    <main role="main" class="pb-3">
-        @RenderBody()
-    </main>
-</div>
 
-<footer class="border-top footer text-muted">
+<main role="main" class="flex-grow-1">
+    @RenderBody()
+</main>
+
+<footer class="border-top footer text-muted mt-auto">
     <div class="container">
-        &copy; 2025 - FreelancePlatform - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        © 2025 - FreelancePlatform - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
     </div>
 </footer>
+
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>

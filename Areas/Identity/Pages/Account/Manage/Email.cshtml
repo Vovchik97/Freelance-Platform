@@ -1,0 +1,49 @@
+﻿@page
+@model EmailModel
+@{
+ViewData["Title"] = "Электронная почта";
+ViewData["ActivePage"] = ManageNavPages.Email;
+}
+
+<h2 style="text-align: center">Управление электронной почтой</h2>
+<p class="text-secondary mb-1" style="text-align: center">Вы можете изменить свой email или подтвердить текущий адрес</p>
+<div class="container mt-1">
+    <partial name="_StatusMessage" for="StatusMessage" />
+
+    <form id="email-form" method="post">
+        <div asp-validation-summary="All" class="text-danger mb-3" role="alert"></div>
+
+        @if (Model.IsEmailConfirmed)
+        {
+        <div class="input-group mb-3">
+            <label asp-for="Email" class="form-label">Текущий email</label>
+            <input asp-for="Email" class="form-input" placeholder="Введите email" disabled />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+        }
+        else
+        {
+        <div class="input-group mb-3">
+            <label asp-for="Email" class="form-label">Текущий email</label>
+            <input asp-for="Email" class="form-input" placeholder="Введите email" disabled />
+            <button id="email-verification" type="submit" asp-page-handler="SendVerificationEmail" class="btn btn-outline-secondary btn-sm mt-2">
+                Отправить письмо с подтверждением
+            </button>
+        </div>
+        }
+
+        <div class="input-group mb-4">
+            <label asp-for="Input.NewEmail" class="form-label">Новый email</label>
+            <input asp-for="Input.NewEmail" class="form-input" autocomplete="email" placeholder="Введите новый email" />
+            <span asp-validation-for="Input.NewEmail" class="text-danger"></span>
+        </div>
+
+        <button id="change-email-button" type="submit" asp-page-handler="ChangeEmail" class="btn btn-primary w-100">
+            Изменить email
+        </button>
+    </form>
+</div>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+}

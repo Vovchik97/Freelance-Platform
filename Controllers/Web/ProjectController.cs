@@ -1,8 +1,10 @@
 ﻿using System.Security.Claims;
 using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Api;
+using FreelancePlatform.Dto.Projects;
 using FreelancePlatform.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,10 +13,12 @@ namespace FreelancePlatform.Controllers.Web;
 public class ProjectController : Controller
 {
     private readonly AppDbContext _context;
+    private readonly UserManager<IdentityUser> _userManager;
 
-    public ProjectController(AppDbContext context)
+    public ProjectController(AppDbContext context, UserManager<IdentityUser> userManager)
     {
         _context = context;
+        _userManager = userManager;
     }
     
     [AllowAnonymous]
@@ -187,5 +191,159 @@ public class ProjectController : Controller
             .ToListAsync();
 
         return View(myProjects);
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Client")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AcceptBid(int projectId, int bidId)
+    {
+        var project = await _context.Projects
+            .Include(p => p.Bids)
+            .FirstOrDefaultAsync(p => p.Id == projectId);
+        
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        if (project.ClientId != _userManager.GetUserId(User))
+        {
+            return Forbid();
+        }
+
+        var bid = project.Bids.FirstOrDefault(b => b.Id == bidId);
+        if (bid == null)
+        {
+            return NotFound();
+        }
+        
+        bid.Status = BidStatus.Accepted;
+        project.SelectedFreelancerId = bid.FreelancerId;
+        project.Status = ProjectStatus.InProgress;
+
+        foreach (var otherBid in project.Bids.Where(b => b.Id != bidId))
+        {
+            otherBid.Status = BidStatus.Rejected;
+        }
+        
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "Исполнитель выбран. Остальные заявки отклонены.";
+        return RedirectToAction(nameof(Details), new { id = bid.ProjectId });
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Client")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RejectBid(int bidId)
+    {
+        var bid = await _context.Bids
+            .Include(b => b.Project)
+            .FirstOrDefaultAsync(b => b.Id == bidId);
+
+        if (bid == null)
+        {
+            return NotFound();
+        }
+
+        if (bid.Project.ClientId != _userManager.GetUserId(User))
+        {
+            return Forbid();
+        }
+
+        bid.Status = BidStatus.Rejected;
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Заявка отклонена";
+        return RedirectToAction(nameof(Details), new { id = bid.ProjectId });
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Freelancer")]
+    public async Task<IActionResult> CompleteProject(int id)
+    {
+        var userId = _userManager.GetUserId(User);
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == id);
+        
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        if (project.SelectedFreelancerId != userId)
+        {
+            return Forbid();
+        }
+
+        if (project.Status != ProjectStatus.InProgress)
+        {
+            return BadRequest("Проект не может быть завершён.");
+        }
+
+        project.Status = ProjectStatus.Completed;
+        await _context.SaveChangesAsync();
+        
+        TempData["SuccessMessage"] = "Проект завершён.";
+        return RedirectToAction(nameof(Details), new { id = project.Id });
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Client")]
+    public async Task<IActionResult> CancelProject(int id)
+    {
+        var userId = _userManager.GetUserId(User);
+        var project = await _context.Projects
+            .Include(p => p.Bids)
+            .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
+        
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        if (project.Status != ProjectStatus.Open)
+        {
+            return BadRequest("Проект нельзя отменить на текущей стадии.");
+        }
+
+        project.Status = ProjectStatus.Cancelled;
+        foreach (var bid in project.Bids)
+        {
+            bid.Status = BidStatus.Rejected;
+        }
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Проект отменен.";
+        string? referer = Request.Headers["Referer"].ToString();
+        return !string.IsNullOrEmpty(referer) ? Redirect(referer) : RedirectToAction("MyProjects");
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Client")]
+    public async Task<IActionResult> ResumeProject(int id)
+    {
+        var userId = _userManager.GetUserId(User);
+        var project = await _context.Projects
+            .Include(p => p.Bids)
+            .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
+        
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        if (project.Status != ProjectStatus.Cancelled)
+        {
+            return BadRequest("Проект не находитс в статусе 'Отменён'.");
+        }
+
+        project.Status = ProjectStatus.Open;
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Проект успешно возобновлён.";
+        string? referer = Request.Headers["Referer"].ToString();
+        return !string.IsNullOrEmpty(referer) ? Redirect(referer) : RedirectToAction("MyProjects");
     }
 }

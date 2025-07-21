@@ -1,0 +1,31 @@
+﻿@{
+if (ViewData.TryGetValue("ParentLayout", out var parentLayout) && parentLayout != null)
+{
+Layout = parentLayout.ToString();
+}
+else
+{
+Layout = "/Areas/Identity/Pages/Account/Manage/_Layout.cshtml";
+}
+}
+
+<div class="container mt-4">
+    <div class="header">
+        <h1 class="header">Управление аккаунтом</h1>
+        <p class="text-center text-muted mb-4">Здесь вы можете изменить настройки профиля, почту, пароль и другие параметры</p>
+    </div>
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <partial name="_ManageNav"/>
+        </div>
+        <div class="col-md-9">
+            <div class="project-card">
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+@RenderSection("Scripts", required: false)
+}

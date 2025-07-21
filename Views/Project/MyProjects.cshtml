@@ -4,34 +4,135 @@
 ViewData["Title"] = "Мои проекты";
 }
 
-<h2>Мои проекты</h2>
+<div class="container mt-5">
+    <!-- Заголовок -->
+    <div class="header mb-4">
+        <h1>Мои проекты</h1>
+        <p class="text-secondary">Здесь вы можете управлять своими опубликованными проектами</p>
+    </div>
 
-<a asp-action="Create" class="btn btn-success mb-3">Создать новый проект</a>
+    <!-- Кнопка создания -->
+    <div class="mb-4 text-end">
+        <a asp-action="Create" class="btn btn-success">
+            <svg class="meta-icon me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Создать проект
+        </a>
+    </div>
 
-<table class="table table-bordered table-striped table-hover align-middle">
-    <thead class="table-light">
-    <tr>
-        <th>Название</th>
-        <th>Бюджет</th>
-        <th>Статус</th>
-        <th style="width: 140px;"></th>
-    </tr>
-    </thead>
-    <tbody>
-    @foreach (var project in Model)
+    @if (Model != null && Model.Any())
     {
-    <tr>
-        <td>@project.Title</td>
-        <td>@project.Budget.ToString("C")</td>
-        <td><span class="badge bg-secondary">@project.Status</span></td>
-        <td>
-            <a asp-action="Details" asp-route-id="@project.Id" class="btn btn-sm btn-info me-1">Подробнее</a>
-            <a asp-action="Edit" asp-route-id="@project.Id" class="btn btn-sm btn-warning me-1">Редактировать</a>
-            <form asp-action="Delete" asp-route-id="@project.Id" method="post" class="d-inline" onsubmit="return confirm('Удалить проект?');">
-                <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
-            </form>
-        </td>
-    </tr>
+    <div class="projects-list">
+        @foreach (var project in Model)
+        {
+        <div class="project-card">
+            <div class="project-header">
+                <h3 class="project-title">@project.Title</h3>
+                @switch (project.Status)
+                {
+                case ProjectStatus.Open:
+                <span class="status-badge status-open">Открыт</span>
+                break;
+                case ProjectStatus.InProgress:
+                <span class="status-badge status-inprogress">В работе</span>
+                break;
+                case ProjectStatus.Completed:
+                <span class="status-badge status-completed">Завершён</span>
+                break;
+                case ProjectStatus.Cancelled:
+                <span class="status-badge status-cancelled">Отменён</span>
+                break;
+                default:
+                <span class="status-badge">Неизвестно</span>
+                break;
+                }
+            </div>
+
+            <div class="project-meta">
+                <div class="meta-item">
+                    <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                    </svg>
+                    <span class="project-budget">@project.Budget.ToString("C")</span>
+                </div>
+                <div class="meta-item">
+                    <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>@project.CreatedAt.ToString("dd.MM.yyyy")</span>
+                </div>
+            </div>
+
+            <div class="project-actions">
+                <a asp-action="Details" asp-route-id="@project.Id" class="btn btn-outline">
+                    <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    Подробнее
+                </a>
+
+                @if (project.Status == ProjectStatus.Open || project.Status == ProjectStatus.Cancelled)
+                {
+                <a asp-action="Edit" asp-route-id="@project.Id" class="btn btn-warning">
+                    <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Редактировать
+                </a>
+
+                <form asp-action="Delete" asp-route-id="@project.Id" method="post" class="d-inline" onsubmit="return confirm('Удалить проект?');">
+                    <button type="submit" class="btn btn-danger">
+                        <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 4V3a1 1 0 011-1h4a1 1 0 011 1v1M4 7h16" />
+                        </svg>
+                        Удалить
+                    </button>
+                </form>
+                }
+
+                @if (project.Status == ProjectStatus.Open)
+                {
+                <form asp-action="CancelProject" asp-route-id="@project.Id" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Отменить
+                    </button>
+                </form>
+                }
+
+                @if (project.Status == ProjectStatus.Cancelled)
+                {
+                <form method="post" asp-action="ResumeProject" asp-route-id="@project.Id" class="d-inline">
+                    <button type="submit" class="btn btn-outline-success">
+                        <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 17v-2a4 4 0 014-4h4" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M15 7l4 4-4 4" />
+                        </svg>
+                        Возобновить
+                    </button>
+                </form>
+                }
+            </div>
+        </div>
+        }
+    </div>
     }
-    </tbody>
-</table>
+    else
+    {
+    <div class="alert alert-info">
+        У вас пока нет проектов. <a asp-action="Create">Создайте первый проект</a>, чтобы начать.
+    </div>
+    }
+</div>

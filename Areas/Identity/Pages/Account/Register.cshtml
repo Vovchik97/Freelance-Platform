@@ -2,44 +2,103 @@
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @model RegisterModel
 @{
-    ViewData["Title"] = "Register";
+ViewData["Title"] = "Создание аккаунта";
 }
 
-<h1>@ViewData["Title"]</h1>
+<div class="container mt-5">
+    <div class="header">
+        <h1>@ViewData["Title"]</h1>
+        <p>Заполните форму, чтобы создать новый аккаунт.</p>
+    </div>
 
-<div class="row">
-    <div class="col-md-4">
+    <div class="filters-card mx-auto" style="max-width: 600px;">
         <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-            <h2>Create a new account.</h2>
-            <hr />
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                <label asp-for="Input.Email">Email</label>
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+
+            <div class="input-group">
+                <label asp-for="Input.Email" class="form-label">Email</label>
+                <input asp-for="Input.Email" class="form-input" autocomplete="username" placeholder="Введите email"/>
                 <span asp-validation-for="Input.Email" class="text-danger"></span>
             </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label asp-for="Input.Password">Password</label>
+
+            <div class="input-group">
+                <label asp-for="Input.Password" class="form-label">Пароль</label>
+                <input asp-for="Input.Password" class="form-input" autocomplete="new-password" placeholder="Введите пароль"/>
                 <span asp-validation-for="Input.Password" class="text-danger"></span>
             </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label asp-for="Input.ConfirmPassword">Confirm Password</label>
+
+            <div class="input-group">
+                <label asp-for="Input.ConfirmPassword" class="form-label">Подтвердите пароль</label>
+                <input asp-for="Input.ConfirmPassword" class="form-input" autocomplete="new-password" placeholder="Повторите пароль"/>
                 <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
             </div>
-            <div class="form-group mb-3">
-                <label asp-for="Input.Role">Role</label>
-                <select asp-for="Input.Role" class="form-control">
-                    <option value="Client">Client</option>
-                    <option value="Freelancer">Freelancer</option>
+
+            <div class="input-group">
+                <label asp-for="Input.Role" class="form-label">Роль</label>
+                <select asp-for="Input.Role" class="form-select" style="width: 100%">
+                    <option value="Client">Клиент</option>
+                    <option value="Freelancer">Фрилансер</option>
                 </select>
+                <span asp-validation-for="Input.Role" class="text-danger"></span>
             </div>
-            <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
+
+            <div id="password-rules" class="alert alert-warning mt-3">
+                <strong>Пароль должен содержать:</strong>
+                <ul class="mb-0">
+                    <li id="rule-length">Не менее 6 символов</li>
+                    <li id="rule-digit">Хотя бы одну цифру</li>
+                    <li id="rule-lower">Хотя бы одну строчную букву</li>
+                    <li id="rule-upper">Хотя бы одну заглавную букву</li>
+                    <li id="rule-special">Хотя бы один спецсимвол (!# и т.д.)</li>
+                </ul>
+            </div>
+
+            <div id="password-valid" class="alert alert-success mt-3" style="display:none;">
+                ✅ Пароль соответствует всем требованиям.
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mt-3">Зарегистрироваться</button>
         </form>
     </div>
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+<partial name="_ValidationScriptsPartial" />
+
+<script>
+    const passwordInput = document.getElementById("Input_Password");
+    const rulesBox = document.getElementById("password-rules");
+    const validBox = document.getElementById("password-valid");
+
+    const rules = {
+        length: document.getElementById("rule-length"),
+        digit: document.getElementById("rule-digit"),
+        lower: document.getElementById("rule-lower"),
+        upper: document.getElementById("rule-upper"),
+        special: document.getElementById("rule-special"),
+    };
+
+    passwordInput.addEventListener("input", () => {
+        const val = passwordInput.value;
+        let passed = 0;
+
+        for (const key in rules) {
+            rules[key].style.display = "list-item";
+        }
+
+        if (val.length >= 6) { rules.length.style.display = "none"; passed++; }
+        if (/\d/.test(val)) { rules.digit.style.display = "none"; passed++; }
+        if (/[a-z]/.test(val)) { rules.lower.style.display = "none"; passed++; }
+        if (/[A-Z]/.test(val)) { rules.upper.style.display = "none"; passed++; }
+        if (/[^A-Za-z0-9]/.test(val)) { rules.special.style.display = "none"; passed++; }
+
+        if (passed === 5) {
+            rulesBox.style.display = "none";
+            validBox.style.display = "block";
+        } else {
+            rulesBox.style.display = "block";
+            validBox.style.display = "none";
+        }
+    });
+</script>
 }

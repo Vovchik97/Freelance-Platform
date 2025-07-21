@@ -2,31 +2,35 @@
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @model IndexModel
 @{
-    ViewData["Title"] = "Profile";
-    ViewData["ActivePage"] = ManageNavPages.Index;
+ViewData["Title"] = "Профиль";
+ViewData["ActivePage"] = ManageNavPages.Index;
 }
 
-<h3>@ViewData["Title"]</h3>
-<partial name="_StatusMessage" for="StatusMessage" />
-<div class="row">
-    <div class="col-md-6">
-        <form id="profile-form" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Username" class="form-control" placeholder="Please choose your username."/>
-                <label asp-for="Input.Username" class="form-label"></label>
-                <span asp-validation-for="Input.Username" class="text-danger"></span>
-            </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number."/>
-                <label asp-for="Input.PhoneNumber" class="form-label"></label>
-                <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
-            </div>
-            <button id="update-profile-button" type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
-        </form>
-    </div>
-</div>
+<h2 style="text-align: center">Мой профиль</h2>
+<p class="text-secondary mb-1" style="text-align: center">Обновите свои данные, чтобы сохранить актуальную информацию</p>
+<div class="container mt-1">
+    
+            <partial name="_StatusMessage" for="StatusMessage" />
+
+            <form id="profile-form" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+
+                <div class="input-group mb-3">
+                    <label asp-for="Input.Username" class="form-label">Имя пользователя</label>
+                    <input asp-for="Input.Username" class="form-input" placeholder="Введите имя пользователя"/>
+                    <span asp-validation-for="Input.Username" class="text-danger"></span>
+                </div>
+
+                <div class="input-group mb-4">
+                    <label asp-for="Input.PhoneNumber" class="form-label">Телефон</label>
+                    <input asp-for="Input.PhoneNumber" class="form-input" placeholder="Введите номер телефона"/>
+                    <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+                </div>
+
+                <button id="update-profile-button" type="submit" class="btn btn-primary w-100">Сохранить</button>
+            </form>
+        </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+<partial name="_ValidationScriptsPartial" />
 }

@@ -1,8 +1,96 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model IEnumerable<FreelancePlatform.Models.Project>
+@{
+    ViewData["Title"] = "Главная";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container mt-5">
+
+    <!-- HERO -->
+    <div class="text-center mb-5">
+        <h1 class="display-4" style="background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Добро пожаловать на Freelance Platform</h1>
+        <p class="lead text-secondary">Современная площадка для сотрудничества клиентов и фрилансеров</p>
+
+        @if (!User.Identity.IsAuthenticated)
+        {
+            <div class="d-flex justify-content-center gap-3 mt-4">
+                <a class="btn btn-primary btn-lg" asp-area="Identity" asp-page="/Account/Register">Зарегистрироваться</a>
+                <a class="btn btn-outline btn-lg" asp-area="Identity" asp-page="/Account/Login">Войти</a>
+            </div>
+        }
+
+        <!-- CTA в зависимости от роли -->
+        @if (User.Identity.IsAuthenticated)
+        {
+        <div class="text-center mt-5">
+            @if (User.IsInRole("Client"))
+            {
+            <a class="btn btn-primary btn-lg mx-2" asp-controller="Project" asp-action="Create">Разместить проект</a>
+            <a class="btn btn-outline btn-lg mx-2" asp-controller="Project" asp-action="MyProjects">Мои проекты</a>
+            }
+            else if (User.IsInRole("Freelancer"))
+            {
+            <a class="btn btn-primary btn-lg mx-2" asp-controller="Project" asp-action="Index">Найти проект</a>
+            <a class="btn btn-outline btn-lg mx-2" asp-controller="Bid" asp-action="MyBids">Мои отклики</a>
+            }
+        </div>
+        }
+    </div>
+
+    <!-- Как работает -->
+    <div class="filters-card mb-5">
+        <h2 class="filters-title">Как это работает</h2>
+        <div class="filters-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-label">1. Клиенты публикуют проекты</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💬</div>
+                <div class="stat-label">2. Фрилансеры отправляют отклики</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🤝</div>
+                <div class="stat-label">3. Заключается сделка</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Преимущества -->
+    <div class="filters-card mb-5">
+        <h2 class="filters-title">Преимущества</h2>
+        <ul class="text-secondary">
+            <li>🔒 Надёжная система авторизации и ролей</li>
+            <li>🔍 Умные фильтры проектов</li>
+            <li>📬 Уведомления и управление откликами</li>
+            <li>💼 Каталог проектов и личный кабинет</li>
+        </ul>
+    </div>
+
+    <!-- Statistics -->
+    @if (Model != null && Model.Any())
+    {
+    <div class="stats-grid">
+        <div class="stat-card">
+            <svg class="stat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+            </svg>
+            <div class="stat-value">@Model.Count()</div>
+            <div class="stat-label">Активных проектов</div>
+        </div>
+        <div class="stat-card">
+            <svg class="stat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+            </svg>
+            <div class="stat-value">@Model.Sum(p => p.Budget).ToString("C")</div>
+            <div class="stat-label">Общий бюджет</div>
+        </div>
+        <div class="stat-card">
+            <svg class="stat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <div class="stat-value">@Model.Select(p => p.Client?.UserName).Distinct().Count()</div>
+            <div class="stat-label">Активных клиентов</div>
+        </div>
+    </div>
+    }
 </div>

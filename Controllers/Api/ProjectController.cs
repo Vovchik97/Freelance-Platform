@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using FreelancePlatform.Context;
+using FreelancePlatform.Dto.Projects;
 using FreelancePlatform.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -155,20 +156,4 @@ public class ProjectController : ControllerBase
 
         return NoContent();
     }
-}
-
-public class CreateProjectDto
-{
-    public string Title { get; set; } = default!;
-    public string Description { get; set; } = default!;
-    public decimal Budget { get; set; }
-    public ProjectStatus Status { get; set; } = ProjectStatus.Open;
-}
-
-public class UpdateProjectDto
-{
-    public string Title { get; set; } = default!;
-    public string Description { get; set; } = default!;
-    public decimal Budget { get; set; }
-    public ProjectStatus Status { get; set; }
 }

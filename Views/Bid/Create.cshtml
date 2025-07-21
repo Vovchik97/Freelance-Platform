@@ -1,42 +1,51 @@
 ﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
-@model FreelancePlatform.Controllers.Api.CreateBidDto
+@model FreelancePlatform.Dto.Bids.CreateBidDto
 @{
 ViewData["Title"] = "Откликнуться на проект";
 }
 
-<h2>Откликнуться на проект</h2>
+<div class="container mt-5" style="max-width: 700px;">
+    <div class="filters-card mx-auto">
+        <h2 class="filters-title mb-4">Откликнуться на проект</h2>
 
-<form asp-action="Create" asp-route-projectId="@ViewBag.ProjectId" method="post">
-    @Html.AntiForgeryToken()
+        <form asp-action="Create" asp-route-projectId="@ViewBag.ProjectId" method="post" novalidate>
+            @Html.AntiForgeryToken()
+            
+            <div class="filters-row">
+                <div class="input-group mb-3">
+                    <label asp-for="Amount" class="form-label"></label>
+                    <input asp-for="Amount" class="form-input" type="number" min="0" step="any" />
+                    <span asp-validation-for="Amount" class="text-danger"></span>
+                </div>
 
-    <div class="mb-3">
-        <label asp-for="Amount" class="form-label"></label>
-        <input asp-for="Amount" class="form-control" type="number" step="any" />
-        <span asp-validation-for="Amount" class="text-danger"></span>
+                <div class="input-group mb-3">
+                    <label asp-for="DurationInDays" class="form-label"></label>
+                    <input asp-for="DurationInDays" class="form-input" type="number" min="0" step="any"/>
+                    <span asp-validation-for="DurationInDays" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="input-group mb-4">
+                <label asp-for="Comment" class="form-label"></label>
+                <textarea asp-for="Comment" class="form-input" rows="4"></textarea>
+                <span asp-validation-for="Comment" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Отправить заявку</button>
+        </form>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+        <div class="alert alert-danger mt-3">
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+            <div>@error.ErrorMessage</div>
+            }
+        </div>
+        }
     </div>
-    <div class="mb-3">
-        <label asp-for="DurationInDays" class="form-label"></label>
-        <input asp-for="DurationInDays" class="form-control" type="number" />
-        <span asp-validation-for="DurationInDays" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Comment" class="form-label"></label>
-        <textarea asp-for="Comment" class="form-control"></textarea>
-        <span asp-validation-for="Comment" class="text-danger"></span>
-    </div>
-    <button type="submit" class="btn btn-primary">Отправить заявку</button>
-</form>
+</div>
 
 @section Scripts {
 @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
-}
-
-@if (!ViewData.ModelState.IsValid)
-{
-    <div class="alert alert-danger">
-        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-        {
-            <div>@error.ErrorMessage</div>
-        }
-    </div>
 }

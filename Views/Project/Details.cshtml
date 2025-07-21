@@ -4,56 +4,156 @@
     ViewData["Title"] = "Детали проекта";
 }
 
-<div class="card mb-4">
-    <div class="card-header">
-        <h2 class="card-title">@Model.Title</h2>
-        <small class="text-muted">Создан: @Model.CreatedAt.ToLocalTime().ToString("g")</small>
-    </div>
-    <div class="card-body">
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success text-center">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger text-center">@TempData["ErrorMessage"]</div>
+}
+
+<div class="container mt-5">
+    <!-- Карточка проекта -->
+    <div class="filters-card mx-auto mb-5" style="max-width: 900px;">
+        <h2 class="filters-title mb-3">@Model.Title</h2>
+        <div class="text-muted mb-3">Создан: @Model.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
+
         <p><strong>Описание:</strong> @Model.Description</p>
         <p><strong>Бюджет:</strong> <span class="badge bg-success">@Model.Budget.ToString("C")</span></p>
-        <p><strong>Статус:</strong> <span class="badge bg-info">@Model.Status</span></p>
-        <p><strong>Клиент:</strong> @Model.Client?.Email</p>
-    </div>
-</div>
-
-<h4>Заявки</h4>
-@if (Model.Bids != null && Model.Bids.Any())
-{
-    <table class="table table-hover align-middle">
-        <thread class="table-light">
-            <tr>
-                <th>Фрилансер</th>
-                <th>Цена</th>
-                <th>Комментарий</th>
-            </tr>
-        </thread>
-        <tbody>
-            @foreach (var bid in Model.Bids)
+        <p><strong>Статус проекта:</strong>
+            @switch (Model.Status)
             {
-                <tr>
-                    <td>@bid.Freelancer.UserName</td>
-                    <td>@bid.Amount.ToString("C")</td>
-                    <td>@bid.DurationInDays</td>
-                    <td>@bid.Comment</td>
-                    <td>
-                        <a asp-controller="Bid" asp-action="Details" asp-route-id="@bid.Id" class="btn btn-sm btn-outline-primary">
-                            Посмотреть
-                        </a>
-                    </td>
-                </tr>
+                case ProjectStatus.Open:
+                    <span class="status-badge status-open">Открыт</span>
+                    break;
+                case ProjectStatus.InProgress:
+                    <span class="status-badge status-inprogress">В работе</span>
+                    break;
+                case ProjectStatus.Completed:
+                    <span class="status-badge status-completed">Завершён</span>
+                    break;
+                case ProjectStatus.Cancelled:
+                    <span class="status-badge status-cancelled">Отменён</span>
+                    break;
+                default:
+                    <span class="status-badge">Неизвестно</span>
+                    break;
             }
-        </tbody>
-    </table>
-}
-else
-{
-    <p class="text-muted">Заявок пока нет.</p>
-}
+        </p>
+        <p><strong>Клиент:</strong> @Model.Client?.Email</p>
 
-@if (User.IsInRole("Freelancer"))
-{
-    <a class="btn btn-primary mt-3" asp-controller="Bid" asp-action="Create" asp-route-projectId="@Model.Id">
-        Откликнуться на проект
-    </a>
-}
+        @if (User.Identity?.Name == Model.Client?.UserName && Model.Status == ProjectStatus.Open)
+        {
+            <div class="mt-4">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning me-2">Редактировать</a>
+                <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline me-2">
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+                <form asp-action="CancelProject" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-outline-danger">Отменить</button>
+                </form>
+            </div>
+        }
+
+        @if (Model.Status == ProjectStatus.Cancelled)
+        {
+            <form method="post" asp-controller="Project" asp-action="ResumeProject" asp-route-id="@Model.Id" class="mt-3">
+                <button type="submit" class="btn btn-outline-success">Возобновить проект</button>
+            </form>
+        }
+
+        @{
+        var userName = User.Identity?.Name;
+        bool hasBid = Model.Bids?.Any(b => b.Freelancer.UserName == userName) ?? false;
+        }
+
+        @if (User.IsInRole("Freelancer") && !hasBid && Model.Status == ProjectStatus.Open)
+        {
+        <a class="btn btn-primary mt-4" asp-controller="Bid" asp-action="Create" asp-route-projectId="@Model.Id">
+            Откликнуться на проект
+        </a>
+        }
+
+        @if (User.IsInRole("Freelancer") && User.Identity.Name == Model.SelectedFreelancer?.UserName && Model.Status == ProjectStatus.InProgress)
+        {
+        <form method="post" asp-action="CompleteProject" asp-route-id="@Model.Id" class="mt-3">
+            <button class="btn btn-outline-success">Завершить проект</button>
+        </form>
+        }
+    </div>
+
+    @if (User.Identity?.IsAuthenticated == true && User.Identity.Name == Model.Client?.UserName)
+    {
+        <!-- Заголовок -->
+        <div class="header">
+            <h1>Заявки на проект</h1>
+        </div>
+
+        @if (Model.Bids != null && Model.Bids.Any())
+        {
+            <div class="custom-table-container">
+                <h2 class="filters-title text-center mb-4">Заявки на проект</h2>
+
+                <div class="table-responsive">
+                    <table class="table custom-table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Фрилансер</th>
+                                <th>Цена</th>
+                                <th>Срок (дней)</th>
+                                <th>Комментарий</th>
+                                <th>Действия</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var bid in Model.Bids)
+                            {
+                                <tr>
+                                    <td>@bid.Freelancer.UserName</td>
+                                    <td class="text-success">@bid.Amount.ToString("C")</td>
+                                    <td>@bid.DurationInDays</td>
+                                    <td>@bid.Comment</td>
+                                    <td>
+                                        <a asp-controller="Bid" asp-action="Details" asp-route-id="@bid.Id" class="btn btn-sm btn-outline-primary me-1">
+                                            Посмотреть
+                                        </a>
+                                        @if (bid.Status == BidStatus.Pending)
+                                        {
+                                            <form method="post" asp-controller="Project" asp-action="AcceptBid" asp-route-projectId="@Model.Id" asp-route-bidId="@bid.Id" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-success">Одобрить</button>
+                                            </form>
+                                            <form method="post" asp-controller="Project" asp-action="RejectBid" asp-route-bidId="@bid.Id" class="d-inline ms-1">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Отклонить</button>
+                                            </form>
+                                        }
+                                    </td>
+                                    <td>
+                                        @switch (bid.Status)
+                                        {
+                                            case BidStatus.Accepted:
+                                                <span class="badge bg-success">Одобрена</span>
+                                                break;
+                                            case BidStatus.Rejected:
+                                                <span class="badge bg-secondary">Отклонена</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-warning text-dark">Рассматривается</span>
+                                                break;
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
+        else
+        {
+            <p class="text-muted">Заявок пока нет.</p>
+        }
+    }
+</div>

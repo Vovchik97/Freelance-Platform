@@ -185,7 +185,8 @@ namespace FreelancePlatform.Migrations
                     Budget = table.Column<decimal>(type: "numeric", nullable: false),
                     ClientId = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Status = table.Column<int>(type: "integer", nullable: false)
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    SelectedFreelancerId = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -196,6 +197,11 @@ namespace FreelancePlatform.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Projects_AspNetUsers_SelectedFreelancerId",
+                        column: x => x.SelectedFreelancerId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -209,7 +215,8 @@ namespace FreelancePlatform.Migrations
                     Amount = table.Column<decimal>(type: "numeric", nullable: false),
                     Comment = table.Column<string>(type: "text", nullable: true),
                     DurationInDays = table.Column<int>(type: "integer", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -279,6 +286,11 @@ namespace FreelancePlatform.Migrations
                 name: "IX_Projects_ClientId",
                 table: "Projects",
                 column: "ClientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Projects_SelectedFreelancerId",
+                table: "Projects",
+                column: "SelectedFreelancerId");
         }
 
         /// <inheritdoc />

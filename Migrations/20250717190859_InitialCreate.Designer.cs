@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FreelancePlatform.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250715183608_InitialCreate")]
+    [Migration("20250717190859_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -50,6 +50,9 @@ namespace FreelancePlatform.Migrations
                         .HasColumnType("text");
 
                     b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -112,6 +115,9 @@ namespace FreelancePlatform.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("SelectedFreelancerId")
+                        .HasColumnType("text");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -122,6 +128,8 @@ namespace FreelancePlatform.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId");
+
+                    b.HasIndex("SelectedFreelancerId");
 
                     b.ToTable("Projects");
                 });
@@ -353,7 +361,13 @@ namespace FreelancePlatform.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "SelectedFreelancer")
+                        .WithMany()
+                        .HasForeignKey("SelectedFreelancerId");
+
                     b.Navigation("Client");
+
+                    b.Navigation("SelectedFreelancer");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

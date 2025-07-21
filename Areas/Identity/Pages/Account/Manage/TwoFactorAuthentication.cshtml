@@ -1,0 +1,81 @@
+﻿@page
+@using Microsoft.AspNetCore.Http.Features
+@model TwoFactorAuthenticationModel
+@{
+    ViewData["Title"] = "Двухфакторная аутентификация (2FA)";
+    ViewData["ActivePage"] = ManageNavPages.TwoFactorAuthentication;
+}
+
+<h2 class="mb-1">Двухфакторная аутентификация</h2>
+<p class="text-secondary mb-1">Управляйте параметрами безопасности и резервными кодами</p>
+
+<div class="container mt-0">
+    <partial name="_StatusMessage" for="StatusMessage" />
+
+    @{
+        var consentFeature = HttpContext.Features.Get<ITrackingConsentFeature>();
+        if (consentFeature?.CanTrack ?? true)
+        {
+            if (Model.Is2faEnabled)
+            {
+                if (Model.RecoveryCodesLeft == 0)
+                {
+                    <div class="alert alert-danger">
+                        <strong>У вас не осталось резервных кодов.</strong>
+                        <p>Перед следующей авторизацией создайте <a asp-page="./GenerateRecoveryCodes">новый набор резервных кодов</a>.</p>
+                    </div>
+                }
+                else if (Model.RecoveryCodesLeft == 1)
+                {
+                    <div class="alert alert-danger">
+                        <strong>У вас остался 1 резервный код.</strong>
+                        <p>Рекомендуется <a asp-page="./GenerateRecoveryCodes">создать новый набор резервных кодов</a>.</p>
+                    </div>
+                }
+                else if (Model.RecoveryCodesLeft <= 3)
+                {
+                    <div class="alert alert-warning">
+                        <strong>Осталось @Model.RecoveryCodesLeft резервных кода.</strong>
+                        <p>Создайте <a asp-page="./GenerateRecoveryCodes">новый набор резервных кодов</a> для безопасности.</p>
+                    </div>
+                }
+
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    @if (Model.IsMachineRemembered)
+                    {
+                        <form method="post">
+                            <button type="submit" class="btn btn-outline-primary">Забыть этот браузер</button>
+                        </form>
+                    }
+                    <a asp-page="./Disable2fa" class="btn btn-outline-primary">Отключить 2FA</a>
+                    <a asp-page="./GenerateRecoveryCodes" class="btn btn-outline-primary">Сбросить коды</a>
+                </div>
+            }
+
+            <h4 class="mt-0 mb-3">Приложение-аутентификатор</h4>
+
+            <div class="d-flex flex-wrap gap-2">
+                @if (!Model.HasAuthenticator)
+                {
+                    <a id="enable-authenticator" asp-page="./EnableAuthenticator" class="btn btn-primary">Добавить приложение</a>
+                }
+                else
+                {
+                    <a id="enable-authenticator" asp-page="./EnableAuthenticator" class="btn btn-outline-primary">Настроить заново</a>
+                    <a id="reset-authenticator" asp-page="./ResetAuthenticator" class="btn btn-outline-danger">Сбросить привязку</a>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-danger mt-3">
+                <strong>Политика конфиденциальности и куки не приняты.</strong>
+                <p>Вы должны принять её, чтобы включить двухфакторную аутентификацию.</p>
+            </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
