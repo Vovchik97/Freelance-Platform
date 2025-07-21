@@ -171,5 +171,56 @@
     });
     loader.innerHTML = "Загрузка...";
     document.body.appendChild(loader);
+
+    // 11. Переключение темы с анимацией
+    const currentTheme = localStorage.getItem("theme") || "dark";
+    document.documentElement.setAttribute("data-theme", currentTheme);
+
+    const themeBtn = document.createElement("button");
+    themeBtn.id = "btnThemeToggle";
+    themeBtn.title = "Переключить тему";
+    themeBtn.innerHTML = currentTheme === "dark" ? "🌞" : "🌙";
+    Object.assign(themeBtn.style, {
+        position: "fixed",
+        bottom: "90px", // чуть выше кнопки "⬆"
+        right: "30px",
+        backgroundColor: "var(--surface)",
+        color: "var(--text-primary)",
+        border: "1px solid var(--border)",
+        borderRadius: "50%",
+        width: "48px",
+        height: "48px",
+        fontSize: "1.2rem",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+        cursor: "pointer",
+        boxShadow: "0 0 10px rgba(0,0,0,0.3)",
+        transition: "all 0.3s ease, transform 0.3s ease"
+    });
+    document.body.appendChild(themeBtn);
+
+    // Добавим fade-анимацию для иконки темы
+    themeBtn.style.transition = "background 0.3s ease, color 0.3s ease, opacity 0.3s ease";
+
+    themeBtn.addEventListener("click", () => {
+        const html = document.documentElement;
+        const oldTheme = html.getAttribute("data-theme");
+        const newTheme = oldTheme === "dark" ? "light" : "dark";
+
+        // Смена темы
+        html.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+
+        // Плавная смена иконки
+        themeBtn.style.opacity = 0;
+        setTimeout(() => {
+            themeBtn.innerHTML = newTheme === "dark" ? "🌞" : "🌙";
+            themeBtn.style.opacity = 1;
+        }, 200);
+    });
+
+
 });
 

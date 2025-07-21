@@ -1,4 +1,26 @@
-:root {
+:root[data-theme='light'] {
+  --primary: #8b5cf6;
+  --primary-dark: #7c3aed;
+  --primary-light: #a78bfa;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --background: #f9fafb;
+  --surface: #ffffff;
+  --surface-light: #f1f5f9;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --border: #d1d5db;
+  --gradient: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  --status-bg-success: rgba(16, 185, 129, 0.1);
+  --status-bg-warning: rgba(245, 158, 11, 0.1);
+  --status-bg-danger: rgba(239, 68, 68, 0.1);
+  --status-bg-completed: rgba(147, 51, 234, 0.1);
+  --hover-surface: var(--surface-light);
+  --hover-table: rgba(139, 92, 246, 0.07);
+}
+
+:root[data-theme='dark'] {
   --primary: #8b5cf6;
   --primary-dark: #7c3aed;
   --primary-light: #a78bfa;
@@ -506,3 +528,22 @@ body {
   border-right: none;
 }
 
+/* Глобально для всех форм */
+input.form-input,
+select.form-select,
+textarea.form-input {
+  border-radius: 0.75rem !important;
+}
+
+/* Убираем возможные ограничения от группировки */
+.input-group,
+.filters-row,
+.filters-search {
+  border-radius: 0 !important; /* чтобы не мешали */
+}
+
+/* Если используется input-group с соседними элементами */
+.input-group > .form-input,
+.input-group > .form-select {
+  border-radius: 0.75rem !important;
+}
