@@ -205,6 +205,36 @@ namespace FreelancePlatform.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Services",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Title = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    Price = table.Column<decimal>(type: "numeric", nullable: false),
+                    FreelancerId = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    ClientId = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Services", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Services_AspNetUsers_ClientId",
+                        column: x => x.ClientId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Services_AspNetUsers_FreelancerId",
+                        column: x => x.FreelancerId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Bids",
                 columns: table => new
                 {
@@ -291,6 +321,16 @@ namespace FreelancePlatform.Migrations
                 name: "IX_Projects_SelectedFreelancerId",
                 table: "Projects",
                 column: "SelectedFreelancerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Services_ClientId",
+                table: "Services",
+                column: "ClientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Services_FreelancerId",
+                table: "Services",
+                column: "FreelancerId");
         }
 
         /// <inheritdoc />
@@ -316,6 +356,9 @@ namespace FreelancePlatform.Migrations
 
             migrationBuilder.DropTable(
                 name: "Messages");
+
+            migrationBuilder.DropTable(
+                name: "Services");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

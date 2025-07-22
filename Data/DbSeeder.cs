@@ -120,5 +120,26 @@ public static class DbSeeder
             await context.Bids.AddRangeAsync(bids);
             await context.SaveChangesAsync();
         }
+        
+        // Услуги
+        if (!await context.Services.AnyAsync())
+        {
+            var services = new[]
+            {
+                new Service { Title = "Создание лендинга", Description = "Сделаю современный одностраничник", Price = 1000, FreelancerId = "freelancer1", Status = ServiceStatus.Available },
+                new Service { Title = "UX/UI дизайн", Description = "Прототипы и дизайн для веба", Price = 1200, FreelancerId = "freelancer2", Status = ServiceStatus.Available },
+                new Service { Title = "Frontend разработка", Description = "Верстаю React / Vue интерфейсы", Price = 1500, FreelancerId = "freelancer3", Status = ServiceStatus.Available },
+                new Service { Title = "Backend API", Description = "Разработка REST API на .NET", Price = 2000, FreelancerId = "freelancer4", Status = ServiceStatus.Available },
+                new Service { Title = "Мобильная разработка", Description = "Android и iOS приложения", Price = 2500, FreelancerId = "freelancer5", Status = ServiceStatus.Available },
+                new Service { Title = "SEO аудит", Description = "Анализ и рекомендации по SEO", Price = 800, FreelancerId = "freelancer1", Status = ServiceStatus.Available },
+                new Service { Title = "Копирайтинг", Description = "Продающие тексты и статьи", Price = 700, FreelancerId = "freelancer2", Status = ServiceStatus.Available },
+                new Service { Title = "Создание Telegram-бота", Description = "Бот под ваш сценарий", Price = 1100, FreelancerId = "freelancer3", Status = ServiceStatus.Available },
+                new Service { Title = "Обработка данных", Description = "Python-скрипты, парсинг", Price = 1300, FreelancerId = "freelancer4", Status = ServiceStatus.Available },
+                new Service { Title = "Анимация и видео", Description = "Моушн-дизайн и ролики", Price = 1600, FreelancerId = "freelancer5", Status = ServiceStatus.Available },
+            };
+
+            await context.Services.AddRangeAsync(services);
+            await context.SaveChangesAsync();
+        }
     }
 }
