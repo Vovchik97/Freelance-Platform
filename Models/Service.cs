@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Identity;
+using Newtonsoft.Json;
 
 namespace FreelancePlatform.Models;
 
@@ -14,4 +16,9 @@ public class Service
     public ServiceStatus Status { get; set; }
     public string? ClientId { get; set; }
     public IdentityUser? Client { get; set; }
+    public List<Order> Orders { get; set; } = new List<Order>();
+    public string? SelectedClientId { get; set; }
+
+    [ForeignKey("SelectedClientId")]
+    public IdentityUser? SelectedClient { get; set; }
 }

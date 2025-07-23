@@ -1,0 +1,35 @@
+﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model FreelancePlatform.Dto.Orders.UpdateOrderDto
+@{
+ViewData["Title"] = "Редактировать заказ";
+}
+
+<div class="container mt-5" style="max-width: 700px;">
+    <div class="filters-card mx-auto">
+        <h2 class="filters-title mb-4">Редактировать заказ</h2>
+
+        <form asp-action="Edit" method="post" novalidate>
+            @Html.AntiForgeryToken()
+
+            <div class="filters-row">
+                <div class="input-group mb-3">
+                    <label asp-for="DurationInDays" class="form-label"></label>
+                    <input asp-for="DurationInDays" class="form-input" type="number" min="0" step="any"/>
+                    <span asp-validation-for="DurationInDays" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="input-group mb-4">
+                <label asp-for="Comment" class="form-label"></label>
+                <textarea asp-for="Comment" class="form-input" rows="4"></textarea>
+                <span asp-validation-for="Comment" class="text-danger small"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Сохранить</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+@{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

@@ -1,0 +1,55 @@
+﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model FreelancePlatform.Dto.Services.CreateServiceDto
+@{
+ViewData["Title"] = "Создать услугу";
+}
+
+<div class="container mt-5">
+    <!-- Заголовок -->
+    <div class="header">
+        <h1>Создать услугу</h1>
+        <p>Опишите вашу услугу, чтобы найти клиентов</p>
+    </div>
+
+    <!-- Карточка формы -->
+    <div class="filters-card mx-auto" style="max-width: 700px;">
+        <form asp-action="Create" method="post" novalidate>
+            @Html.AntiForgeryToken()
+
+            <!-- Название -->
+            <div class="input-group">
+                <label asp-for="Title" class="form-label">Название</label>
+                <input asp-for="Title" class="form-input w-100" />
+                <span asp-validation-for="Title" class="text-danger small"></span>
+            </div>
+
+            <!-- Описание -->
+            <div class="input-group">
+                <label asp-for="Description" class="form-label">Описание</label>
+                <textarea asp-for="Description" class="form-input w-100" rows="5" style="resize: vertical;"></textarea>
+                <span asp-validation-for="Description" class="text-danger small"></span>
+            </div>
+
+            <!-- Бюджет -->
+            <div class="input-group">
+                <label asp-for="Price" class="form-label">Цена</label>
+                <input asp-for="Price" class="form-input w-100" type="number" min="0" step="any" />
+                <span asp-validation-for="Price" class="text-danger small"></span>
+            </div>
+
+            <!-- Кнопка -->
+            <div class="text-end mt-4">
+                <button type="submit" class="btn btn-success">
+                    <svg class="meta-icon me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Создать
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+@{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

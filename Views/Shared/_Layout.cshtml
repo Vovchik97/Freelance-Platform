@@ -30,6 +30,9 @@
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Project" asp-action="Index">Каталог проектов</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Service" asp-action="Index">Каталог услуг</a>
+                    </li>
                 </ul>
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     @if (User.IsInRole("Client"))
@@ -37,12 +40,18 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Project" asp-action="MyProjects">Мои проекты</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Order" asp-action="MyOrders">Мои заказы</a>
+                        </li>
                     }
 
                     @if (User.IsInRole("Freelancer"))
                     {
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Bid" asp-action="MyBids">Мои отклики</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Service" asp-action="MyServices">Мои услуги</a>
                         </li>
                     }
                 </ul>

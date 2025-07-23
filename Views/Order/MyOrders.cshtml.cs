@@ -2,7 +2,7 @@
 
 namespace FreelancePlatform.Views.Order;
 
-public class Details : PageModel
+public class MyOrders : PageModel
 {
     public void OnGet()
     {

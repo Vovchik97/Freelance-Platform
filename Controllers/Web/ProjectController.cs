@@ -239,15 +239,16 @@ public class ProjectController : Controller
     public async Task<IActionResult> RejectBid(int bidId)
     {
         var bid = await _context.Bids
-            .Include(b => b.Project)
             .FirstOrDefaultAsync(b => b.Id == bidId);
+        var project = await _context.Projects
+            .FirstOrDefaultAsync(p => p.Id == bid.ProjectId);
 
         if (bid == null)
         {
             return NotFound();
         }
 
-        if (bid.Project.ClientId != _userManager.GetUserId(User))
+        if (project.ClientId != _userManager.GetUserId(User))
         {
             return Forbid();
         }
@@ -336,7 +337,7 @@ public class ProjectController : Controller
 
         if (project.Status != ProjectStatus.Cancelled)
         {
-            return BadRequest("Проект не находитс в статусе 'Отменён'.");
+            return BadRequest("Проект не находится в статусе 'Отменён'.");
         }
 
         project.Status = ProjectStatus.Open;

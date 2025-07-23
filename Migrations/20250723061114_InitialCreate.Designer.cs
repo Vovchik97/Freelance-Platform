@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FreelancePlatform.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250722071534_InitialCreate")]
+    [Migration("20250723061114_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -93,6 +93,42 @@ namespace FreelancePlatform.Migrations
                     b.ToTable("Messages");
                 });
 
+            modelBuilder.Entity("FreelancePlatform.Models.Order", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DurationInDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ServiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("ServiceId");
+
+                    b.ToTable("Orders");
+                });
+
             modelBuilder.Entity("FreelancePlatform.Models.Project", b =>
                 {
                     b.Property<int>("Id")
@@ -159,6 +195,9 @@ namespace FreelancePlatform.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric");
 
+                    b.Property<string>("SelectedClientId")
+                        .HasColumnType("text");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -171,6 +210,8 @@ namespace FreelancePlatform.Migrations
                     b.HasIndex("ClientId");
 
                     b.HasIndex("FreelancerId");
+
+                    b.HasIndex("SelectedClientId");
 
                     b.ToTable("Services");
                 });
@@ -394,6 +435,25 @@ namespace FreelancePlatform.Migrations
                     b.Navigation("Project");
                 });
 
+            modelBuilder.Entity("FreelancePlatform.Models.Order", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FreelancePlatform.Models.Service", "Service")
+                        .WithMany("Orders")
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Service");
+                });
+
             modelBuilder.Entity("FreelancePlatform.Models.Project", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "Client")
@@ -423,9 +483,15 @@ namespace FreelancePlatform.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "SelectedClient")
+                        .WithMany()
+                        .HasForeignKey("SelectedClientId");
+
                     b.Navigation("Client");
 
                     b.Navigation("Freelancer");
+
+                    b.Navigation("SelectedClient");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -482,6 +548,11 @@ namespace FreelancePlatform.Migrations
             modelBuilder.Entity("FreelancePlatform.Models.Project", b =>
                 {
                     b.Navigation("Bids");
+                });
+
+            modelBuilder.Entity("FreelancePlatform.Models.Service", b =>
+                {
+                    b.Navigation("Orders");
                 });
 #pragma warning restore 612, 618
         }

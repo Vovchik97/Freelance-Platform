@@ -11,6 +11,7 @@ public class AppDbContext : IdentityDbContext
     public DbSet<Bid> Bids { get; set; }
     public DbSet<Message> Messages { get; set; }
     public DbSet<Service> Services { get; set; }
+    public DbSet<Order> Orders { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) 
     {

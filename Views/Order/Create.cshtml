@@ -1,0 +1,45 @@
+﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model FreelancePlatform.Dto.Orders.CreateOrderDto
+@{
+ViewData["Title"] = "Откликнуться на проект";
+}
+
+<div class="container mt-5" style="max-width: 700px;">
+    <div class="filters-card mx-auto">
+        <h2 class="filters-title mb-4">Заказать услугу</h2>
+
+        <form asp-action="Create" asp-route-serviceId="@ViewBag.ServiceId" method="post" novalidate>
+            @Html.AntiForgeryToken()
+            
+            <div class="filters-row">
+                <div class="input-group mb-3">
+                    <label asp-for="DurationInDays" class="form-label">Количество дней</label>
+                    <input asp-for="DurationInDays" class="form-input" type="number" min="0" step="any"/>
+                    <span asp-validation-for="DurationInDays" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="input-group mb-4">
+                <label asp-for="Comment" class="form-label">Комментарий</label>
+                <textarea asp-for="Comment" class="form-input" rows="4"></textarea>
+                <span asp-validation-for="Comment" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Заказать услугу</button>
+        </form>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+        <div class="alert alert-danger mt-3">
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+            <div>@error.ErrorMessage</div>
+            }
+        </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+@{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

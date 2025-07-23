@@ -77,11 +77,17 @@ namespace FreelancePlatform.Areas.Identity.Pages.Account.Manage
             }
 
             RequirePassword = await _userManager.HasPasswordAsync(user);
+            
+            if (!ModelState.IsValid)
+            {
+                return Page();
+            }
+            
             if (RequirePassword)
             {
                 if (!await _userManager.CheckPasswordAsync(user, Input.Password))
                 {
-                    ModelState.AddModelError(string.Empty, "Incorrect password.");
+                    ModelState.AddModelError(string.Empty, "Неверный пароль.");
                     return Page();
                 }
             }

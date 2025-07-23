@@ -1,0 +1,69 @@
+﻿@model FreelancePlatform.Models.Order
+@{
+ViewData["Title"] = "Заказ";
+}
+
+<div class="container mt-5" style="max-width: 700px;">
+    <div class="filters-card mx-auto">
+        <h2 class="filters-title mb-3">Заказ услуги</h2>
+
+        <div class="mb-3">
+            <strong>Услуга:</strong> @Model.Service.Title
+        </div>
+        <div class="mb-3 text-secondary">
+            <strong>Клиент:</strong> @Model.Client.UserName
+        </div>
+        <div class="mb-3">
+            <strong>Срок выполнения:</strong> @Model.DurationInDays дней
+        </div>
+        <div class="mb-3">
+            <strong>Комментарий:</strong> @Model.Comment
+        </div>
+        <div class="mb-3">
+            <strong>Создана:</strong> @Model.CreatedAt.ToLocalTime().ToString("g")
+        </div>
+        <div class="mb-4">
+            <strong>Статус заказа:</strong>
+            @switch (Model.Status)
+            {
+            case OrderStatus.Accepted:
+            <span class="status-badge status-accepted">Взят в работу</span>
+            break;
+            case OrderStatus.Rejected:
+            <span class="status-badge status-cancelled">Отклонен</span>
+            break;
+            case OrderStatus.Completed:
+            <span class="status-badge status-completed">Выполнен</span>
+            break;
+            default:
+            <span class="status-badge status-inprogress">Рассматривается</span>
+            break;
+            }
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            @if (Model.Status == OrderStatus.Pending && User.Identity?.Name == Model.Client.UserName)
+            {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Редактировать</a>
+            <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Удалить заказ?')">Удалить</button>
+            </form>
+            }
+
+            @if (Model.Status == OrderStatus.Pending && User.Identity?.Name == Model.Service.Freelancer?.UserName)
+            {
+            <form method="post" asp-controller="Service" asp-action="AcceptOrder" asp-route-serviceId="@Model.Service.Id" asp-route-orderId="@Model.Id" class="d-inline">
+                <button type="submit" class="btn btn-success">Одобрить</button>
+            </form>
+            <form method="post" asp-controller="Service" asp-action="RejectOrder" asp-route-orderId="@Model.Id" class="d-inline ms-1">
+                <button type="submit" class="btn btn-outline-danger">Отклонить</button>
+            </form>
+            }
+        </div>
+
+        <a class="btn btn-primary mt-4" asp-controller="Service" asp-action="Details" asp-route-id="@Model.Service.Id">
+            Перейти к услуге
+        </a>
+    </div>
+</div>

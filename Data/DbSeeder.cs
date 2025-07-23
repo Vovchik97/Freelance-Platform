@@ -126,20 +126,53 @@ public static class DbSeeder
         {
             var services = new[]
             {
-                new Service { Title = "Создание лендинга", Description = "Сделаю современный одностраничник", Price = 1000, FreelancerId = "freelancer1", Status = ServiceStatus.Available },
-                new Service { Title = "UX/UI дизайн", Description = "Прототипы и дизайн для веба", Price = 1200, FreelancerId = "freelancer2", Status = ServiceStatus.Available },
-                new Service { Title = "Frontend разработка", Description = "Верстаю React / Vue интерфейсы", Price = 1500, FreelancerId = "freelancer3", Status = ServiceStatus.Available },
-                new Service { Title = "Backend API", Description = "Разработка REST API на .NET", Price = 2000, FreelancerId = "freelancer4", Status = ServiceStatus.Available },
-                new Service { Title = "Мобильная разработка", Description = "Android и iOS приложения", Price = 2500, FreelancerId = "freelancer5", Status = ServiceStatus.Available },
-                new Service { Title = "SEO аудит", Description = "Анализ и рекомендации по SEO", Price = 800, FreelancerId = "freelancer1", Status = ServiceStatus.Available },
-                new Service { Title = "Копирайтинг", Description = "Продающие тексты и статьи", Price = 700, FreelancerId = "freelancer2", Status = ServiceStatus.Available },
-                new Service { Title = "Создание Telegram-бота", Description = "Бот под ваш сценарий", Price = 1100, FreelancerId = "freelancer3", Status = ServiceStatus.Available },
-                new Service { Title = "Обработка данных", Description = "Python-скрипты, парсинг", Price = 1300, FreelancerId = "freelancer4", Status = ServiceStatus.Available },
-                new Service { Title = "Анимация и видео", Description = "Моушн-дизайн и ролики", Price = 1600, FreelancerId = "freelancer5", Status = ServiceStatus.Available },
+                new Service { Title = "Создание лендинга", Description = "Сделаю современный одностраничник", Price = 1000, FreelancerId = "freelancer1", Status = ServiceStatus.Available, CreatedAt = DateTime.UtcNow},
+                new Service { Title = "UX/UI дизайн", Description = "Прототипы и дизайн для веба", Price = 1200, FreelancerId = "freelancer2", Status = ServiceStatus.Available, CreatedAt = DateTime.UtcNow },
+                new Service { Title = "Frontend разработка", Description = "Верстаю React / Vue интерфейсы", Price = 1500, FreelancerId = "freelancer3", Status = ServiceStatus.Available, CreatedAt = DateTime.UtcNow },
+                new Service { Title = "Backend API", Description = "Разработка REST API на .NET", Price = 2000, FreelancerId = "freelancer4", Status = ServiceStatus.Available, CreatedAt = DateTime.UtcNow },
+                new Service { Title = "Мобильная разработка", Description = "Android и iOS приложения", Price = 2500, FreelancerId = "freelancer5", Status = ServiceStatus.Available, CreatedAt = DateTime.UtcNow },
+                new Service { Title = "SEO аудит", Description = "Анализ и рекомендации по SEO", Price = 800, FreelancerId = "freelancer1", Status = ServiceStatus.Available, CreatedAt = DateTime.UtcNow },
+                new Service { Title = "Копирайтинг", Description = "Продающие тексты и статьи", Price = 700, FreelancerId = "freelancer2", Status = ServiceStatus.Available, CreatedAt = DateTime.UtcNow },
+                new Service { Title = "Создание Telegram-бота", Description = "Бот под ваш сценарий", Price = 1100, FreelancerId = "freelancer3", Status = ServiceStatus.Available, CreatedAt = DateTime.UtcNow },
+                new Service { Title = "Обработка данных", Description = "Python-скрипты, парсинг", Price = 1300, FreelancerId = "freelancer4", Status = ServiceStatus.Available, CreatedAt = DateTime.UtcNow },
+                new Service { Title = "Анимация и видео", Description = "Моушн-дизайн и ролики", Price = 1600, FreelancerId = "freelancer5", Status = ServiceStatus.Available, CreatedAt = DateTime.UtcNow },
             };
 
             await context.Services.AddRangeAsync(services);
             await context.SaveChangesAsync();
         }
+        
+        // Заказы
+        if (!await context.Orders.AnyAsync())
+        {
+            var orders = new[]
+            {
+                new Order { ClientId = "client1", ServiceId = 1, Comment = "Нужен лендинг для продукта", DurationInDays = 5, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client2", ServiceId = 2, Comment = "Дизайн для интернет-магазина", DurationInDays = 7, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client3", ServiceId = 3, Comment = "Сайт на React", DurationInDays = 7, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client4", ServiceId = 4, Comment = "API для авторизации", DurationInDays = 10, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client5", ServiceId = 5, Comment = "Приложение под Android", DurationInDays = 15, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client1", ServiceId = 6, Comment = "SEO аудит сайта", DurationInDays = 9, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client2", ServiceId = 7, Comment = "Текст для блога", DurationInDays = 8, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client3", ServiceId = 8, Comment = "Бот для Telegram", DurationInDays = 5, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client4", ServiceId = 9, Comment = "Скрипт для обработки таблиц", DurationInDays = 6, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client5", ServiceId = 10, Comment = "Видео-презентация", DurationInDays = 2, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+
+                new Order { ClientId = "client1", ServiceId = 2, Comment = "Дизайн для лэндинга", DurationInDays = 5, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client2", ServiceId = 3, Comment = "Frontend для CRM", DurationInDays = 7, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client3", ServiceId = 4, Comment = "API на .NET 8", DurationInDays = 7, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client4", ServiceId = 5, Comment = "Приложение для мероприятий", DurationInDays = 15, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client5", ServiceId = 1, Comment = "Лендинг для продукта", DurationInDays = 6, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client1", ServiceId = 7, Comment = "Описание для страницы", DurationInDays = 2, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client2", ServiceId = 8, Comment = "Бот для автоответов", DurationInDays = 7, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client3", ServiceId = 9, Comment = "Парсинг excel", DurationInDays = 3, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client4", ServiceId = 10, Comment = "Видео-анимация логотипа", DurationInDays = 6, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+                new Order { ClientId = "client5", ServiceId = 6, Comment = "Оптимизация под SEO", DurationInDays = 5, CreatedAt = DateTime.UtcNow, Status = OrderStatus.Pending },
+            };
+
+            await context.Orders.AddRangeAsync(orders);
+            await context.SaveChangesAsync();
+        }
+
     }
 }

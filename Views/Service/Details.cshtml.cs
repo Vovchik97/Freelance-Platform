@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace FreelancePlatform.Views.Order;
+namespace FreelancePlatform.Views.Service;
 
 public class Details : PageModel
 {

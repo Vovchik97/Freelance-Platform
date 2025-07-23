@@ -216,7 +216,8 @@ namespace FreelancePlatform.Migrations
                     FreelancerId = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
-                    ClientId = table.Column<string>(type: "text", nullable: true)
+                    ClientId = table.Column<string>(type: "text", nullable: true),
+                    SelectedClientId = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -232,6 +233,11 @@ namespace FreelancePlatform.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Services_AspNetUsers_SelectedClientId",
+                        column: x => x.SelectedClientId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -261,6 +267,36 @@ namespace FreelancePlatform.Migrations
                         name: "FK_Bids_Projects_ProjectId",
                         column: x => x.ProjectId,
                         principalTable: "Projects",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Orders",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ServiceId = table.Column<int>(type: "integer", nullable: false),
+                    ClientId = table.Column<string>(type: "text", nullable: false),
+                    Comment = table.Column<string>(type: "text", nullable: true),
+                    DurationInDays = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Orders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Orders_AspNetUsers_ClientId",
+                        column: x => x.ClientId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Orders_Services_ServiceId",
+                        column: x => x.ServiceId,
+                        principalTable: "Services",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -313,6 +349,16 @@ namespace FreelancePlatform.Migrations
                 column: "ProjectId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Orders_ClientId",
+                table: "Orders",
+                column: "ClientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_ServiceId",
+                table: "Orders",
+                column: "ServiceId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Projects_ClientId",
                 table: "Projects",
                 column: "ClientId");
@@ -331,6 +377,11 @@ namespace FreelancePlatform.Migrations
                 name: "IX_Services_FreelancerId",
                 table: "Services",
                 column: "FreelancerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Services_SelectedClientId",
+                table: "Services",
+                column: "SelectedClientId");
         }
 
         /// <inheritdoc />
@@ -358,13 +409,16 @@ namespace FreelancePlatform.Migrations
                 name: "Messages");
 
             migrationBuilder.DropTable(
-                name: "Services");
+                name: "Orders");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "Projects");
+
+            migrationBuilder.DropTable(
+                name: "Services");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
