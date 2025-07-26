@@ -1,0 +1,49 @@
+﻿@page
+@model FreelancePlatform.Areas.Identity.Pages.Admin.Orders.IndexModel;
+@{
+ViewData["Title"] = "Заказы";
+}
+<h2>Заказы</h2>
+<table class="custom-table table-bordered table-striped">
+    <thead>
+    <tr>
+        <th>Услуга</th>
+        <th>Клиент</th>
+        <th>Статус</th>
+        <th>Действия</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var order in Model.Orders)
+    {
+    <tr>
+        <td>@order.Service?.Title</td>
+        <td>@order.Client?.UserName</td>
+        <td>@GetStatusText(order.Status.ToString())</td>
+        <td>
+            <form method="get" asp-page="Details" asp-route-id="@order.Id" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-primary">Подробнее</button>
+            </form>
+            <form method="post" asp-page-handler="Delete" asp-route-id="@order.Id" class="d-inline">
+                <button class="btn btn-sm btn-danger">Удалить</button>
+            </form>
+        </td>
+    </tr>
+    }
+    </tbody>
+</table>
+
+@functions
+{
+    private string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "Pending" => "Рассматривается",
+            "Accepted" => "Одобрен",
+            "Rejected" => "Отклонен",
+            "Completed" => "Завершен",
+            _ => "Неизвестно"
+        };
+    }
+}

@@ -96,6 +96,12 @@ public class ProjectController : Controller
         {
             return View(dto);
         }
+        
+        var clientId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (clientId == null)
+        {
+            return Unauthorized();
+        }
 
         var project = new Project
         {
@@ -103,7 +109,7 @@ public class ProjectController : Controller
             Description = dto.Description,
             Budget = dto.Budget,
             Status = dto.Status,
-            ClientId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+            ClientId = clientId,
             CreatedAt = DateTime.UtcNow
         };
         
@@ -240,10 +246,16 @@ public class ProjectController : Controller
     {
         var bid = await _context.Bids
             .FirstOrDefaultAsync(b => b.Id == bidId);
+
+        if (bid == null)
+        {
+            return NotFound();
+        }
+        
         var project = await _context.Projects
             .FirstOrDefaultAsync(p => p.Id == bid.ProjectId);
 
-        if (bid == null)
+        if (project == null)
         {
             return NotFound();
         }

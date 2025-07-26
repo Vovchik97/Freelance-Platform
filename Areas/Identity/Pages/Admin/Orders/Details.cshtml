@@ -1,0 +1,33 @@
+﻿@page "{id}"
+@model FreelancePlatform.Areas.Identity.Pages.Admin.Orders.DetailsModel;
+@{
+ViewData["Title"] = "Детали заказа";
+}
+
+<h2>Детали заказа</h2>
+
+<div class="project-card">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Услуга</dt>
+            <dd class="col-sm-9">@Model.Order?.Service?.Title</dd>
+
+            <dt class="col-sm-3">Клиент</dt>
+            <dd class="col-sm-9">@Model.Order?.Client?.UserName</dd>
+
+            <dt class="col-sm-3">Продолжительность</dt>
+            <dd class="col-sm-9">@Model.Order?.DurationInDays д.</dd>
+
+            <dt class="col-sm-3">Комментарий</dt>
+            <dd class="col-sm-9">@Model.Order?.Comment</dd>
+
+            <dt class="col-sm-3">Дата создания</dt>
+            <dd class="col-sm-9">@Model.Order?.CreatedAt</dd>
+
+            <dt class="col-sm-3">Статус</dt>
+            <dd class="col-sm-9">@Model.Order?.Status</dd>
+        </dl>
+    </div>
+</div>
+
+<a asp-page="/Admin/Orders/Index" class="btn btn-secondary mt-3">Назад</a>

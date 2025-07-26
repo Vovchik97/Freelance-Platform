@@ -23,8 +23,9 @@ public class BidController : Controller
         var bid = await _context.Bids
             .Include(b => b.Freelancer)
             .Include(b => b.Project)
-                .ThenInclude(p => p.Client)
+                .ThenInclude(p => p!.Client)
             .FirstOrDefaultAsync(b => b.Id == id);
+        
 
         if (bid == null)
         {
@@ -56,6 +57,10 @@ public class BidController : Controller
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
 
         var alreadyExists = await _context.Bids.AnyAsync(b => b.ProjectId == dto.ProjectId && b.FreelancerId == userId);
 
@@ -72,7 +77,7 @@ public class BidController : Controller
             Comment = dto.Comment,
             DurationInDays = dto.DurationInDays,
             CreatedAt = DateTime.UtcNow,
-            FreelancerId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+            FreelancerId = userId,
             ProjectId = dto.ProjectId
         };
 

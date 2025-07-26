@@ -28,8 +28,8 @@ ViewData["Title"] = "Мои заказы";
             @foreach (var order in Model)
             {
             <tr>
-                <td>@order.Service.Title</td>
-                <td>@order.Service.Price</td>
+                <td>@order.Service?.Title</td>
+                <td>@order.Service?.Price</td>
                 <td>@order.DurationInDays</td>
                 <td>@order.Comment</td>
                 <td>@order.CreatedAt.ToLocalTime().ToString("g")</td>
@@ -41,7 +41,7 @@ ViewData["Title"] = "Мои заказы";
                 <td>
                     <div class="d-flex flex-column gap-1">
                         <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@order.Id">Детали</a>
-                        <a asp-controller="Service" asp-action="Details" asp-route-id="@order.Service.Id" class="btn btn-sm btn-outline-secondary">Услуга</a>
+                        <a asp-controller="Service" asp-action="Details" asp-route-id="@order.Service?.Id" class="btn btn-sm btn-outline-secondary">Услуга</a>
 
                         @if (order.Status == OrderStatus.Pending)
                         {

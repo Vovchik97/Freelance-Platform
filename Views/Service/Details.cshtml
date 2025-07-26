@@ -59,9 +59,9 @@
 
         @{
         var userName = User.Identity?.Name;
-        bool hasOrder = Model.Orders?.Any(o => o.Client.UserName == userName) ?? false;
+        bool hasOrder = Model.Orders?.Any(o => o.Client?.UserName == userName) ?? false;
         bool isSelectedClient = userName == Model.SelectedClient?.UserName;
-        bool isOrderCompleted = Model.Orders?.FirstOrDefault(o => o.Client.UserName == userName)?.Status == OrderStatus.Completed;
+        bool isOrderCompleted = Model.Orders?.FirstOrDefault(o => o.Client?.UserName == userName)?.Status == OrderStatus.Completed;
         }
 
         @if (User.IsInRole("Client") && !hasOrder && Model.Status == ServiceStatus.Available)
@@ -106,7 +106,7 @@
                             @foreach (var order in Model.Orders)
                             {
                                 <tr>
-                                    <td>@order.Client.UserName</td>
+                                    <td>@order.Client?.UserName</td>
                                     <td>@order.DurationInDays</td>
                                     <td>@order.Comment</td>
                                     <td>

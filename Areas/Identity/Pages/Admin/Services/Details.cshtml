@@ -1,0 +1,30 @@
+﻿@page "{id}"
+@model FreelancePlatform.Areas.Identity.Pages.Admin.Services.DetailsModel
+@{
+    ViewData["Title"] = "Детали услуги";
+}
+
+<h2>Детали услуги</h2>
+
+<div class="project-card">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Название</dt>
+            <dd class="col-sm-9">@Model.Service?.Title</dd>
+
+            <dt class="col-sm-3">Описание</dt>
+            <dd class="col-sm-9">@Model.Service?.Description</dd>
+
+            <dt class="col-sm-3">Цена</dt>
+            <dd class="col-sm-9">@Model.Service?.Price.ToString("C")</dd>
+
+            <dt class="col-sm-3">Фрилансер</dt>
+            <dd class="col-sm-9">@Model.Service?.Freelancer?.UserName</dd>
+
+            <dt class="col-sm-3">Дата добавления</dt>
+            <dd class="col-sm-9">@Model.Service?.CreatedAt</dd>
+        </dl>
+    </div>
+</div>
+
+<a asp-page="/Admin/Services/Index" class="btn btn-secondary mt-3">Назад</a>

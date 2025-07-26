@@ -26,4 +26,40 @@
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.2" />
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Admin\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Admin\Pages\Analytics.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Admin\Pages\Bids\Details.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Admin\Pages\Bids\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Admin\Pages\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Admin\Pages\Orders\Details.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Admin\Pages\Orders\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Admin\Pages\Projects\Details.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Admin\Pages\Projects\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Admin\Pages\Services\Details.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Admin\Pages\Services\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Admin\Pages\Users\Details.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Admin\Pages\Users\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Admin\Pages\Analytics.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Admin\Pages\Bids\Details.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Admin\Pages\Bids\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Admin\Pages\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Admin\Pages\Orders\Details.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Admin\Pages\Orders\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Admin\Pages\Projects\Details.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Admin\Pages\Projects\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Admin\Pages\Services\Details.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Admin\Pages\Services\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Admin\Pages\Users\Details.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Admin\Pages\Users\Index.cshtml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <AdditionalFiles Include="Areas\Identity\Pages\Admin\Bids\Index.cshtml" />
+      <AdditionalFiles Include="Areas\Identity\Pages\Admin\Orders\Index.cshtml" />
+      <AdditionalFiles Include="Areas\Identity\Pages\Admin\Projects\Index.cshtml" />
+      <AdditionalFiles Include="Areas\Identity\Pages\Admin\Services\Index.cshtml" />
+      <AdditionalFiles Include="Areas\Identity\Pages\Admin\Users\Index.cshtml" />
+    </ItemGroup>
+
 </Project>

@@ -1,0 +1,178 @@
+﻿@page
+@model FreelancePlatform.Areas.Identity.Pages.Admin.Analytics.IndexModel
+@{
+ViewData["Title"] = "Аналитика";
+}
+
+<h2 class="text-center my-4">Аналитика платформы</h2>
+
+<div class="row text-center mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="project-card">
+            <div class="card-body">
+                <h5 class="card-title">Пользователи</h5>
+                <p class="display-6 text-primary">@Model.UserCount</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="project-card">
+            <div class="card-body">
+                <h5 class="card-title">Фрилансеры</h5>
+                <p class="display-6 text-success">@Model.FreelancerCount</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="project-card">
+            <div class="card-body">
+                <h5 class="card-title">Клиенты</h5>
+                <p class="display-6 text-info">@Model.ClientCount</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="project-card">
+            <div class="card-body">
+                <h5 class="card-title">Проекты</h5>
+                <p class="display-6 text-warning">@Model.ProjectCount</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row text-center mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="project-card">
+            <div class="card-body">
+                <h5 class="card-title">Услуги</h5>
+                <p class="display-6 text-danger">@Model.ServiceCount</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="project-card">
+            <div class="card-body">
+                <h5 class="card-title">Заявки</h5>
+                <p class="display-6 text-secondary">@Model.ApplicationCount</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="project-card">
+            <div class="card-body">
+                <h5 class="card-title">Заказы</h5>
+                <p class="display-6 text-truncate">@Model.OrderCount</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <h4 class="text-center">Соотношение ролей</h4>
+        <canvas id="rolesChart"></canvas>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-4">
+            <h4 class="text-center">Активность на платформе</h4>
+            <canvas id="activityChart"></canvas>
+        </div>
+        <div>
+            <h4 class="text-center">Оборот по месяцам</h4>
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    const rolesChart = new Chart(document.getElementById("rolesChart"), {
+        type: "doughnut",
+        data: {
+            labels: ["Фрилансеры", "Клиенты"],
+            datasets: [{
+                label: "Роли",
+                data: [@Model.FreelancerCount, @Model.ClientCount],
+                backgroundColor: ["#28a745", "#17a2b8"]
+            }]
+        }
+    });
+
+    const activityChart = new Chart(document.getElementById("activityChart"), {
+        type: "bar",
+        data: {
+            labels: ["Проекты", "Услуги", "Заявки", "Заказы"],
+            datasets: [{
+                label: "Количество",
+                data: [@Model.ProjectCount, @Model.ServiceCount, @Model.ApplicationCount, @Model.OrderCount],
+                backgroundColor: ["#ffc107", "#dc3545", "#6c757d", "#343a40"]
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+
+    const months = @Html.Raw(Json.Serialize(Model.Months));
+    const revenue = @Html.Raw(Json.Serialize(Model.RevenueByMonth));
+
+    const revenueChart = new Chart(document.getElementById('revenueChart'), {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Оборот (₽)',
+                data: revenue,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true,
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: context => `${context.dataset.label}: ${context.raw.toLocaleString()} ₽`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    type: 'linear',
+                    title: {
+                        display: true,
+                        text: 'Сумма (₽)'
+                    }
+                },
+                x: {
+                    type: 'category',
+                    title: {
+                        display: true,
+                        text: 'Месяц'
+                    }
+                }
+            }
+        }
+    });
+</script>
+}

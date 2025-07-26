@@ -97,6 +97,12 @@ public class ServiceController : Controller
         {
             return View(dto);
         }
+        
+        var freelancerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (freelancerId == null)
+        {
+            return Unauthorized();
+        }
 
         var service = new Service
         {
@@ -104,7 +110,7 @@ public class ServiceController : Controller
             Description = dto.Description,
             Price = dto.Price,
             Status = dto.Status,
-            FreelancerId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+            FreelancerId = freelancerId,
             CreatedAt = DateTime.UtcNow
         };
         
@@ -247,7 +253,7 @@ public class ServiceController : Controller
             return NotFound();
         }
 
-        if (order.Service.FreelancerId != _userManager.GetUserId(User))
+        if (order.Service?.FreelancerId != _userManager.GetUserId(User))
         {
             return Forbid();
         }

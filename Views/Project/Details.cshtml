@@ -65,7 +65,7 @@
 
         @{
         var userName = User.Identity?.Name;
-        bool hasBid = Model.Bids?.Any(b => b.Freelancer.UserName == userName) ?? false;
+        bool hasBid = Model.Bids?.Any(b => b.Freelancer?.UserName == userName) ?? false;
         }
 
         @if (User.IsInRole("Freelancer") && !hasBid && Model.Status == ProjectStatus.Open)
@@ -75,7 +75,7 @@
         </a>
         }
 
-        @if (User.IsInRole("Freelancer") && User.Identity.Name == Model.SelectedFreelancer?.UserName && Model.Status == ProjectStatus.InProgress)
+        @if (User.IsInRole("Freelancer") && User.Identity?.Name == Model.SelectedFreelancer?.UserName && Model.Status == ProjectStatus.InProgress)
         {
         <form method="post" asp-action="CompleteProject" asp-route-id="@Model.Id" class="mt-3">
             <button class="btn btn-outline-success">Завершить проект</button>
@@ -111,7 +111,7 @@
                             @foreach (var bid in Model.Bids)
                             {
                                 <tr>
-                                    <td>@bid.Freelancer.UserName</td>
+                                    <td>@bid.Freelancer?.UserName</td>
                                     <td class="text-success">@bid.Amount.ToString("C")</td>
                                     <td>@bid.DurationInDays</td>
                                     <td>@bid.Comment</td>

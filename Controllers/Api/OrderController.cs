@@ -36,7 +36,8 @@ public class OrderController : ControllerBase
         }
         
         return await query
-            .Include(o => o.Service.Freelancer)
+            .Include(o => o.Service)
+                .ThenInclude(s => s!.Freelancer)
             .Include(o => o.Client)
             .ToListAsync();
     }
@@ -45,7 +46,8 @@ public class OrderController : ControllerBase
     public async Task<ActionResult<Order>> GetOrder(int id)
     {
         var order = await _context.Orders
-            .Include(o => o.Service.Freelancer)
+            .Include(o => o.Service)
+                .ThenInclude(s => s!.Freelancer)
             .Include(o => o.Client)
             .FirstOrDefaultAsync(o => o.Id == id);
         if (order == null)
@@ -108,7 +110,8 @@ public class OrderController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var order = await _context.Orders
-            .Include(o => o.Service.Freelancer)
+            .Include(o => o.Service)
+                .ThenInclude(s => s!.Freelancer)
             .Include(o => o.Client)
             .FirstOrDefaultAsync(o => o.Id == id);
 

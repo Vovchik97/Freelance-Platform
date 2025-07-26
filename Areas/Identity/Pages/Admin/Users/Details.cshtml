@@ -1,0 +1,32 @@
+﻿@page "{id}"
+@model FreelancePlatform.Areas.Identity.Pages.Admin.Users.DetailsModel
+@{
+ViewData["Title"] = "Детали пользователя";
+}
+
+<h2>Детали пользователя</h2>
+
+<div class="project-card">
+<div class="card-body">
+    <dl class="row">
+        <dt class="col-sm-3">Имя</dt>
+        <dd class="col-sm-9">@Model.SelectedUser?.UserName</dd>
+
+        <dt class="col-sm-3">Email</dt>
+        <dd class="col-sm-9">@Model.SelectedUser?.Email</dd>
+
+        <dt class="col-sm-3">Телефон</dt>
+        <dd class="col-sm-9">@Model.SelectedUser?.PhoneNumber</dd>
+
+        <dt class="col-sm-3">Email подтвержден</dt>
+        <dd class="col-sm-9">@(Model.SelectedUser?.EmailConfirmed == true ? "Да" : "Нет")</dd>
+
+        <dt class="col-sm-3">Роли</dt>
+        <dd class="col-sm-9">@string.Join(", ", Model.Roles)</dd>
+
+        <dt class="col-sm-3">Статус</dt>
+        <dd class="col-sm-9">@(Model.IsLockedOut == true ? "Заблокирован" : "Активен")</dd>
+    </dl>
+</div>
+</div>
+<a asp-page="/Admin/Users/Index" class="btn btn-secondary mt-3">Назад</a>

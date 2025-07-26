@@ -1,0 +1,30 @@
+﻿@page "{id}"
+@model FreelancePlatform.Areas.Identity.Pages.Admin.Bids.DetailsModel
+@{
+ViewData["Title"] = "Детали заявки";
+}
+
+<h2>Детали заявки</h2>
+
+<div class="project-card">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Проект</dt>
+            <dd class="col-sm-9">@Model.Bid?.Project?.Title</dd>
+
+            <dt class="col-sm-3">Фрилансер</dt>
+            <dd class="col-sm-9">@Model.Bid?.Freelancer?.UserName</dd>
+
+            <dt class="col-sm-3">Сумма</dt>
+            <dd class="col-sm-9">@Model.Bid?.Amount.ToString("C")</dd>
+
+            <dt class="col-sm-3">Дата подачи</dt>
+            <dd class="col-sm-9">@Model.Bid?.CreatedAt</dd>
+
+            <dt class="col-sm-3">Статус</dt>
+            <dd class="col-sm-9">@Model.Bid?.Status</dd>
+        </dl>
+    </div>
+</div>
+
+<a asp-page="/Admin/Bids/Index" class="btn btn-secondary mt-3">Назад</a>

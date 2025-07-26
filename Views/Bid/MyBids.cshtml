@@ -28,7 +28,7 @@ ViewData["Title"] = "Мои заявки";
             @foreach (var bid in Model)
             {
             <tr>
-                <td>@bid.Project.Title</td>
+                <td>@bid.Project?.Title</td>
                 <td>@bid.Amount ₽</td>
                 <td>@bid.DurationInDays</td>
                 <td>@bid.Comment</td>
@@ -41,7 +41,7 @@ ViewData["Title"] = "Мои заявки";
                 <td>
                     <div class="d-flex flex-column gap-1">
                         <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@bid.Id">Детали</a>
-                        <a asp-controller="Project" asp-action="Details" asp-route-id="@bid.Project.Id" class="btn btn-sm btn-outline-secondary">Проект</a>
+                        <a asp-controller="Project" asp-action="Details" asp-route-id="@bid.Project?.Id" class="btn btn-sm btn-outline-secondary">Проект</a>
 
                         @if (bid.Status == BidStatus.Pending)
                         {

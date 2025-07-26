@@ -8,10 +8,10 @@ ViewData["Title"] = "Заявка";
         <h2 class="filters-title mb-3">Заявка на проект</h2>
 
         <div class="mb-3">
-            <strong>Проект:</strong> @Model.Project.Title
+            <strong>Проект:</strong> @Model.Project?.Title
         </div>
         <div class="mb-3 text-secondary">
-            <strong>Фрилансер:</strong> @Model.Freelancer.UserName
+            <strong>Фрилансер:</strong> @Model.Freelancer?.UserName
         </div>
         <div class="mb-3">
             <strong>Сумма:</strong> <span class="text-success">@Model.Amount ₽</span>
@@ -42,7 +42,7 @@ ViewData["Title"] = "Заявка";
         </div>
 
         <div class="d-flex flex-wrap gap-2">
-            @if (Model.Status == BidStatus.Pending && User.Identity?.Name == Model.Freelancer.UserName)
+            @if (Model.Status == BidStatus.Pending && User.Identity?.Name == Model.Freelancer?.UserName)
             {
             <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Редактировать</a>
             <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline">
@@ -51,9 +51,9 @@ ViewData["Title"] = "Заявка";
             </form>
             }
 
-            @if (Model.Status == BidStatus.Pending && User.Identity?.Name == Model.Project.Client?.UserName)
+            @if (Model.Status == BidStatus.Pending && User.Identity?.Name == Model.Project?.Client?.UserName)
             {
-            <form method="post" asp-controller="Project" asp-action="AcceptBid" asp-route-projectId="@Model.Project.Id" asp-route-bidId="@Model.Id" class="d-inline">
+            <form method="post" asp-controller="Project" asp-action="AcceptBid" asp-route-projectId="@Model.Project?.Id" asp-route-bidId="@Model.Id" class="d-inline">
                 <button type="submit" class="btn btn-success">Одобрить</button>
             </form>
             <form method="post" asp-controller="Project" asp-action="RejectBid" asp-route-bidId="@Model.Id" class="d-inline ms-1">
@@ -62,7 +62,7 @@ ViewData["Title"] = "Заявка";
             }
         </div>
 
-        <a class="btn btn-primary mt-4" asp-controller="Project" asp-action="Details" asp-route-id="@Model.Project.Id">
+        <a class="btn btn-primary mt-4" asp-controller="Project" asp-action="Details" asp-route-id="@Model.Project?.Id">
             Перейти к проекту
         </a>
     </div>

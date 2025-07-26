@@ -10,7 +10,7 @@
         <h1 class="display-4" style="background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Добро пожаловать на Freelance Platform</h1>
         <p class="lead text-secondary">Современная площадка для сотрудничества клиентов и фрилансеров</p>
 
-        @if (!User.Identity.IsAuthenticated)
+        @if (!User.Identity!.IsAuthenticated)
         {
             <div class="d-flex justify-content-center gap-3 mt-4">
                 <a class="btn btn-primary btn-lg" asp-area="Identity" asp-page="/Account/Register">Зарегистрироваться</a>

@@ -25,7 +25,7 @@ public class OrderController : Controller
         var order = await _context.Orders
             .Include(o => o.Client)
             .Include(o => o.Service)
-                .ThenInclude(o => o.Freelancer)
+                .ThenInclude(s => s!.Freelancer)
             .FirstOrDefaultAsync(o => o.Id == id);
 
         if (order == null)
@@ -68,12 +68,18 @@ public class OrderController : Controller
             return View(dto);
         }
         
+        var clientId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (clientId == null)
+        {
+            return Unauthorized();
+        }
+        
         var order = new Order
         {
             Comment = dto.Comment,
             DurationInDays = dto.DurationInDays,
             CreatedAt = DateTime.UtcNow,
-            ClientId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+            ClientId = clientId,
             ServiceId = dto.ServiceId
         };
 

@@ -1,0 +1,72 @@
+﻿@page
+@model FreelancePlatform.Areas.Identity.Pages.Admin.IndexModel
+@{
+ViewData["Title"] = "Панель администратора";
+}
+<h2 class="text-center mb-4">Добро пожаловать в панель администратора</h2>
+
+<div class="alert alert-info text-center">
+    Здесь вы можете управлять пользователями, проектами, услугами, заявками, заказами и просматривать аналитику.
+</div>
+
+<div class="row text-center mt-4">
+    <div class="col-md-4 mb-3">
+        <div class="project-card">
+            <div class="card-body">
+                <h5 class="card-title">👤 Пользователи</h5>
+                <p class="card-text">Управление аккаунтами и правами доступа.</p>
+                <a asp-page="/Admin/Users/Index" class="btn btn-primary w-100">Перейти</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <div class="project-card">
+            <div class="card-body">
+                <h5 class="card-title">📁 Проекты</h5>
+                <p class="card-text">Просмотр и модерация проектов клиентов.</p>
+                <a asp-page="/Admin/Projects/Index" class="btn btn-primary w-100">Перейти</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <div class="project-card">
+            <div class="card-body">
+                <h5 class="card-title">🛠️ Услуги</h5>
+                <p class="card-text">Модерация услуг фрилансеров.</p>
+                <a asp-page="/Admin/Services/Index" class="btn btn-primary w-100">Перейти</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <div class="project-card">
+            <div class="card-body">
+                <h5 class="card-title">📨 Заявки</h5>
+                <p class="card-text">Проверка и удаление заявок.</p>
+                <a asp-page="/Admin/Bids/Index" class="btn btn-primary w-100">Перейти</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <div class="project-card">
+            <div class="card-body">
+                <h5 class="card-title">🧾 Заказы</h5>
+                <p class="card-text">Просмотр и управление заказами.</p>
+                <a asp-page="/Admin/Orders/Index" class="btn btn-primary w-100">Перейти</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <div class="project-card">
+            <div class="card-body">
+                <h5 class="card-title">📈 Аналитика</h5>
+                <p class="card-text">Общая статистика платформы.</p>
+                <a asp-page="/Admin/Analytics/Index" class="btn btn-primary w-100">Перейти</a>
+            </div>
+        </div>
+    </div>
+</div>

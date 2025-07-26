@@ -35,7 +35,8 @@ public class BidController : ControllerBase
         }
         
         return await query
-            .Include(b => b.Project.Client)
+            .Include(b => b.Project)
+                .ThenInclude(p => p!.Client)
             .Include(b => b.Freelancer)
             .ToListAsync();
     }
@@ -44,7 +45,8 @@ public class BidController : ControllerBase
     public async Task<ActionResult<Bid>> GetBid(int id)
     {
         var bid = await _context.Bids
-            .Include(b => b.Project.Client)
+            .Include(b => b.Project)
+                .ThenInclude(p => p!.Client)
             .Include(b => b.Freelancer)
             .FirstOrDefaultAsync(b => b.Id == id);
         if (bid == null)
@@ -108,7 +110,8 @@ public class BidController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var bid = await _context.Bids
-            .Include(b => b.Project.Client)
+            .Include(b => b.Project)
+                .ThenInclude(p => p!.Client)
             .Include(b => b.Freelancer)
             .FirstOrDefaultAsync(b => b.Id == id);
 

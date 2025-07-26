@@ -1,4 +1,6 @@
-﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
+﻿@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> UserManager
+@using Microsoft.AspNetCore.Mvc.TagHelpers
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -56,8 +58,14 @@
                     }
                 </ul>
                 <ul class="navbar-nav">
-                    @if (User.Identity.IsAuthenticated)
+                    @if (User.Identity!.IsAuthenticated)
                     {
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="Identity" asp-page="/Admin/Index">Админка</a>
+                            </li>
+                        }
                         <li class="nav-item">
                             <a class="nav-link" asp-area="Identity" asp-page="/Account/Manage/Index">Профиль</a>
                         </li>
