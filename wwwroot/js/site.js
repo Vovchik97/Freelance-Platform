@@ -220,7 +220,39 @@
             themeBtn.style.opacity = 1;
         }, 200);
     });
-
-
 });
 
+// === Индикатор новых чатов с непрочитанными сообщениями ===
+document.addEventListener("DOMContentLoaded", function () {
+    const badge = document.getElementById("chatUnreadBadge");
+    const countSpan = document.getElementById("chatUnreadCount");
+    const chatLink = document.getElementById("chatLink");
+
+    // Если элементов нет (например, неавторизован) — выходим
+    if (!badge || !countSpan || !chatLink) return;
+
+    function updateUnreadBadge() {
+        fetch('/Chat/GetUnreadChatsCount')
+            .then(response => {
+                if (!response.ok) throw new Error("HTTP " + response.status);
+                return response.json();
+            })
+            .then(data => {
+                const count = data.count || 0;
+                countSpan.textContent = count > 9 ? '9+' : count;
+
+                if (count > 0) {
+                    badge.style.display = "inline-flex";
+                } else {
+                    badge.style.display = "none";
+                }
+            })
+            .catch(err => {
+                console.warn("Ошибка при обновлении индикатора:", err);
+            });
+    }
+
+    // Обновляем при загрузке и каждые 30 сек
+    updateUnreadBadge();
+    setInterval(updateUnreadBadge, 30000);
+});

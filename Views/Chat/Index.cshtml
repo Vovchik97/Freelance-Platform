@@ -1,0 +1,29 @@
+﻿@model List<FreelancePlatform.Models.ChatViewModel>
+@{
+ViewData["Title"] = "Мои чаты";
+var userId = ViewBag.UserId as string;
+var otherUser = ViewBag.OtherUser as string;
+}
+<div class="container">
+    <div class="header">
+        <h1>Мои чаты</h1>
+        <p>Здесь вы можете обсуждать условия вашего сотрудничества с другими пользователями</p>
+    </div>
+    <ul class="list-group">
+        @foreach (var chat in Model)
+        {
+            <li class="project-card d-flex justify-content-between align-items-center">
+                <span>
+                    Чат c @chat.OtherUserName
+                </span>
+                @if (chat.HasUnread)
+                {
+                    <span class="badge bg-danger">Новое</span>
+                }
+                <div class="flex-shrink-0">
+                    <a class="btn btn-primary" asp-action="Chat" asp-route-chatId="@chat.Chat.Id">Открыть</a>
+                </div>
+            </li>
+        }
+    </ul>
+</div>

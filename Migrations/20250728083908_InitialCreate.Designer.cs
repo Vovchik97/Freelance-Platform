@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FreelancePlatform.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250723061114_InitialCreate")]
+    [Migration("20250728083908_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -64,6 +64,30 @@ namespace FreelancePlatform.Migrations
                     b.ToTable("Bids");
                 });
 
+            modelBuilder.Entity("FreelancePlatform.Models.Chat", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FreelancerId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Chats");
+                });
+
             modelBuilder.Entity("FreelancePlatform.Models.Message", b =>
                 {
                     b.Property<int>("Id")
@@ -72,23 +96,26 @@ namespace FreelancePlatform.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Content")
+                    b.Property<int>("ChatId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SenderId")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int?>("ProjectId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ReceiverId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("SenderId")
-                        .HasColumnType("integer");
 
                     b.Property<DateTime>("SentAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("ChatId");
 
                     b.ToTable("Messages");
                 });
@@ -435,6 +462,17 @@ namespace FreelancePlatform.Migrations
                     b.Navigation("Project");
                 });
 
+            modelBuilder.Entity("FreelancePlatform.Models.Message", b =>
+                {
+                    b.HasOne("FreelancePlatform.Models.Chat", "Chat")
+                        .WithMany("Messages")
+                        .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Chat");
+                });
+
             modelBuilder.Entity("FreelancePlatform.Models.Order", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "Client")
@@ -543,6 +581,11 @@ namespace FreelancePlatform.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("FreelancePlatform.Models.Chat", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("FreelancePlatform.Models.Project", b =>

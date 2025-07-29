@@ -37,7 +37,7 @@
         </p>
         <p><strong>Фрилансер:</strong> @Model.Freelancer?.Email</p>
 
-        @if (User.Identity?.Name == Model.Client?.UserName && Model.Status == ServiceStatus.Available)
+        @if (User.Identity?.Name == Model.Freelancer?.UserName && Model.Status == ServiceStatus.Available)
         {
             <div class="mt-4">
                 <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning me-2">Редактировать</a>
@@ -50,7 +50,7 @@
             </div>
         }
 
-        @if (Model.Status == ServiceStatus.Unavailable)
+        @if (User.Identity?.Name == Model.Freelancer?.UserName && Model.Status == ServiceStatus.Unavailable)
         {
             <form method="post" asp-controller="Service" asp-action="ResumeService" asp-route-id="@Model.Id" class="mt-3">
                 <button type="submit" class="btn btn-outline-success">Возобновить услугу</button>
@@ -58,24 +58,25 @@
         }
 
         @{
-        var userName = User.Identity?.Name;
-        bool hasOrder = Model.Orders?.Any(o => o.Client?.UserName == userName) ?? false;
-        bool isSelectedClient = userName == Model.SelectedClient?.UserName;
-        bool isOrderCompleted = Model.Orders?.FirstOrDefault(o => o.Client?.UserName == userName)?.Status == OrderStatus.Completed;
+            var userName = User.Identity?.Name;
+            bool hasActiveOrder = Model.Orders?.Any(o =>
+                o.Client?.UserName == userName &&
+                (o.Status == OrderStatus.Pending || o.Status == OrderStatus.Accepted)
+            ) ?? false;
         }
 
-        @if (User.IsInRole("Client") && !hasOrder && Model.Status == ServiceStatus.Available)
+        @if (User.IsInRole("Client") && !hasActiveOrder && Model.Status == ServiceStatus.Available)
         {
             <a class="btn btn-primary mt-4" asp-controller="Order" asp-action="Create" asp-route-serviceId="@Model.Id">
                 Заказать услугу
             </a>
         }
-
-        @if (User.IsInRole("Client") && isSelectedClient && !isOrderCompleted)
+        else
         {
-            <form method="post" asp-action="CompleteOrder" asp-route-id="@Model.Id" class="mt-3">
-                <button class="btn btn-outline-success">Услуга выполнена</button>
-            </form>
+            @if (User.IsInRole("Client"))
+            {
+                <p class="text-muted">Вы уже заказали эту услугу.</p>
+            }
         }
     </div>
 
@@ -127,10 +128,13 @@
                                         @switch (order.Status)
                                         {
                                             case OrderStatus.Accepted:
-                                                <span class="badge bg-success">Одобрена</span>
+                                                <span class="badge bg-success">Одобрен</span>
                                                 break;
                                             case OrderStatus.Rejected:
-                                                <span class="badge bg-secondary">Отклонена</span>
+                                                <span class="badge bg-secondary">Отклонен</span>
+                                                break;
+                                            case OrderStatus.Completed:
+                                                <span class="badge bg-primary">Выполнен</span>
                                                 break;
                                             default:
                                                 <span class="badge bg-warning text-dark">Рассматривается</span>

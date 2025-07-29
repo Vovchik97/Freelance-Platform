@@ -230,7 +230,25 @@ public class ServiceController : Controller
 
         foreach (var otherOrder in service.Orders.Where(o => o.Id != orderId))
         {
-            otherOrder.Status = OrderStatus.Rejected;
+            if (otherOrder.Status != OrderStatus.Completed)
+            {
+                otherOrder.Status = OrderStatus.Rejected;
+            }
+        }
+        
+        var existingChat = await _context.Chats
+            .FirstOrDefaultAsync(c => c.FreelancerId == service.FreelancerId && c.ClientId == order.ClientId);
+
+        if (existingChat == null)
+        {
+            var chat = new Chat
+            {
+                ClientId = order.ClientId,
+                FreelancerId = service.FreelancerId,
+                Messages = new List<Message>()
+            };
+        
+            _context.Chats.Add(chat);
         }
         
         await _context.SaveChangesAsync();
@@ -263,32 +281,6 @@ public class ServiceController : Controller
 
         TempData["SuccessMessage"] = "Заказ отклонен";
         return RedirectToAction(nameof(Details), new { id = order.ServiceId });
-    }
-    
-    [HttpPost]
-    [Authorize(Roles = "Client")]
-    public async Task<IActionResult> CompleteOrder(int id)
-    {
-        var userId = _userManager.GetUserId(User);
-        var order = await _context.Orders
-            .Include(o => o.Service)
-            .FirstOrDefaultAsync(o => o.Id == id);
-        
-        if (order == null)
-        {
-            return NotFound();
-        }
-
-        if (order.ClientId != userId)
-        {
-            return Forbid();
-        }
-        
-        order.Status = OrderStatus.Completed;
-        await _context.SaveChangesAsync();
-        
-        TempData["SuccessMessage"] = "Заказ выполнен.";
-        return RedirectToAction(nameof(Details), new { id = order.Id });
     }
 
     [HttpPost]

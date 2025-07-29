@@ -51,6 +51,13 @@ ViewData["Title"] = "Заказ";
             </form>
             }
 
+            @if (Model.Status == OrderStatus.Accepted && User.Identity?.Name == Model.Client?.UserName)
+            {
+            <form method="post" asp-action="CompleteOrder" asp-route-id="@Model.Id" class="mt-3">
+                <button class="btn btn-outline-success">Заказ выполнен</button>
+            </form>
+            }
+
             @if (Model.Status == OrderStatus.Pending && User.Identity?.Name == Model.Service?.Freelancer?.UserName)
             {
             <form method="post" asp-controller="Service" asp-action="AcceptOrder" asp-route-serviceId="@Model.Service?.Id" asp-route-orderId="@Model.Id" class="d-inline">

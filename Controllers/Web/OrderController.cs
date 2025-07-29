@@ -5,6 +5,7 @@ using FreelancePlatform.Dto.Bids;
 using FreelancePlatform.Dto.Orders;
 using FreelancePlatform.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,10 +14,12 @@ namespace FreelancePlatform.Controllers.Web;
 public class OrderController : Controller
 {
     private readonly AppDbContext _context;
+    private readonly UserManager<IdentityUser> _userManager;
 
-    public OrderController(AppDbContext context)
+    public OrderController(AppDbContext context, UserManager<IdentityUser> userManager)
     {
         _context = context;
+        _userManager = userManager;
     }
 
     [AllowAnonymous]
@@ -58,10 +61,11 @@ public class OrderController : Controller
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var service = await _context.Services.FirstOrDefaultAsync(s => s.Id == dto.ServiceId);
 
-        var alreadyExists = await _context.Orders.AnyAsync(o => o.ServiceId == dto.ServiceId && o.ClientId == userId);
+        var hasActiveOrder = service?.Orders?.Any(o => o.Client!.Id == userId && (o.Status == OrderStatus.Pending || o.Status == OrderStatus.Accepted)) ?? false;
 
-        if (alreadyExists)
+        if (hasActiveOrder)
         {
             ModelState.AddModelError(string.Empty, "Вы уже отправили заказ на эту услугу.");
             ViewBag.ProjectId = dto.ServiceId;
@@ -166,5 +170,29 @@ public class OrderController : Controller
         return View(myOrders);
     }
     
-    
+    [HttpPost]
+    [Authorize(Roles = "Client")]
+    public async Task<IActionResult> CompleteOrder(int id)
+    {
+        var userId = _userManager.GetUserId(User);
+        var order = await _context.Orders
+            .Include(o => o.Service)
+            .FirstOrDefaultAsync(o => o.Id == id);
+        
+        if (order == null)
+        {
+            return NotFound();
+        }
+
+        if (order.ClientId != userId)
+        {
+            return Forbid();
+        }
+        
+        order.Status = OrderStatus.Completed;
+        await _context.SaveChangesAsync();
+        
+        TempData["SuccessMessage"] = "Заказ выполнен.";
+        return RedirectToAction(nameof(Details), new { id = order.Id });
+    }
 }

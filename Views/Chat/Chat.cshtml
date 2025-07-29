@@ -1,0 +1,37 @@
+﻿@model FreelancePlatform.Models.Chat
+@{
+ViewData["Title"] = "Чат";
+}
+
+<input type="hidden" id="chatId" value="@Model.Id" />
+<input type="hidden" id="currentUserId" value="@ViewBag.CurrentUserId" />
+<input type="hidden" id="userName" value="@ViewBag.UserName" />
+
+<div class="container">
+<div class="project-card">
+    <div class="card-header">Чат с @ViewBag.OtherUser</div>
+    <div class="card-body" style="height: 400px; overflow-y: auto;">
+        <ul id="messages" class="list-unstyled p-2">
+            @foreach (var msg in Model.Messages)
+            {
+            bool isMe = msg.SenderId == ViewBag.CurrentUserId;
+            <li class="d-flex mb-2 @(isMe ? "justify-content-end" : "justify-content-start")">
+                <div class="message-bubble @(isMe ? "me" : "other")">
+                    @msg.Text
+                    <div class="message-time">@msg.SentAt.ToLocalTime().ToString("g")</div>
+                </div>
+            </li>
+            }
+        </ul>
+    </div>
+    <div class="card-footer d-flex">
+        <input type="text" id="messageInput" class="form-control me-2" placeholder="Введите сообщение" />
+        <button class="btn btn-primary" onclick="sendMessage()">Отправить</button>
+    </div>
+</div>
+</div>
+
+@section Scripts {
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.2/signalr.min.js"></script>
+<script src="~/js/chat.js"></script>
+}

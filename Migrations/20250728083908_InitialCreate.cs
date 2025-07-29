@@ -52,20 +52,18 @@ namespace FreelancePlatform.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Messages",
+                name: "Chats",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    SenderId = table.Column<int>(type: "integer", nullable: false),
-                    ReceiverId = table.Column<int>(type: "integer", nullable: false),
-                    ProjectId = table.Column<int>(type: "integer", nullable: true),
-                    Content = table.Column<string>(type: "text", nullable: false),
-                    SentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    ClientId = table.Column<string>(type: "text", nullable: false),
+                    FreelancerId = table.Column<string>(type: "text", nullable: false),
+                    IsRead = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Messages", x => x.Id);
+                    table.PrimaryKey("PK_Chats", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -241,6 +239,29 @@ namespace FreelancePlatform.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Messages",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ChatId = table.Column<int>(type: "integer", nullable: false),
+                    SenderId = table.Column<string>(type: "text", nullable: false),
+                    Text = table.Column<string>(type: "text", nullable: false),
+                    SentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsRead = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Messages", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Messages_Chats_ChatId",
+                        column: x => x.ChatId,
+                        principalTable: "Chats",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Bids",
                 columns: table => new
                 {
@@ -349,6 +370,11 @@ namespace FreelancePlatform.Migrations
                 column: "ProjectId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Messages_ChatId",
+                table: "Messages",
+                column: "ChatId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Orders_ClientId",
                 table: "Orders",
                 column: "ClientId");
@@ -416,6 +442,9 @@ namespace FreelancePlatform.Migrations
 
             migrationBuilder.DropTable(
                 name: "Projects");
+
+            migrationBuilder.DropTable(
+                name: "Chats");
 
             migrationBuilder.DropTable(
                 name: "Services");

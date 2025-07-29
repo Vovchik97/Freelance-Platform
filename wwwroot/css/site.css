@@ -489,6 +489,8 @@ body {
   margin-bottom: 2rem;
   box-shadow: 0 10px 30px -10px rgba(139, 92, 246, 0.3);
   backdrop-filter: blur(10px);
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 .custom-table {
@@ -561,4 +563,33 @@ textarea.form-input {
 }
 .nav-link.active {
   font-weight: bold;
+}
+
+.message-bubble {
+  max-width: 60%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  position: relative;
+  word-wrap: break-word;
+}
+
+.message-bubble.me {
+  background-color: #0dcaf0;
+  color: #000000;
+  border-bottom-right-radius: 0;
+  align-self: flex-end;
+}
+
+.message-bubble.other {
+  background-color: #f8d7da;
+  color: #000000;
+  border-bottom-left-radius: 0;
+  align-self: flex-start;
+}
+
+.message-time {
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-top: 4px;
+  text-align: right;
 }

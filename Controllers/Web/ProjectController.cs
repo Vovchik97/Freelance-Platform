@@ -233,6 +233,21 @@ public class ProjectController : Controller
             otherBid.Status = BidStatus.Rejected;
         }
         
+        var existingChat = await _context.Chats
+            .FirstOrDefaultAsync(c => c.ClientId == project.ClientId && c.FreelancerId == bid.FreelancerId);
+        
+        if (existingChat == null)
+        {
+            var chat = new Chat
+            {
+                ClientId = project.ClientId,
+                FreelancerId = bid.FreelancerId,
+                Messages = new List<Message>()
+            };
+            
+            _context.Chats.Add(chat);
+        }
+        
         await _context.SaveChangesAsync();
 
         TempData["Success"] = "Исполнитель выбран. Остальные заявки отклонены.";

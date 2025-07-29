@@ -27,7 +27,7 @@ public class ServiceController : ControllerBase
         [FromQuery] decimal? maxBudget,
         [FromQuery] string? sort)
     {
-        var query = _context.Services.Include(p => p.Client).AsQueryable();
+        var query = _context.Services.Include(p => p.SelectedClient).AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -57,13 +57,13 @@ public class ServiceController : ControllerBase
         else
             query = query.OrderByDescending(s => s.CreatedAt);
         
-        return await query.Include(s => s.Client).ToListAsync();
+        return await query.Include(s => s.SelectedClient).ToListAsync();
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<Service>> GetService(int id)
     {
-        var service = await _context.Services.Include(s => s.Client).FirstOrDefaultAsync(s => s.Id == id);
+        var service = await _context.Services.Include(s => s.SelectedClient).FirstOrDefaultAsync(s => s.Id == id);
         if (service == null)
         {
             return BadRequest();

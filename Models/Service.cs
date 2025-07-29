@@ -14,8 +14,6 @@ public class Service
     public IdentityUser? Freelancer { get; set; }
     public DateTime CreatedAt { get; set; }
     public ServiceStatus Status { get; set; }
-    public string? ClientId { get; set; }
-    public IdentityUser? Client { get; set; }
     public List<Order> Orders { get; set; } = new List<Order>();
     public string? SelectedClientId { get; set; }
 

@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using FreelancePlatform.Context;
 using FreelancePlatform.Data;
+using FreelancePlatform.Hubs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -19,6 +20,7 @@ builder.Services.AddControllers()
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+builder.Services.AddSignalR();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole>()
@@ -152,5 +154,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapControllers();
 app.MapRazorPages();
+app.MapHub<ChatHub>("/chatHub");
 
 app.Run();
