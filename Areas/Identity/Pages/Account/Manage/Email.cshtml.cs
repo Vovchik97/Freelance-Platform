@@ -31,42 +31,18 @@ namespace FreelancePlatform.Areas.Identity.Pages.Account.Manage
             _emailSender = emailSender;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public string Email { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public bool IsEmailConfirmed { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [TempData]
         public string StatusMessage { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [BindProperty]
         public InputModel Input { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public class InputModel
         {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [Required]
             [EmailAddress]
             [Display(Name = "New email")]
@@ -123,10 +99,19 @@ namespace FreelancePlatform.Areas.Identity.Pages.Account.Manage
                     pageHandler: null,
                     values: new { area = "Identity", userId = userId, email = Input.NewEmail, code = code },
                     protocol: Request.Scheme);
+
+                var bodyHtml = $@"
+                    <p>Здравствуйте!</p>
+                    <p>Вы получили это письмо для подтверждения изменения электронной почты на сайте FreelancePlatform.</p>
+                    <p>Пожалуйста, перейдите по ссылке ниже, чтобы подтвердить новый email:</p>
+                    <p><a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>Подтвердить email</a></p>
+                    <p>Если вы не запрашивали это изменение, просто проигнорируйте это письмо.</p>
+                ";
+
                 await _emailSender.SendEmailAsync(
                     Input.NewEmail,
                     "Подтвердите ваш email",
-                    $"Пожалуйста, подтвердите свой аккаунт <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>здесь</a>.");
+                    bodyHtml);
 
                 StatusMessage = "Письмо с подтверждением отправлено. Пожалуйста, проверьте свою почту.";
                 return RedirectToPage();
@@ -159,12 +144,21 @@ namespace FreelancePlatform.Areas.Identity.Pages.Account.Manage
                 pageHandler: null,
                 values: new { area = "Identity", userId = userId, code = code },
                 protocol: Request.Scheme);
+
+            var bodyHtml = $@"
+                <p>Здравствуйте!</p>
+                <p>Вы получили это письмо для подтверждения своего аккаунта на сайте FreelancePlatform.</p>
+                <p>Пожалуйста, перейдите по ссылке ниже, чтобы подтвердить email:</p>
+                <p><a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>Подтвердить email</a></p>
+                <p>Если вы не запрашивали это письмо, просто проигнорируйте его.</p>
+            ";
+
             await _emailSender.SendEmailAsync(
                 email,
                 "Подтвердите ваш email",
-                $"Пожалуйста, подтвердите свой аккаунт <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>здесь</a>.");
+                bodyHtml);
 
-            StatusMessage = "Письмо с подтверждение отправлено. Пожалуйста проверьте вашу почту.";
+            StatusMessage = "Письмо с подтверждением отправлено. Пожалуйста проверьте вашу почту.";
             return RedirectToPage();
         }
     }

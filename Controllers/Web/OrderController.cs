@@ -4,6 +4,7 @@ using FreelancePlatform.Dto;
 using FreelancePlatform.Dto.Bids;
 using FreelancePlatform.Dto.Orders;
 using FreelancePlatform.Models;
+using FreelancePlatform.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -15,11 +16,13 @@ public class OrderController : Controller
 {
     private readonly AppDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly SmtpEmailSender _emailSender;
 
-    public OrderController(AppDbContext context, UserManager<IdentityUser> userManager)
+    public OrderController(AppDbContext context, UserManager<IdentityUser> userManager, SmtpEmailSender emailSender)
     {
         _context = context;
         _userManager = userManager;
+        _emailSender = emailSender;
     }
 
     [AllowAnonymous]
@@ -61,7 +64,10 @@ public class OrderController : Controller
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var service = await _context.Services.FirstOrDefaultAsync(s => s.Id == dto.ServiceId);
+        var service = await _context.Services
+            .Include(s => s.Freelancer)
+            .FirstOrDefaultAsync(s => s.Id == dto.ServiceId);
+        var client = await _userManager.GetUserAsync(User);
 
         var hasActiveOrder = service?.Orders?.Any(o => o.Client!.Id == userId && (o.Status == OrderStatus.Pending || o.Status == OrderStatus.Accepted)) ?? false;
 
@@ -71,21 +77,37 @@ public class OrderController : Controller
             ViewBag.ProjectId = dto.ServiceId;
             return View(dto);
         }
-        
-        var clientId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (clientId == null)
+
+        if (service == null || service.Freelancer == null)
         {
-            return Unauthorized();
+            return NotFound("Услуга или фрилансер не найдены.");
         }
         
+        if (client == null)
+        {
+            return Unauthorized("Пользователь не найден.");
+        }
+
         var order = new Order
         {
             Comment = dto.Comment,
             DurationInDays = dto.DurationInDays,
             CreatedAt = DateTime.UtcNow,
-            ClientId = clientId,
+            ClientId = client.Id,
             ServiceId = dto.ServiceId
         };
+        
+        var freelancerEmail = service.Freelancer?.Email;
+
+        if (!string.IsNullOrWhiteSpace(freelancerEmail))
+        {
+            await _emailSender.SendEmailAsync(
+                toEmail: freelancerEmail,
+                subject: "Новый заказ на услугу",
+                bodyHtml: $"Пользователь {client.UserName} сделал заказ на услугу {service.Title}."
+            );
+        }
+
 
         await _context.Orders.AddAsync(order);
         await _context.SaveChangesAsync();

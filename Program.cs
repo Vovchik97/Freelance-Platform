@@ -2,7 +2,9 @@ using System.Text.Json.Serialization;
 using FreelancePlatform.Context;
 using FreelancePlatform.Data;
 using FreelancePlatform.Hubs;
+using FreelancePlatform.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -21,6 +23,10 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddSignalR();
+builder.Services.AddTransient<SmtpEmailSender>();
+builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
+
+
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole>()

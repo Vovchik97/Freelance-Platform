@@ -4,5 +4,6 @@ obj/
 /_ReSharper.Caches/
 .env
 .idea/
-.appsettings.Development.json
+appsettings.Development.json
+appsettings.json
 FreelancePlatform.sln.DotSettings.user

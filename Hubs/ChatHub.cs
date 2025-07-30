@@ -1,5 +1,6 @@
 ﻿using FreelancePlatform.Context;
 using FreelancePlatform.Models;
+using FreelancePlatform.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
@@ -11,11 +12,13 @@ public class ChatHub : Hub
 {
     private readonly AppDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly SmtpEmailSender _emailSender;
 
-    public ChatHub(AppDbContext context, UserManager<IdentityUser> userManager)
+    public ChatHub(AppDbContext context, UserManager<IdentityUser> userManager, SmtpEmailSender emailSender)
     {
         _context = context;
         _userManager = userManager;
+        _emailSender = emailSender;
     }
     
     public async Task SendMessage(int chatId, string userName, string message)
@@ -27,6 +30,9 @@ public class ChatHub : Hub
             .Include(c => c.Messages)
             .FirstOrDefaultAsync(c => c.Id == chatId);
         if (chat == null) return;
+        
+        var otherUserId = chat.FreelancerId == user.Id ? chat.ClientId : chat.FreelancerId;
+        var otherUser = await _userManager.FindByIdAsync(otherUserId);
 
         var newMessage = new Message
         {
@@ -41,6 +47,16 @@ public class ChatHub : Hub
 
         await Clients.Group(chatId.ToString())
             .SendAsync("ReceiveMessage", newMessage.SenderId, newMessage.Text, newMessage.SentAt);
+        
+        if (otherUser != null && !string.IsNullOrEmpty(otherUser.Email))
+        {
+            await _emailSender.SendEmailAsync(
+                toEmail: otherUser.Email,
+                subject: "Новое сообщение в чате",
+                bodyHtml: $"Пользователь {userName} отправил новое сообщение."
+            );
+        }
+
     }
     
     public async Task JoinChat(string chatId)
