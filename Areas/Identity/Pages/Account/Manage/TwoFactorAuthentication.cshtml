@@ -55,7 +55,7 @@
             <h4 class="mt-0 mb-3">Приложение-аутентификатор</h4>
 
             <div class="d-flex flex-wrap gap-2">
-                @if (!Model.HasAuthenticator)
+                @if (!Model.Is2faEnabled)
                 {
                     <a id="enable-authenticator" asp-page="./EnableAuthenticator" class="btn btn-primary">Добавить приложение</a>
                 }

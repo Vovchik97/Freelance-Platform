@@ -62,7 +62,7 @@ namespace FreelancePlatform.Areas.Identity.Pages.Account.Manage
             }
 
             _logger.LogInformation("User with ID '{UserId}' has disabled 2fa.", _userManager.GetUserId(User));
-            StatusMessage = "2fa has been disabled. You can reenable 2fa when you setup an authenticator app";
+            StatusMessage = "функция 2fa была отключена. Вы можете снова включить функцию 2fa при настройке приложения для проверки подлинности";
             return RedirectToPage("./TwoFactorAuthentication");
         }
     }

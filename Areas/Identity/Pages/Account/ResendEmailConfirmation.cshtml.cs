@@ -76,13 +76,20 @@ namespace FreelancePlatform.Areas.Identity.Pages.Account
                 pageHandler: null,
                 values: new { userId = userId, code = code },
                 protocol: Request.Scheme);
+            var bodyHtml = $@"
+                <p>Здравствуйте!</p>
+                <p>Вы получили это письмо для подтверждения своего аккаунта на сайте FreelancePlatform.</p>
+                <p>Пожалуйста, перейдите по ссылке ниже, чтобы подтвердить email:</p>
+                <p><a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>Подтвердить email</a></p>
+                <p>Если вы не запрашивали это письмо, просто проигнорируйте его.</p>
+            ";
             await _emailSender.SendEmailAsync(
                 Input.Email,
-                "Confirm your email",
-                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                "Подтвердите ваш email",
+                bodyHtml);
 
-            ModelState.AddModelError(string.Empty, "Письмо подтверждения отправлено. Пожалуйства проверьте свою почту.");
-            return Page();
+            TempData["StatusMessage"] = "Письмо подтверждения отправлено. Пожалуйста, проверьте свою почту.";
+            return RedirectToPage();
         }
     }
 }

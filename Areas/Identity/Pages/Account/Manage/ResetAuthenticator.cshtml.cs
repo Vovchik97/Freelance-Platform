@@ -59,7 +59,7 @@ namespace FreelancePlatform.Areas.Identity.Pages.Account.Manage
             _logger.LogInformation("User with ID '{UserId}' has reset their authentication app key.", user.Id);
 
             await _signInManager.RefreshSignInAsync(user);
-            StatusMessage = "Your authenticator app key has been reset, you will need to configure your authenticator app using the new key.";
+            StatusMessage = "Ваш ключ приложения аутентификации был сброшен, вам нужно будет настроить приложение аутентификации с помощью нового ключа.";
 
             return RedirectToPage("./EnableAuthenticator");
         }

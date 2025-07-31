@@ -18,8 +18,14 @@ ViewData["Title"] = "Повторная отправка подтвержден�
                 <span asp-validation-for="Input.Email" class="text-danger"></span>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100">Отправить письмо повторно</button>
+            <button type="submit" class="btn btn-primary w-100 mb-3">Отправить письмо повторно</button>
         </form>
+        @if (TempData["StatusMessage"] != null)
+        {
+        <div class="alert alert-success" role="alert">
+            @TempData["StatusMessage"]
+        </div>
+        }
     </div>
 </div>
 

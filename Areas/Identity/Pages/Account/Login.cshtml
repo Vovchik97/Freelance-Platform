@@ -30,9 +30,7 @@ ViewData["Title"] = "Вход в аккаунт";
 
             <div class="form-check mb-3">
                 <input class="form-check-input" asp-for="Input.RememberMe" />
-                <label class="form-check-label" asp-for="Input.RememberMe">
-                    @Html.DisplayNameFor(m => m.Input.RememberMe)
-                </label>
+                <label class="form-check-label" asp-for="Input.RememberMe">Запомнить меня</label>
             </div>
 
             <button id="login-submit" type="submit" class="btn btn-primary w-100">Войти</button>
