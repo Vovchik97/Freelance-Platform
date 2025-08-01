@@ -22,8 +22,7 @@
         </li>
         <li>
             <p>Отсканируйте QR-код или введите ключ: <kbd>@Model.SharedKey</kbd> в вашем приложении для двухфакторной аутентификации. Пробелы и заглавные буквы не имеют значения.</p>
-            <div class="alert alert-info">Узнайте <a href="https://go.microsoft.com/fwlink/?Linkid=852423">как включить генерацию QR-кода</a>.</div>
-            <div id="qrCode"></div>
+            <div id="qrCode" style="margin: 20px auto; width: 270px; height: 270px; padding: 10px; background: #fff;"></div>
             <div id="qrCodeData" data-url="@Model.AuthenticatorUri"></div>
         </li>
         <li>
@@ -50,4 +49,7 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script type="text/javascript" src="~/lib/qrcodejs/qrcode.js"></script>
+    <script type="text/javascript" src="~/js/qr.js"></script>
 }

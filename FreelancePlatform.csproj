@@ -64,4 +64,8 @@
       <AdditionalFiles Include="Areas\Identity\Pages\Admin\Users\Index.cshtml" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="wwwroot\lib\qrcodejs\" />
+    </ItemGroup>
+
 </Project>
