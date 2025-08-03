@@ -106,7 +106,7 @@ public class OrderController : ControllerBase
 
     [HttpPut("{id}")]
     [Authorize(AuthenticationSchemes = "Bearer", Roles = "Client")]
-    public async Task<ActionResult<Order>> UpdateBid(int id, [FromBody] UpdateOrderDto dto)
+    public async Task<ActionResult<Order>> UpdateOrder(int id, [FromBody] UpdateOrderDto dto)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var order = await _context.Orders
