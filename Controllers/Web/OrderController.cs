@@ -7,6 +7,7 @@ using FreelancePlatform.Models;
 using FreelancePlatform.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,9 +17,9 @@ public class OrderController : Controller
 {
     private readonly AppDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
-    private readonly SmtpEmailSender _emailSender;
+    private readonly IEmailSender _emailSender;
 
-    public OrderController(AppDbContext context, UserManager<IdentityUser> userManager, SmtpEmailSender emailSender)
+    public OrderController(AppDbContext context, UserManager<IdentityUser> userManager, IEmailSender emailSender)
     {
         _context = context;
         _userManager = userManager;
@@ -102,9 +103,9 @@ public class OrderController : Controller
         if (!string.IsNullOrWhiteSpace(freelancerEmail))
         {
             await _emailSender.SendEmailAsync(
-                toEmail: freelancerEmail,
+                email: freelancerEmail,
                 subject: "Новый заказ на услугу",
-                bodyHtml: $"Пользователь {client.UserName} сделал заказ на услугу {service.Title}."
+                htmlMessage: $"Пользователь {client.UserName} сделал заказ на услугу {service.Title}."
             );
         }
 

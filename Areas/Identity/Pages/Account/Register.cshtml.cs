@@ -138,9 +138,16 @@ namespace FreelancePlatform.Areas.Identity.Pages.Account
                             pageHandler: null,
                             values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
                             protocol: Request.Scheme);
+                        
+                        var bodyHtml = $@"
+                            <p>Здравствуйте!</p>
+                            <p>Вы получили это письмо для подтверждения изменения электронной почты на сайте FreelancePlatform.</p>
+                            <p>Пожалуйста, перейдите по ссылке ниже, чтобы подтвердить новый email:</p>
+                            <p><a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>Подтвердить email</a></p>
+                            <p>Если вы не запрашивали это изменение, просто проигнорируйте это письмо.</p>
+                        ";
 
-                        await _emailSender.SendEmailAsync(Input.Email, "Подтвердите ваш акккаунт",
-                            $"Пожалуйста подтвердите ваш аккаунт, <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>нажав здесь</a>.");
+                        await _emailSender.SendEmailAsync(Input.Email, "Подтвердите ваш акккаунт", bodyHtml);
 
                         if (_userManager.Options.SignIn.RequireConfirmedAccount)
                         {

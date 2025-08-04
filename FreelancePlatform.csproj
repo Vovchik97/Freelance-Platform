@@ -17,7 +17,7 @@
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         <PrivateAssets>all</PrivateAssets>
       </PackageReference>
-      <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.7" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.8" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.8" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.8">
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -69,7 +69,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="FreelancePlatform.Tests\Mvc\" />
       <Folder Include="wwwroot\lib\qrcodejs\" />
     </ItemGroup>
 

@@ -4,6 +4,7 @@
     using FreelancePlatform.Models;
     using FreelancePlatform.Services;
     using Microsoft.AspNetCore.Authorization;
+    using Microsoft.AspNetCore.Identity.UI.Services;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
 
@@ -12,9 +13,9 @@
     public class BidController : Controller
     {
         private readonly AppDbContext _context;
-        private readonly SmtpEmailSender _emailSender;
+        private readonly IEmailSender _emailSender;
 
-        public BidController(AppDbContext context, SmtpEmailSender emailSender)
+        public BidController(AppDbContext context, IEmailSender emailSender)
         {
             _context = context;
             _emailSender = emailSender;
@@ -100,9 +101,9 @@
             if (!string.IsNullOrWhiteSpace(clientEmail))
             {
                 await _emailSender.SendEmailAsync(
-                    toEmail: clientEmail,
+                    email: clientEmail,
                     subject: "Новая заявка на проект",
-                    bodyHtml: $"Пользователь {bid.Freelancer?.UserName} оставил заявку на проект {bid.Project?.Title ?? "Без названия"}."
+                    htmlMessage: $"Пользователь {bid.Freelancer?.UserName} оставил заявку на проект {bid.Project?.Title ?? "Без названия"}."
                 );
             }
 

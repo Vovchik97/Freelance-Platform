@@ -1,6 +1,5 @@
 ﻿using System.Security.Claims;
 using FreelancePlatform.Context;
-using FreelancePlatform.Controllers.Api;
 using FreelancePlatform.Dto.Projects;
 using FreelancePlatform.Models;
 using Microsoft.AspNetCore.Authorization;
