@@ -127,11 +127,15 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    
+    // 🚀 Применяем миграции — это создаст таблицы AspNetRoles, AspNetUsers и т.д.
+    await context.Database.MigrateAsync(); // <-- Вот это было пропущено!
+    
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
     
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await DbSeeder.SeedAsync(db, userManager, roleManager);
+    await DbSeeder.SeedAsync(context, userManager, roleManager);
 }
 
 // Configure the HTTP request pipeline.

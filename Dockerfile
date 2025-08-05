@@ -1,23 +1,26 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER $APP_UID
-WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
-
+﻿# === Сборка ===
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-COPY ["FreelancePlatform.csproj", "./"]
-RUN dotnet restore "FreelancePlatform.csproj"
-COPY . .
-WORKDIR "/src/"
-RUN dotnet build "FreelancePlatform.csproj" -c $BUILD_CONFIGURATION -o /app/build
-
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "FreelancePlatform.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
-
-FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+
+# Копируем .csproj и восстанавливаем зависимости
+COPY FreelancePlatform.csproj .
+RUN dotnet restore
+
+# Копируем весь код
+COPY . .
+
+# Публикуем в папку out
+RUN dotnet publish -c Release -o out
+
+# === Запуск ===
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+# Копируем опубликованный код
+COPY --from=build /app/out .
+
+# Открываем порт
+EXPOSE 8080
+
+# Запускаем приложение
 ENTRYPOINT ["dotnet", "FreelancePlatform.dll"]
