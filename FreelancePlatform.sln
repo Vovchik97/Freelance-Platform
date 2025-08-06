@@ -1,5 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# 
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreelancePlatform", "FreelancePlatform.csproj", "{7C87368E-F1B7-45F1-8675-F7D72490EE78}"
 EndProject
 Global
