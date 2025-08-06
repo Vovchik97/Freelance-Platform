@@ -1,4 +1,6 @@
 ﻿@page "{id}"
+@using System.Globalization
+@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model FreelancePlatform.Areas.Identity.Pages.Admin.Bids.DetailsModel
 @{
 ViewData["Title"] = "Детали заявки";
@@ -16,7 +18,7 @@ ViewData["Title"] = "Детали заявки";
             <dd class="col-sm-9">@Model.Bid?.Freelancer?.UserName</dd>
 
             <dt class="col-sm-3">Сумма</dt>
-            <dd class="col-sm-9">@Model.Bid?.Amount.ToString("C")</dd>
+            <dd class="col-sm-9">@Model.Bid?.Amount.ToString("C", new CultureInfo("ru-RU"))</dd>
 
             <dt class="col-sm-3">Дата подачи</dt>
             <dd class="col-sm-9">@Model.Bid?.CreatedAt</dd>

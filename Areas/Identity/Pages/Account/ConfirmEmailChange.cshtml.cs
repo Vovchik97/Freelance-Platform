@@ -62,7 +62,7 @@ namespace FreelancePlatform.Areas.Identity.Pages.Account
             }
 
             await _signInManager.RefreshSignInAsync(user);
-            StatusMessage = "Thank you for confirming your email change.";
+            StatusMessage = "Благодарим вас за подтверждение изменения вашего адреса электронной почты.";
             return Page();
         }
     }

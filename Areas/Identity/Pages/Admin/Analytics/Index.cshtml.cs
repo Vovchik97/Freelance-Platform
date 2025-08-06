@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using FreelancePlatform.Data;
 using FreelancePlatform.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace FreelancePlatform.Areas.Identity.Pages.Admin.Analytics;
 
@@ -12,10 +13,14 @@ namespace FreelancePlatform.Areas.Identity.Pages.Admin.Analytics;
 public class IndexModel : PageModel
 {
     private readonly AppDbContext _context;
+    private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly UserManager<IdentityUser> _userManager;
 
-    public IndexModel(AppDbContext context)
+    public IndexModel(AppDbContext context, RoleManager<IdentityRole> roleManager, UserManager<IdentityUser> userManager)
     {
         _context = context;
+        _roleManager = roleManager;
+        _userManager = userManager;
     }
 
     public int UserCount { get; set; }
@@ -32,9 +37,20 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync()
     {
+        var clientRole = await _roleManager.FindByNameAsync("Client");
+        var freelancerRole = await _roleManager.FindByNameAsync("Freelancer");
+
+        if (clientRole == null || freelancerRole == null)
+        {
+            ClientCount = 0;
+            FreelancerCount = 0;
+        }
+        else
+        {
+            ClientCount = (await _userManager.GetUsersInRoleAsync("Client")).Count;
+            FreelancerCount = (await _userManager.GetUsersInRoleAsync("Freelancer")).Count;
+        }
         UserCount = await _context.Users.CountAsync();
-        FreelancerCount = await _context.UserRoles.CountAsync(u => u.RoleId == "da11a244-e04c-44f2-894e-96be625d64cf");
-        ClientCount = await _context.UserRoles.CountAsync(u => u.RoleId == "5e82848c-349d-4deb-8510-240d8aa73aa8");
         ProjectCount = await _context.Projects.CountAsync();
         ServiceCount = await _context.Services.CountAsync();
         ApplicationCount = await _context.Bids.CountAsync();

@@ -29,7 +29,7 @@ ViewData["Title"] = "Мои заказы";
             {
             <tr>
                 <td>@order.Service?.Title</td>
-                <td>@order.Service?.Price</td>
+                <td>@order.Service?.Price ₽</td>
                 <td>@order.DurationInDays</td>
                 <td>@order.Comment</td>
                 <td>@order.CreatedAt.ToLocalTime().ToString("g")</td>

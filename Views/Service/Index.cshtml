@@ -1,4 +1,5 @@
-﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
+﻿@using System.Globalization
+@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model IEnumerable<FreelancePlatform.Models.Service>
 @{
 ViewData["Title"] = "Каталог услуг";
@@ -44,21 +45,21 @@ ViewData["Title"] = "Каталог услуг";
                 </div>
 
                 <div class="input-group">
-                    <label for="minBudget">Мин. бюджет</label>
-                    <input type="number" min="0" step="1" id="minBudget" name="minBudget" value="@ViewBag.MinBudget" class="form-input" placeholder="0" />
+                    <label for="minPrice">Мин. цена</label>
+                    <input type="number" min="0" step="1" id="minPrice" name="minPrice" value="@ViewBag.MinPrice" class="form-input" placeholder="0" />
                 </div>
 
                 <div class="input-group">
-                    <label for="maxBudget">Макс. бюджет</label>
-                    <input type="number" min="0" step="1" id="maxBudget" name="maxBudget" value="@ViewBag.MaxBudget" class="form-input" placeholder="∞" />
+                    <label for="maxPrice">Макс. цена</label>
+                    <input type="number" min="0" step="1" id="maxPrice" name="maxPrice" value="@ViewBag.MaxPrice" class="form-input" placeholder="∞" />
                 </div>
 
                 <div class="input-group">
                     <label for="sort">Сортировка</label>
                     <select name="sort" id="sort" class="form-select" style="width: 100%">
                         <option value="" selected="@(string.IsNullOrEmpty(ViewBag.Sort))">Дата (новые)</option>
-                        <option value="budget_asc" selected="@(ViewBag.Sort == "budget_asc")">Цена ↑</option>
-                        <option value="budget_desc" selected="@(ViewBag.Sort == "budget_desc")">Цена ↓</option>
+                        <option value="price_asc" selected="@(ViewBag.Sort == "price_asc")">Цена ↑</option>
+                        <option value="price_desc" selected="@(ViewBag.Sort == "price_desc")">Цена ↓</option>
                     </select>
                 </div>
 
@@ -94,7 +95,7 @@ ViewData["Title"] = "Каталог услуг";
                             <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                             </svg>
-                            <span class="project-budget">@service.Price.ToString("C")</span>
+                            <span class="project-budget">@service.Price.ToString("C", new CultureInfo("ru-RU"))</span>
                         </div>
                         <div class="meta-item">
                             <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">

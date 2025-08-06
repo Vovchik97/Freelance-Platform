@@ -1,4 +1,5 @@
-﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
+﻿@using System.Globalization
+@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model FreelancePlatform.Models.Service
 @{
     ViewData["Title"] = "Детали услуги";
@@ -20,7 +21,7 @@
         <div class="text-muted mb-3">Создана: @Model.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
 
         <p><strong>Описание:</strong> @Model.Description</p>
-        <p><strong>Цена:</strong> <span class="badge bg-success">@Model.Price.ToString("C")</span></p>
+        <p><strong>Цена:</strong> <span class="badge bg-success">@Model.Price.ToString("C", new CultureInfo("ru-RU"))</span></p>
         <p><strong>Статус услуги:</strong>
             @switch (Model.Status)
             {

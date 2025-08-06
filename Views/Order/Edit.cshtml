@@ -13,14 +13,14 @@ ViewData["Title"] = "Редактировать заказ";
 
             <div class="filters-row">
                 <div class="input-group mb-3">
-                    <label asp-for="DurationInDays" class="form-label"></label>
+                    <label asp-for="DurationInDays" class="form-label">Количество дней</label>
                     <input asp-for="DurationInDays" class="form-input" type="number" min="0" step="any"/>
                     <span asp-validation-for="DurationInDays" class="text-danger small"></span>
                 </div>
             </div>
 
             <div class="input-group mb-4">
-                <label asp-for="Comment" class="form-label"></label>
+                <label asp-for="Comment" class="form-label">Комментарий</label>
                 <textarea asp-for="Comment" class="form-input" rows="4"></textarea>
                 <span asp-validation-for="Comment" class="text-danger small"></span>
             </div>

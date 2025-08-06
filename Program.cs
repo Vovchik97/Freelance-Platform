@@ -129,7 +129,6 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     
-    // 🚀 Применяем миграции — это создаст таблицы AspNetRoles, AspNetUsers и т.д.
     await context.Database.MigrateAsync(); // <-- Вот это было пропущено!
     
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();

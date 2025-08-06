@@ -13,20 +13,20 @@ ViewData["Title"] = "Откликнуться на проект";
             
             <div class="filters-row">
                 <div class="input-group mb-3">
-                    <label asp-for="Amount" class="form-label"></label>
+                    <label asp-for="Amount" class="form-label">Сумма</label>
                     <input asp-for="Amount" class="form-input" type="number" min="0" step="any" />
                     <span asp-validation-for="Amount" class="text-danger"></span>
                 </div>
 
                 <div class="input-group mb-3">
-                    <label asp-for="DurationInDays" class="form-label"></label>
+                    <label asp-for="DurationInDays" class="form-label">Количчество дней</label>
                     <input asp-for="DurationInDays" class="form-input" type="number" min="0" step="any"/>
                     <span asp-validation-for="DurationInDays" class="text-danger"></span>
                 </div>
             </div>
 
             <div class="input-group mb-4">
-                <label asp-for="Comment" class="form-label"></label>
+                <label asp-for="Comment" class="form-label">Комментарий</label>
                 <textarea asp-for="Comment" class="form-input" rows="4"></textarea>
                 <span asp-validation-for="Comment" class="text-danger"></span>
             </div>

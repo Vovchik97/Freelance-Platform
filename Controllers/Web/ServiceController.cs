@@ -23,7 +23,7 @@ public class ServiceController : Controller
     }
     
     [AllowAnonymous]
-    public async Task<IActionResult> Index(string? search, string? status, decimal? minBudget, decimal? maxBudget, string sort)
+    public async Task<IActionResult> Index(string? search, string? status, decimal? minPrice, decimal? maxPrice, string sort)
     {
         var query = _context.Services.Include(s => s.Freelancer).AsQueryable();
 
@@ -37,19 +37,19 @@ public class ServiceController : Controller
             query = query.Where(s => s.Status == parsedStatus);
         }
         
-        if (minBudget.HasValue)
+        if (minPrice.HasValue)
         {
-            query = query.Where(s => s.Price >= minBudget);    
+            query = query.Where(s => s.Price >= minPrice);    
         }
 
-        if (maxBudget.HasValue)
+        if (maxPrice.HasValue)
         {
-            query = query.Where(s => s.Price <= maxBudget);
+            query = query.Where(s => s.Price <= maxPrice);
         }
         
-        if (sort == "budget_desc")
+        if (sort == "price_desc")
             query = query.OrderByDescending(s => s.Price);
-        else if (sort == "budget_asc")
+        else if (sort == "price_asc")
             query = query.OrderBy(s => s.Price);
         else
             query = query.OrderByDescending(s => s.CreatedAt);
@@ -58,8 +58,8 @@ public class ServiceController : Controller
 
         ViewBag.Searcg = search;
         ViewBag.Status = status;
-        ViewBag.MinBudget = minBudget;
-        ViewBag.MaxBudget = maxBudget;
+        ViewBag.MinBudget = minPrice;
+        ViewBag.MaxBudget = maxPrice;
         ViewBag.Sort = sort;
         
         return View(services);

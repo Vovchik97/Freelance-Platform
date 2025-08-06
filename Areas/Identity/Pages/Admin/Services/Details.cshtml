@@ -1,4 +1,6 @@
 ﻿@page "{id}"
+@using System.Globalization
+@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model FreelancePlatform.Areas.Identity.Pages.Admin.Services.DetailsModel
 @{
     ViewData["Title"] = "Детали услуги";
@@ -16,7 +18,7 @@
             <dd class="col-sm-9">@Model.Service?.Description</dd>
 
             <dt class="col-sm-3">Цена</dt>
-            <dd class="col-sm-9">@Model.Service?.Price.ToString("C")</dd>
+            <dd class="col-sm-9">@Model.Service?.Price.ToString("C", new CultureInfo("ru-RU"))</dd>
 
             <dt class="col-sm-3">Фрилансер</dt>
             <dd class="col-sm-9">@Model.Service?.Freelancer?.UserName</dd>

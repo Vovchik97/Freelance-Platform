@@ -23,8 +23,8 @@ public class ServiceController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Service>>> ListServices([FromQuery] string? search,
         [FromQuery] string? status,
-        [FromQuery] decimal? minBudget,
-        [FromQuery] decimal? maxBudget,
+        [FromQuery] decimal? minPrice,
+        [FromQuery] decimal? maxPrice,
         [FromQuery] string? sort)
     {
         var query = _context.Services.Include(p => p.SelectedClient).AsQueryable();
@@ -39,20 +39,20 @@ public class ServiceController : ControllerBase
             query = query.Where(s => s.Status == parsedStatus);
         }
 
-        if (minBudget.HasValue)
+        if (minPrice.HasValue)
         {
-            query = query.Where(s => s.Price >= minBudget);
+            query = query.Where(s => s.Price >= minPrice);
         }
 
-        if (maxBudget.HasValue)
+        if (maxPrice.HasValue)
         {
-            query = query.Where(s => s.Price <= maxBudget);
+            query = query.Where(s => s.Price <= maxPrice);
         }
 
         // Сортировка
-        if (sort == "budget_desc")
+        if (sort == "price_desc")
             query = query.OrderByDescending(s => s.Price);
-        else if (sort == "budget_asc")
+        else if (sort == "price_asc")
             query = query.OrderBy(s => s.Price);
         else
             query = query.OrderByDescending(s => s.CreatedAt);
