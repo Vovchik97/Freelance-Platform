@@ -31,7 +31,7 @@ public class ChatControllerTests
     {
         var store = new Mock<IUserStore<IdentityUser>>();
         var mock = new Mock<UserManager<IdentityUser>>(
-            store.Object, null, null, null, null, null, null, null, null);
+            store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
 
         mock.Setup(m => m.GetUserId(It.IsAny<ClaimsPrincipal>()))
             .Returns((ClaimsPrincipal principal) =>

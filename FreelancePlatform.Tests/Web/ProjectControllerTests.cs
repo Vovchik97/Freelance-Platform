@@ -34,7 +34,7 @@ public class ProjectControllerTests
     {
         var store = new Mock<IUserStore<IdentityUser>>();
         var mock = new Mock<UserManager<IdentityUser>>(
-            store.Object, null, null, null, null, null, null, null, null);
+            store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
         
         mock.Setup(m => m.GetUserId(It.IsAny<ClaimsPrincipal>()))
             .Returns((ClaimsPrincipal principal) =>
@@ -73,7 +73,7 @@ public class ProjectControllerTests
         );
         await _context.SaveChangesAsync();
 
-        var result = await _controller.Index("One", ProjectStatus.Open.ToString(), 50, 300, null);
+        var result = await _controller.Index("One", ProjectStatus.Open.ToString(), 50, 300, null!);
         var view = Assert.IsType<ViewResult>(result);
         var model = Assert.IsAssignableFrom<IEnumerable<Project>>(view.Model);
         Assert.Single(model);

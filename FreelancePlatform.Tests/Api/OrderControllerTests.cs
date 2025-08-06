@@ -243,7 +243,7 @@ public class OrderControllerTests
         Assert.IsType<ForbidResult>(result.Result);
     }
 
-    public void Dispose()
+    private void Dispose()
     {
         _context.Dispose();
     }

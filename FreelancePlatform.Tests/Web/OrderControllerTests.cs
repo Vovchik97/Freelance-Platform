@@ -33,7 +33,7 @@ public class OrderControllerTests
     {
         var store = new Mock<IUserStore<IdentityUser>>();
         var mock = new Mock<UserManager<IdentityUser>>(
-            store.Object, null, null, null, null, null, null, null, null);
+            store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
 
         mock.Setup(m => m.GetUserAsync(It.IsAny<ClaimsPrincipal>()))
             .ReturnsAsync((ClaimsPrincipal principal) =>
@@ -41,7 +41,7 @@ public class OrderControllerTests
                 var userId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
                 return new IdentityUser
                 {
-                    Id = userId,
+                    Id = userId!,
                     UserName = userId + "@test.com",
                     Email = userId + "@test.com"
                 };

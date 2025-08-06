@@ -249,7 +249,7 @@ public class ProjectControllerTests
         Assert.Equal(ProjectStatus.Open, projects.First().Status);
     }
 
-    public void Dispose()
+    private void Dispose()
     {
         _context.Dispose();
     }

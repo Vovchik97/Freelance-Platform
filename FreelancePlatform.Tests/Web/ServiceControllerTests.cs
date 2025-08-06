@@ -34,7 +34,7 @@ public class ServiceControllerTests
     {
         var store = new Mock<IUserStore<IdentityUser>>();
         var mock = new Mock<UserManager<IdentityUser>>(
-            store.Object, null, null, null, null, null, null, null, null);
+            store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
         
         mock.Setup(m => m.GetUserId(It.IsAny<ClaimsPrincipal>()))
             .Returns((ClaimsPrincipal principal) =>
@@ -73,7 +73,7 @@ public class ServiceControllerTests
         );
         await _context.SaveChangesAsync();
 
-        var result = await _controller.Index("One", ServiceStatus.Available.ToString(), 50, 300, null);
+        var result = await _controller.Index("One", ServiceStatus.Available.ToString(), 50, 300, null!);
         var view = Assert.IsType<ViewResult>(result);
         var model = Assert.IsAssignableFrom<IEnumerable<Service>>(view.Model);
         Assert.Single(model);

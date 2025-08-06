@@ -233,7 +233,7 @@ public class ServiceControllerTests
         Assert.Equal(ServiceStatus.Available, services.First().Status);
     }
     
-    public void Dispose()
+    private void Dispose()
     {
         _context.Dispose();
     }

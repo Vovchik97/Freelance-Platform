@@ -16,7 +16,7 @@ public class AuthControllerTests
     public AuthControllerTests()
     {
         var store = new Mock<IUserStore<IdentityUser>>();
-        _userManagerMock = new Mock<UserManager<IdentityUser>>(store.Object, null, null, null, null, null, null, null, null);
+        _userManagerMock = new Mock<UserManager<IdentityUser>>(store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
         
         _configMock = new Mock<IConfiguration>();
         _configMock.Setup(c => c["Jwt:Key"]).Returns("ThisIsAVeryVeryStrongJwtKeyThatIsLongEnough123!");
