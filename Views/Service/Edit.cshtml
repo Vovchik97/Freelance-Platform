@@ -25,19 +25,11 @@ ViewData["Title"] = "Редактировать услугу";
                 <span asp-validation-for="Title" class="text-danger small"></span>
             </div>
 
-            <!-- Бюджет + Статус в одной строке -->
-            <div class="filters-row">
-                <div class="input-group flex-fill">
-                    <label asp-for="Price" class="form-label">Цена</label>
-                    <input asp-for="Price" class="form-input w-100" type="number" min="0" step="any" />
-                    <span asp-validation-for="Price" class="text-danger small"></span>
-                </div>
-
-                <div class="input-group flex-fill">
-                    <label asp-for="Status" class="form-label">Статус</label>
-                    <select asp-for="Status" class="form-input w-100" asp-items="Html.GetEnumSelectList<FreelancePlatform.Models.ServiceStatus>()"></select>
-                    <span asp-validation-for="Status" class="text-danger small"></span>
-                </div>
+            <!-- Бюджет -->
+            <div class="input-group flex-fill">
+                <label asp-for="Price" class="form-label">Цена</label>
+                <input asp-for="Price" class="form-input w-100" type="number" min="0" step="any" />
+                <span asp-validation-for="Price" class="text-danger small"></span>
             </div>
 
             <!-- Описание -->

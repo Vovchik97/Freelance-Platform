@@ -75,12 +75,28 @@
             Откликнуться на проект
         </a>
         }
-
-        @if (User.IsInRole("Freelancer") && User.Identity?.Name == Model.SelectedFreelancer?.UserName && Model.Status == ProjectStatus.InProgress)
+        
+        else if (User.IsInRole("Freelancer") && hasBid && Model.Status == ProjectStatus.Open)
         {
-        <form method="post" asp-action="CompleteProject" asp-route-id="@Model.Id" class="mt-3">
-            <button class="btn btn-outline-success">Завершить проект</button>
-        </form>
+        <p class="text-muted">Вы уже откликнулись на этот проект.</p>
+        }
+
+        else if (User.IsInRole("Freelancer") && User.Identity?.Name == Model.SelectedFreelancer?.UserName)
+        {
+            @if (Model.Status == ProjectStatus.InProgress)
+            {
+                <form method="post" asp-action="CompleteProject" asp-route-id="@Model.Id" class="mt-3">
+                    <button class="btn btn-outline-success">Завершить проект</button>
+                </form>
+            }
+            @if (Model.Status == ProjectStatus.Completed)
+            {
+                <p class="text-muted">Вы уже выполнили этот проект.</p>
+            }
+        }
+        else if (User.IsInRole("Freelancer"))
+        {
+            <p class="text-muted">Вы не можете откликнуться на этот проект, так как он не является открытым.</p>
         }
     </div>
 

@@ -1,4 +1,6 @@
 ﻿@page
+@using FreelancePlatform.Models
+@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model FreelancePlatform.Areas.Identity.Pages.Admin.Services.IndexModel
 @{
 ViewData["Title"] = "Услуги";
@@ -21,9 +23,18 @@ ViewData["Title"] = "Услуги";
         <td>@service.Freelancer?.UserName</td>
         <td>@GetStatusText(service.Status.ToString())</td>
         <td>
-            <form method="post" asp-page-handler="Close" asp-route-id="@service.Id" class="d-inline">
-                <button class="btn btn-sm btn-warning">Закрыть</button>
-            </form>
+            @if (service.Status == ServiceStatus.Available)
+            {
+                <form method="post" asp-page-handler="Close" asp-route-id="@service.Id" class="d-inline">
+                    <button class="btn btn-sm btn-warning">Закрыть</button>
+                </form>
+            }
+            else
+            {
+                <form method="post" asp-page-handler="Open" asp-route-id="@service.Id" class="d-inline">
+                    <button class="btn btn-sm btn-success">Открыть</button>
+                </form>
+            }
             <form method="post" asp-page-handler="Delete" asp-route-id="@service.Id" class="d-inline">
                 <button class="btn btn-sm btn-danger">Удалить</button>
             </form>

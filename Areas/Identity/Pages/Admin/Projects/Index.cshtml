@@ -1,4 +1,6 @@
 ﻿@page
+@using FreelancePlatform.Models
+@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model FreelancePlatform.Areas.Identity.Pages.Admin.Projects.IndexModel
 @{
 ViewData["Title"] = "Проекты";
@@ -21,9 +23,18 @@ ViewData["Title"] = "Проекты";
         <td>@project.Client?.UserName</td>
         <td>@GetStatusText(project.Status.ToString())</td>
         <td>
-            <form method="post" asp-page-handler="Close" asp-route-id="@project.Id" class="d-inline">
-                <button class="btn btn-sm btn-warning">Закрыть</button>
-            </form>
+            @if (project.Status == ProjectStatus.Open)
+            {
+                <form method="post" asp-page-handler="Close" asp-route-id="@project.Id" class="d-inline">
+                    <button class="btn btn-sm btn-warning">Закрыть</button>
+                </form>
+            }
+            else if (project.Status == ProjectStatus.Cancelled)
+            {
+                <form method="post" asp-page-handler="Open" asp-route-id="@project.Id" class="d-inline">
+                    <button class="btn btn-sm btn-success">Открыть</button>
+                </form>
+            }
             <form method="post" asp-page-handler="Delete" asp-route-id="@project.Id" class="d-inline">
                 <button class="btn btn-sm btn-danger">Удалить</button>
             </form>

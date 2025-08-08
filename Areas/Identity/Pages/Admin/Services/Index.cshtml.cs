@@ -26,6 +26,16 @@ public class IndexModel : PageModel
             .ToListAsync();
     }
     
+    public async Task<IActionResult> OnPostOpenAsync(int id)
+    {
+        var service = await _context.Services.FindAsync(id);
+        if (service is null) return NotFound();
+        
+        service.Status = ServiceStatus.Available;
+        await _context.SaveChangesAsync();
+        return RedirectToPage();
+    }
+    
     public async Task<IActionResult> OnPostCloseAsync(int id)
     {
         var service = await _context.Services.FindAsync(id);

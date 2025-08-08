@@ -26,6 +26,16 @@ public class IndexModel : PageModel
             .ToListAsync();
     }
 
+    public async Task<IActionResult> OnPostOpenAsync(int id)
+    {
+        var project = await _context.Projects.FindAsync(id);
+        if (project is null) return NotFound();
+        
+        project.Status = ProjectStatus.Open;
+        await _context.SaveChangesAsync();
+        return RedirectToPage();
+    }
+
     public async Task<IActionResult> OnPostCloseAsync(int id)
     {
         var project = await _context.Projects.FindAsync(id);
