@@ -11,4 +11,8 @@ public class Message
     public DateTime SentAt { get; set; } = DateTime.UtcNow;
 
     public bool IsRead { get; set; } = false;
+    
+    public string? AttachmentUrl { get; set; } // Ссылка на файл
+    public string? AttachmentName { get; set; } // Имя файла (для отображения)
+    public string? AttachmentType { get; set; } // MIME-тип (image/png и т.п.)
 }

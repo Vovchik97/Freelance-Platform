@@ -87,4 +87,42 @@ public class ChatController : Controller
 
         return Json(new { count = unreadChatCount });
     }
+    
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadAttachment(int chatId, List<IFormFile> files)
+    {
+        var userId = _userManager.GetUserId(User);
+        if (files == null || files.Count == 0)
+            return BadRequest();
+
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", userId);
+        Directory.CreateDirectory(uploadsFolder);
+
+        var fileResults = new List<object>();
+
+        foreach (var file in files)
+        {
+            if (file.Length == 0) continue;
+
+            var fileName = Guid.NewGuid() + "_" + Path.GetFileName(file.FileName);
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            fileResults.Add(new
+            {
+                url = $"/uploads/{userId}/{fileName}",
+                name = file.FileName,
+                type = file.ContentType
+            });
+        }
+
+        // Сериализуем в чистый JSON без $id, $values
+        var json = System.Text.Json.JsonSerializer.Serialize(fileResults);
+        return Content(json, "application/json");
+    }
 }

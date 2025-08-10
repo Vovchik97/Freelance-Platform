@@ -6,32 +6,62 @@ ViewData["Title"] = "Чат";
 <input type="hidden" id="chatId" value="@Model.Id" />
 <input type="hidden" id="currentUserId" value="@ViewBag.CurrentUserId" />
 <input type="hidden" id="userName" value="@ViewBag.UserName" />
+@Html.AntiForgeryToken()
 
 <div class="container">
-<div class="project-card">
-    <div class="card-header">Чат с @ViewBag.OtherUser</div>
-    <div class="card-body" style="height: 400px; overflow-y: auto;">
-        <ul id="messages" class="list-unstyled p-2">
-            @foreach (var msg in Model.Messages)
-            {
-            bool isMe = msg.SenderId == ViewBag.CurrentUserId;
-            <li class="d-flex mb-2 @(isMe ? "justify-content-end" : "justify-content-start")">
-                <div class="message-bubble @(isMe ? "me" : "other")">
-                    @msg.Text
-                    <div class="message-time">@msg.SentAt.ToLocalTime().ToString("g")</div>
-                </div>
-            </li>
-            }
-        </ul>
+    <div class="project-card">
+        <div class="card-header">Чат с @ViewBag.OtherUser</div>
+        <div class="card-body" style="height: 400px; overflow-y: auto;">
+            <ul id="messages" class="list-unstyled p-2">
+                @foreach (var msg in Model.Messages)
+                {
+                bool isMe = msg.SenderId == ViewBag.CurrentUserId;
+                <li class="d-flex mb-2 @(isMe ? "justify-content-end" : "justify-content-start")">
+                    <div class="message-bubble @(isMe ? "me" : "other")">
+                        @if (!string.IsNullOrEmpty(msg.AttachmentUrl))
+                        {
+                        <div class="attachment-preview">
+                            @if (msg.AttachmentType?.StartsWith("image/") == true)
+                            {
+                            <img src="@msg.AttachmentUrl" alt="Изображение" style="max-width: 200px; border-radius: 8px;" />
+                            }
+                            else
+                            {
+                            <div class="file-attachment">
+                                <i class="fas fa-file"></i>
+                                <a href="@msg.AttachmentUrl" target="_blank">@msg.AttachmentName</a>
+                            </div>
+                            }
+                        </div>
+                        }
+                        @if (!string.IsNullOrEmpty(msg.Text))
+                        {
+                        <div>@msg.Text</div>
+                        }
+                        <div class="message-time">@msg.SentAt.ToLocalTime().ToString("g")</div>
+                    </div>
+                </li>
+                }
+            </ul>
+        </div>
+        <div class="card-footer d-flex align-items-center">
+            <!-- Кнопка загрузки файла -->
+            <label class="btn btn-outline-secondary me-2" style="cursor: pointer;">
+                <i class="fas fa-paperclip"></i>
+                <input type="file" id="fileInput" style="display: none;" multiple />
+            </label>
+
+            <!-- Превью выбранных файлов -->
+            <div id="attachmentsPreview" class="d-flex flex-wrap gap-2 me-2" style="flex-grow: 1; max-height: 60px; overflow-y: auto;"></div>
+
+            <!-- Поле ввода и кнопка отправки -->
+            <input type="text" id="messageInput" class="form-control me-2" placeholder="Введите сообщение" />
+            <button id="sendButton" class="btn btn-primary">Отправить</button>
+        </div>
     </div>
-    <div class="card-footer d-flex">
-        <input type="text" id="messageInput" class="form-control me-2" placeholder="Введите сообщение" />
-        <button class="btn btn-primary" onclick="sendMessage()">Отправить</button>
-    </div>
-</div>
 </div>
 
 @section Scripts {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.2/signalr.min.js"></script>
-<script src="~/js/chat.js"></script>
+<script src="~/js/chat.js?v=2"></script>
 }
