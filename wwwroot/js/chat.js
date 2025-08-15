@@ -1,67 +1,70 @@
 ﻿document.addEventListener("DOMContentLoaded", function () {
-    console.log("✅ DOM загружен");
-
     let selectedFiles = [];
-    window.selectedFiles = selectedFiles; // для отладки в консоли
 
-    // Проверка элементов
     const fileInput = document.getElementById("fileInput");
     const messageInput = document.getElementById("messageInput");
     const sendButton = document.getElementById("sendButton");
     const messagesList = document.getElementById("messages");
     const chatIdInput = document.getElementById("chatId");
-    const userNameInput = document.getElementById("currentUserId");
+    const userNameInput = document.getElementById("userName");
+    const currentUserIdInput = document.getElementById("currentUserId");
+    const attachmentsPreview = document.getElementById("attachmentsPreview");
 
-    console.log("Элементы:", {
-        fileInput, messageInput, sendButton, messagesList, chatIdInput, userNameInput
-    });
-
-    if (!fileInput || !messageInput || !sendButton || !messagesList || !chatIdInput || !userNameInput) {
-        console.error("❌ Не все элементы найдены!");
+    if (!fileInput || !messageInput || !sendButton || !messagesList || !chatIdInput || !userNameInput || !currentUserIdInput) {
         return;
     }
 
-    // 1. Обработчик выбора файла
+    const maxHeight = 150;
+
+    function autoResizeTextarea() {
+        messageInput.style.height = 'auto';
+        if (messageInput.scrollHeight > maxHeight) {
+            messageInput.style.height = maxHeight + 'px';
+            messageInput.style.overflowY = 'auto';
+        } else {
+            messageInput.style.height = messageInput.scrollHeight + 'px';
+            messageInput.style.overflowY = 'hidden';
+        }
+    }
+
+    messageInput.style.resize = "none";
+    messageInput.style.overflowY = 'hidden';
+    messageInput.addEventListener('input', autoResizeTextarea);
+    autoResizeTextarea();
+
     fileInput.addEventListener("change", function (e) {
-        console.log("🎯 change: файлы выбраны", e.target.files);
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
 
         selectedFiles.push(...files);
-        console.log("📂 selectedFiles:", selectedFiles);
-
         updateAttachmentsPreview();
     });
 
-    // 2. Превью вложений
     function updateAttachmentsPreview() {
-        const preview = document.getElementById("attachmentsPreview");
-        if (!preview) {
-            console.error("❌ attachmentsPreview не найден");
+        if (!attachmentsPreview) return;
+
+        attachmentsPreview.innerHTML = "";
+
+        if (selectedFiles.length === 0) {
+            attachmentsPreview.className = "attachments-preview";
+            attachmentsPreview.style.display = "none";
             return;
         }
 
-        preview.innerHTML = "";
+        attachmentsPreview.style.display = "flex";
+        attachmentsPreview.className = "attachments-preview d-flex flex-wrap gap-2 mb-2 p-2 rounded";
 
         selectedFiles.forEach((file, index) => {
-            console.log("🖼️ Обработка файла:", file.name, file.type);
-
             const item = document.createElement("div");
-            item.className = "attachment-item d-flex align-items-center bg-light p-1 rounded";
-            item.style.gap = "8px";
-            item.style.fontSize = "0.9em";
+            item.className = "attachment-item";
 
             if (file.type.startsWith("image/")) {
                 const img = document.createElement("img");
                 img.src = URL.createObjectURL(file);
-                img.style.width = "40px";
-                img.style.height = "40px";
-                img.style.objectFit = "cover";
-                img.style.borderRadius = "4px";
                 item.appendChild(img);
             } else {
                 const icon = document.createElement("i");
-                icon.className = "fas fa-file text-muted";
+                icon.className = "fas fa-file file-icon";
                 item.appendChild(icon);
             }
 
@@ -69,30 +72,94 @@
             name.textContent = file.name.length > 15 ? file.name.substring(0, 12) + "..." : file.name;
             item.appendChild(name);
 
-            const removeBtn = document.createElement("i");
-            removeBtn.className = "fas fa-times text-danger";
-            removeBtn.style.cursor = "pointer";
+            const removeBtn = document.createElement("div");
+            removeBtn.className = "remove-attachment";
+            removeBtn.title = "Удалить вложение";
             removeBtn.onclick = () => {
                 selectedFiles.splice(index, 1);
                 updateAttachmentsPreview();
+                fileInput.value = "";
             };
             item.appendChild(removeBtn);
 
-            preview.appendChild(item);
+            attachmentsPreview.appendChild(item);
         });
     }
 
-    // 3. Отправка
+    messageInput.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+        messageInput.classList.add("dragover");
+    });
+
+    messageInput.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        messageInput.classList.remove("dragover");
+    });
+
+    messageInput.addEventListener("drop", (e) => {
+        e.preventDefault();
+        messageInput.classList.remove("dragover");
+
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length === 0) return;
+
+        selectedFiles.push(...files);
+        updateAttachmentsPreview();
+    });
+
+    messageInput.addEventListener("paste", (e) => {
+        if (e.clipboardData.files.length > 0) {
+            e.preventDefault();
+            const files = Array.from(e.clipboardData.files);
+            selectedFiles.push(...files);
+            updateAttachmentsPreview();
+        }
+    });
+
+    document.body.addEventListener("click", function (e) {
+        if (e.target.closest("a.image-link")) {
+            e.preventDefault();
+            const link = e.target.closest("a.image-link");
+            const modal = document.getElementById("imageModal");
+            const modalImg = document.getElementById("modalImage");
+            modalImg.src = link.href;
+            modal.style.display = "block";
+        }
+    });
+
+    const modalClose = document.getElementById("modalClose");
+    modalClose.onclick = function () {
+        document.getElementById("imageModal").style.display = "none";
+        document.getElementById("modalImage").src = "";
+    };
+
+    const modal = document.getElementById("imageModal");
+    modal.onclick = function (e) {
+        if (e.target === modal) {
+            modal.style.display = "none";
+            document.getElementById("modalImage").src = "";
+        }
+    };
+
     async function sendMessage() {
-        const chatId = parseInt(document.getElementById("chatId").value);
-        const user = document.getElementById("userName").value;
-        const messageInput = document.getElementById("messageInput");
+        const chatId = parseInt(chatIdInput.value);
+        const userName = userNameInput.value;
         const message = messageInput.value.trim();
 
-        // 1. Сначала отправь файлы (если есть)
-        if (selectedFiles.length > 0) {
+        const filesToSend = [...selectedFiles];
+
+        messageInput.value = "";
+        selectedFiles = [];
+        updateAttachmentsPreview();
+        fileInput.value = "";
+        autoResizeTextarea();
+
+        let attachments = [];
+
+        if (filesToSend.length > 0) {
             const formData = new FormData();
-            selectedFiles.forEach(f => formData.append("files", f));
+            filesToSend.forEach(f => formData.append("files", f));
             formData.append("chatId", chatId);
 
             try {
@@ -104,61 +171,41 @@
                     body: formData
                 });
 
-                if (!response.ok) throw new Error("Ошибка загрузки");
+                if (!response.ok) throw new Error();
 
-                const attachments = await response.json();
-
-                // Отправляем каждый файл как отдельное сообщение
-                for (const att of attachments) {
-                    await connection.invoke("SendAttachment", chatId, user, att.url, att.name, att.type);
-                }
-            } catch (err) {
-                console.error("Ошибка отправки файла:", err);
+                attachments = await response.json();
+            } catch {
                 alert("Не удалось отправить файл");
                 return;
             }
         }
 
-        // 2. Потом отправь текст
-        if (message) {
+        if (message || attachments.length > 0) {
             try {
-                await connection.invoke("SendMessage", chatId, user, message);
-            } catch (err) {
-                console.error("Ошибка отправки текста:", err);
+                await connection.invoke("SendMessage", chatId, userName, message, attachments);
+            } catch {
                 alert("Не удалось отправить сообщение");
-                return;
             }
         }
-
-        // 3. Очистка
-        messageInput.value = "";
-        selectedFiles = [];
-        updateAttachmentsPreview();
     }
 
-    // Привяжем функцию глобально
     window.sendMessage = sendMessage;
 
-    // Кнопка
     sendButton.addEventListener("click", sendMessage);
 
-    // Enter
     messageInput.addEventListener("keypress", function (e) {
-        if (e.key === "Enter") {
+        if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             sendMessage();
         }
     });
 
-    // 4. Подключение SignalR
     const connection = new signalR.HubConnectionBuilder()
         .withUrl("/chatHub")
         .build();
 
     connection.on("ReceiveMessage", function (senderId, message, sentAt, attachments) {
-        console.log("📩 Получено сообщение:", { senderId, message, sentAt, attachments });
-
-        const currentUserId = document.getElementById("currentUserId").value;
+        const currentUserId = currentUserIdInput.value;
         const isMe = senderId === currentUserId;
 
         const messageElement = document.createElement("li");
@@ -172,26 +219,104 @@
         }
 
         if (attachments && attachments.length > 0) {
-            attachments.forEach(att => {
-                const attDiv = document.createElement("div");
-                attDiv.className = "attachment-preview mt-1";
+            const images = attachments.filter(a => a.type?.startsWith("image/"));
+            const videos = attachments.filter(a => a.type?.startsWith("video/"));
+            const audios = attachments.filter(a => a.type?.startsWith("audio/"));
+            const files = attachments.filter(a => !a.type?.startsWith("image/") && !a.type?.startsWith("video/") && !a.type?.startsWith("audio/"));
 
-                if (att.type?.startsWith("image/")) {
+            if (images.length > 0) {
+                const imgGrid = document.createElement("div");
+                imgGrid.className = "image-grid";
+
+                images.forEach(imgAtt => {
                     const img = document.createElement("img");
-                    img.src = att.url;
-                    img.style.maxWidth = "200px";
-                    img.style.borderRadius = "8px";
-                    attDiv.appendChild(img);
-                } else {
-                    const link = document.createElement("a");
-                    link.href = att.url;
-                    link.target = "_blank";
-                    link.textContent = att.name || "Файл";
-                    link.className = "file-link";
-                    attDiv.appendChild(link);
-                }
-                bubble.appendChild(attDiv);
-            });
+                    img.src = imgAtt.url;
+                    img.className = "message-image";
+                    img.loading = "lazy";
+                    img.onclick = () => window.open(imgAtt.url, "_blank");
+                    imgGrid.appendChild(img);
+                });
+
+                bubble.appendChild(imgGrid);
+            }
+
+            if (videos.length > 0) {
+                const vidGrid = document.createElement("div");
+                vidGrid.className = "image-grid";
+
+                videos.forEach(vidAtt => {
+                    const video = document.createElement("video");
+                    video.src = vidAtt.url;
+                    video.controls = true;
+                    video.className = "message-image";
+                    video.onclick = () => window.open(vidAtt.url, "_blank");
+                    vidGrid.appendChild(video);
+                });
+
+                bubble.appendChild(vidGrid);
+            }
+
+            if (audios.length > 0) {
+                const audioGrid = document.createElement("div");
+                audioGrid.className = "audio-grid";
+
+                audios.forEach(audioAtt => {
+                    const audio = document.createElement("audio");
+                    audio.src = audioAtt.url;
+                    audio.controls = true;
+                    audio.style.width = "100%";
+                    audioGrid.appendChild(audio);
+                });
+
+                bubble.appendChild(audioGrid);
+            }
+
+            if (files.length > 0) {
+                const filesGrid = document.createElement("div");
+                filesGrid.className = "attachments-grid";
+
+                files.forEach(att => {
+                    const fileItem = document.createElement("a");
+                    fileItem.href = att.url;
+                    fileItem.className = "file-attachment";
+                    fileItem.target = "_blank";
+
+                    const icon = document.createElement("div");
+                    icon.className = "file-icon-box";
+                    const ext = att.name.split('.').pop()?.toUpperCase() || "";
+                    const extSpan = document.createElement("span");
+                    extSpan.textContent = ext;
+                    icon.appendChild(extSpan);
+
+                    const info = document.createElement("div");
+                    info.className = "file-info";
+
+                    const name = document.createElement("div");
+                    name.className = "file-name";
+                    name.textContent = att.name;
+                    info.appendChild(name);
+
+                    if (att.size) {
+                        const size = document.createElement("div");
+                        size.className = "file-size";
+                        size.textContent = formatFileSize(att.size);
+                        info.appendChild(size);
+                    }
+
+                    fileItem.appendChild(icon);
+                    fileItem.appendChild(info);
+                    filesGrid.appendChild(fileItem);
+                });
+
+                bubble.appendChild(filesGrid);
+            }
+        }
+
+        function formatFileSize(bytes) {
+            const sizes = ['Б', 'КБ', 'МБ', 'ГБ'];
+            if (!bytes) return '';
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + sizes[i];
         }
 
         const time = document.createElement("div");
@@ -200,22 +325,20 @@
         bubble.appendChild(time);
 
         messageElement.appendChild(bubble);
-        document.getElementById("messages").appendChild(messageElement);
+        messagesList.appendChild(messageElement);
         scrollToBottom();
     });
 
     connection.start()
         .then(() => {
             const chatId = chatIdInput.value;
-            console.log("🔗 SignalR подключён, заходим в чат:", chatId);
             return connection.invoke("JoinChat", chatId);
-        })
-        .catch(err => console.error("❌ Ошибка SignalR:", err));
+        });
 
     function scrollToBottom() {
-        const container = document.querySelector("#messages");
+        const container = messagesList.parentElement;
         if (container) {
-            container.parentElement.scrollTop = container.parentElement.scrollHeight;
+            container.scrollTop = container.scrollHeight;
         }
     }
 

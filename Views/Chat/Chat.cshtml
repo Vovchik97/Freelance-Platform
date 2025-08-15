@@ -13,55 +13,123 @@ ViewData["Title"] = "Чат";
         <div class="card-header">Чат с @ViewBag.OtherUser</div>
         <div class="card-body" style="height: 400px; overflow-y: auto;">
             <ul id="messages" class="list-unstyled p-2">
-                @foreach (var msg in Model.Messages)
+                @foreach (var msg in Model.Messages.Where(m => m.ParentMessageId == null))
                 {
                 bool isMe = msg.SenderId == ViewBag.CurrentUserId;
                 <li class="d-flex mb-2 @(isMe ? "justify-content-end" : "justify-content-start")">
                     <div class="message-bubble @(isMe ? "me" : "other")">
-                        @if (!string.IsNullOrEmpty(msg.AttachmentUrl))
-                        {
-                        <div class="attachment-preview">
-                            @if (msg.AttachmentType?.StartsWith("image/") == true)
-                            {
-                            <img src="@msg.AttachmentUrl" alt="Изображение" style="max-width: 200px; border-radius: 8px;" />
-                            }
-                            else
-                            {
-                            <div class="file-attachment">
-                                <i class="fas fa-file"></i>
-                                <a href="@msg.AttachmentUrl" target="_blank">@msg.AttachmentName</a>
-                            </div>
-                            }
-                        </div>
-                        }
                         @if (!string.IsNullOrEmpty(msg.Text))
                         {
                         <div>@msg.Text</div>
                         }
+                        @if (msg.Attachments != null && msg.Attachments.Any())
+                        {
+                        var images = msg.Attachments
+                        .Where(a => a.AttachmentType?.StartsWith("image/") == true)
+                        .ToList();
+                        var videos = msg.Attachments
+                        .Where(a => a.AttachmentType?.StartsWith("video/") == true)
+                        .ToList();
+                        var audios = msg.Attachments
+                        .Where(a => a.AttachmentType?.StartsWith("audio/") == true)
+                        .ToList();
+                        var files = msg.Attachments
+                        .Where(a => !a.AttachmentType!.StartsWith("image/") &&
+                        !a.AttachmentType.StartsWith("video/") &&
+                        !a.AttachmentType.StartsWith("audio/"))
+                        .ToList();
+
+                        if (images.Any())
+                        {
+                        <div class="image-grid">
+                            @foreach (var img in images)
+                            {
+                            <a href="@img.AttachmentUrl" target="_blank" class="image-link" controls style="width: 100%;">
+                                <img src="@img.AttachmentUrl" alt="@img.AttachmentName" class="message-image" />
+                            </a>
+                            }
+                        </div>
+                        }
+
+                        @if (videos.Any())
+                        {
+                        <div class="image-grid">
+                            @foreach (var vid in videos)
+                            {
+                            <video src="@vid.AttachmentUrl" class="message-video" controls style="width: 100%;"
+                                   onclick="window.open('@vid.AttachmentUrl','_blank')"></video>
+                            }
+                        </div>
+                        }
+
+                        @if (audios.Any())
+                        {
+                        <div class="audio-grid">
+                            @foreach (var aud in audios)
+                            {
+                            <audio src="@aud.AttachmentUrl" controls style="width: 100%;"></audio>
+                            }
+                        </div>
+                        }
+
+
+                        if (files.Any())
+                        {
+                        <div class="attachments-grid">
+                            @foreach (var file in files)
+                            {
+                            var ext = System.IO.Path.GetExtension(file.AttachmentName)?.TrimStart('.').ToUpper();
+                            <a href="@file.AttachmentUrl" target="_blank" class="file-attachment">
+                                <div class="file-icon-box"><span>@ext</span></div>
+                                <div class="file-info">
+                                    <div class="file-name">@file.AttachmentName</div>
+                                </div>
+                            </a>
+                            }
+                        </div>
+                        }
+                        }
+
+
+
+
                         <div class="message-time">@msg.SentAt.ToLocalTime().ToString("g")</div>
                     </div>
                 </li>
                 }
             </ul>
         </div>
-        <div class="card-footer d-flex align-items-center">
-            <!-- Кнопка загрузки файла -->
-            <label class="btn btn-outline-secondary me-2" style="cursor: pointer;">
-                <i class="fas fa-paperclip"></i>
-                <input type="file" id="fileInput" style="display: none;" multiple />
-            </label>
+        <div class="card-footer d-flex flex-column">
 
-            <!-- Превью выбранных файлов -->
-            <div id="attachmentsPreview" class="d-flex flex-wrap gap-2 me-2" style="flex-grow: 1; max-height: 60px; overflow-y: auto;"></div>
+            @* Блок превью вложений будет отрисован только если есть вложения *@
+            <div id="attachmentsPreview" class="attachments-preview flex-wrap mb-2" style="display:none;">
+                <!-- JS вставляет сюда превью -->
+            </div>
 
-            <!-- Поле ввода и кнопка отправки -->
-            <input type="text" id="messageInput" class="form-control me-2" placeholder="Введите сообщение" />
-            <button id="sendButton" class="btn btn-primary">Отправить</button>
+            <div class="d-flex align-items-center w-100">
+                <div class="position-relative flex-grow-1 me-2">
+                    <textarea id="messageInput" class="form-control" placeholder="Введите сообщение"
+                              style="padding-right: 35px; resize: none; overflow-y: hidden; max-height: 150px;"></textarea>
+                    <label for="fileInput"
+                           style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+                   cursor: pointer; margin: 0; font-size: 18px;">
+                        📎
+                    </label>
+                    <input type="file" id="fileInput" style="display: none;" multiple />
+                </div>
+                <button id="sendButton" class="btn btn-primary">Отправить</button>
+            </div>
         </div>
     </div>
 </div>
 
+@* Модальное окно для просмотра фото *@
+<div id="imageModal" class="modal" style="display:none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8);">
+    <span id="modalClose" style="position: absolute; top: 20px; right: 35px; color: white; font-size: 40px; font-weight: bold; cursor: pointer;">&times;</span>
+    <img id="modalImage" style="margin: auto; display: block; max-width: 90%; max-height: 90vh; border-radius: 8px;" />
+</div>
+
 @section Scripts {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.2/signalr.min.js"></script>
-<script src="~/js/chat.js?v=2"></script>
+<script src="~/js/chat.js"></script>
 }

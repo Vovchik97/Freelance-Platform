@@ -50,8 +50,10 @@ public class ChatController : Controller
     public async Task<IActionResult> Chat(int chatId)
     {
         var chat = await _context.Chats
-            .Include(c => c.Messages.OrderBy(m => m.SentAt))
+            .Include(c => c.Messages.Where(m => m.ParentMessageId == null))
+            .ThenInclude(m => m.Attachments)
             .FirstOrDefaultAsync(c => c.Id == chatId);
+
 
         var userId = _userManager.GetUserId(User);
         var otherUserId = chat?.ClientId == userId ? chat?.FreelancerId : chat?.ClientId;
@@ -90,13 +92,13 @@ public class ChatController : Controller
     
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UploadAttachment(int chatId, List<IFormFile> files)
+    public async Task<IActionResult> UploadAttachment(List<IFormFile> files)
     {
         var userId = _userManager.GetUserId(User);
         if (files == null || files.Count == 0)
             return BadRequest();
 
-        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", userId);
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", userId!);
         Directory.CreateDirectory(uploadsFolder);
 
         var fileResults = new List<object>();

@@ -15,4 +15,8 @@ public class Message
     public string? AttachmentUrl { get; set; } // Ссылка на файл
     public string? AttachmentName { get; set; } // Имя файла (для отображения)
     public string? AttachmentType { get; set; } // MIME-тип (image/png и т.п.)
+    
+    public int? ParentMessageId { get; set; }  // для связи вложения с основным сообщением
+    public Message? ParentMessage { get; set; }
+    public ICollection<Message> Attachments { get; set; } = new List<Message>();  // вложения
 }
