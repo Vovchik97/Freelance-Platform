@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using System.Text;
 using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Web;
 using FreelancePlatform.Models;
@@ -178,5 +179,63 @@ public class ChatControllerTests
         var result = await _controller.GetUnreadChatsCount();
 
         Assert.IsType<UnauthorizedResult>(result);
+    }
+
+    [Fact]
+    public async Task UploadAttachment_ReturnsJson()
+    {
+        SetUser("client1");
+
+        var content = "hello world";
+        var fileName = "test.txt";
+        var ms = new MemoryStream(Encoding.UTF8.GetBytes(content));
+
+        var fileMock = new Mock<IFormFile>();
+        fileMock.Setup(f => f.FileName).Returns(fileName);
+        fileMock.Setup(f  => f.Length).Returns(ms.Length);
+        fileMock.Setup(f => f.ContentType).Returns("text/plain");
+        fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), default)).Returns((Stream target, CancellationToken _) =>
+        {
+            return ms.CopyToAsync(target);
+        });
+
+        var files = new List<IFormFile> { fileMock.Object };
+        
+        var result = await _controller.UploadAttachment(files) as ContentResult;
+
+        Assert.NotNull(result);
+        Assert.Equal("application/json", result.ContentType);
+        Assert.Contains("test.txt", result.Content);
+        Assert.Contains("/uploads/client1/", result.Content);
+    }
+
+    [Fact]
+    public async Task UploadAttachment_ReturnsBadRequest_WhenFilesNullOrEmpty()
+    {
+        SetUser("client1");
+        
+        var result1 = await _controller.UploadAttachment(null);
+        Assert.IsType<BadRequestResult>(result1);
+        
+        var result2 = await _controller.UploadAttachment(new List<IFormFile>());
+        Assert.IsType<BadRequestResult>(result2);
+    }
+
+    [Fact]
+    public async Task UploadAttachment_IgnoresEmptyFiles()
+    {
+        SetUser("client1");
+        
+        var fileMock = new Mock<IFormFile>();
+        fileMock.Setup(f => f.Length).Returns(0);
+        fileMock.Setup(f => f.FileName).Returns("empty.txt");
+        
+        var files = new List<IFormFile> { fileMock.Object };
+        
+        var result = await _controller.UploadAttachment(files) as ContentResult;
+        
+        Assert.NotNull(result);
+        Assert.Equal("application/json", result.ContentType);
+        Assert.Equal("[]", result.Content);
     }
 }

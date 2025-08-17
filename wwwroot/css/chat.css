@@ -119,20 +119,35 @@
     cursor: pointer;
 }
 
-.image-grid, 
-.audio-grid,
+.image-grid,
 .video-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
 }
 
-.audio-grid audio {
-    min-width: 300px;
-}
-
 .image-grid img,
 .video-grid video {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.audio-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    width: 100%;
+    min-inline-size: clamp(300px, 30%, 50%);
+}
+
+/* Только если сообщение содержит аудио — задаём минимальную ширину */
+.message-bubble:has(.audio-grid) {
+    min-width: 350px; /* Минимум, чтобы аудио влезло */
+}
+
+.audio-grid audio {
     max-width: 100%;
     max-height: 300px;
     border-radius: 8px;
@@ -180,14 +195,19 @@
 }
 
 .file-info {
-    display: flex;
-    flex-direction: column;
+    flex: 1;
+    min-width: 0;
 }
 
 .file-name {
     font-size: 14px;
     font-weight: 500;
     color: #000;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .file-size {
