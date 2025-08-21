@@ -36,7 +36,7 @@
                     break;
             }
         </p>
-        <p><strong>Фрилансер:</strong> @Model.Freelancer?.Email</p>
+        <p><strong>Фрилансер:</strong><a asp-controller="PublicProfile" asp-action="Public" asp-route-userId="@Model.FreelancerId">@Model.Freelancer?.Email</a></p>
 
         @if (User.Identity?.Name == Model.Freelancer?.UserName && Model.Status == ServiceStatus.Available)
         {

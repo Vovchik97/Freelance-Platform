@@ -139,12 +139,12 @@
     flex-wrap: wrap;
     gap: 4px;
     width: 100%;
-    min-inline-size: clamp(300px, 30%, 50%);
+    min-inline-size: clamp(150px, 30%, 50%);
 }
 
 /* Только если сообщение содержит аудио — задаём минимальную ширину */
 .message-bubble:has(.audio-grid) {
-    min-width: 350px; /* Минимум, чтобы аудио влезло */
+    min-width: 200px; /* Минимум, чтобы аудио влезло */
 }
 
 .audio-grid audio {

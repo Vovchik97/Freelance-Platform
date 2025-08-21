@@ -214,7 +214,7 @@ public class ChatControllerTests
     {
         SetUser("client1");
         
-        var result1 = await _controller.UploadAttachment(null);
+        var result1 = await _controller.UploadAttachment(default!);
         Assert.IsType<BadRequestResult>(result1);
         
         var result2 = await _controller.UploadAttachment(new List<IFormFile>());

@@ -128,7 +128,7 @@
                             @foreach (var bid in Model.Bids)
                             {
                                 <tr>
-                                    <td>@bid.Freelancer?.UserName</td>
+                                    <td><a asp-controller="PublicProfile" asp-action="Public" asp-route-userId="@bid.FreelancerId">@bid.Freelancer?.UserName</a></td>
                                     <td class="text-success">@bid.Amount.ToString("C", new CultureInfo("ru-RU"))</td>
                                     <td>@bid.DurationInDays</td>
                                     <td>@bid.Comment</td>

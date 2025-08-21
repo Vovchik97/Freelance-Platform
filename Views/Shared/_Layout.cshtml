@@ -66,6 +66,9 @@
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Service" asp-action="MyServices">Мои услуги</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="PublicProfile" asp-action="My">Моя страница</a>
+                    </li>
                     }
 
                     @if (User.Identity!.IsAuthenticated)
@@ -86,7 +89,7 @@
                     </li>
                     }
                     <li class="nav-item">
-                        <a class="nav-link" asp-area="Identity" asp-page="/Account/Manage/Index">Профиль</a>
+                        <a class="nav-link" asp-area="Identity" asp-page="/Account/Manage/Index">Личный кабинет</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" asp-area="Identity" asp-page="/Account/Logout">Выход</a>

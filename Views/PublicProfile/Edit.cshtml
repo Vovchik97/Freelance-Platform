@@ -1,0 +1,17 @@
+﻿@model FreelancePlatform.Models.UserProfile
+
+@{
+ViewData["Title"] = "Редактировать профиль";
+}
+
+<div class="container mt-4">
+    <h2>Редактировать страницу</h2>
+
+    <form asp-action="Edit" method="post">
+        <div class="input-group mb-3">
+            <label for="AboutMe">О себе</label>
+            <textarea asp-for="AboutMe" class="form-input" rows="5"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+    </form>
+</div>

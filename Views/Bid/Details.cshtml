@@ -11,7 +11,7 @@ ViewData["Title"] = "Заявка";
             <strong>Проект:</strong> @Model.Project?.Title
         </div>
         <div class="mb-3 text-secondary">
-            <strong>Фрилансер:</strong> @Model.Freelancer?.UserName
+            <strong>Фрилансер:</strong> <a asp-controller="PublicProfile" asp-action="Public" asp-route-userId="@Model.FreelancerId">@Model.Freelancer?.UserName</a>
         </div>
         <div class="mb-3">
             <strong>Сумма:</strong> <span class="text-success">@Model.Amount ₽</span>
