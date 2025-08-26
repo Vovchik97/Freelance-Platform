@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using Xunit;
 
 namespace FreelancePlatform.FreelancePlatform.Tests.Web;
 
@@ -41,7 +42,7 @@ public class PublicProfileControllerTests
     }
 
     [Fact]
-    public async Task Public_RetrunsNotFound_WhenUserIdIsNull()
+    public async Task Public_ReturnsNotFound_WhenUserIdIsNull()
     {
         var db = GetDbContext();
         var userManager = GetUserManagerMock();
