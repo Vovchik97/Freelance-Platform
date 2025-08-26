@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Xunit.Sdk;
 
 namespace FreelancePlatform.Controllers.Web;
 
@@ -25,7 +26,10 @@ public class ServiceController : Controller
     [AllowAnonymous]
     public async Task<IActionResult> Index(string? search, string? status, decimal? minPrice, decimal? maxPrice, string sort)
     {
-        var query = _context.Services.Include(s => s.Freelancer).AsQueryable();
+        var query = _context.Services
+            .Include(s => s.Freelancer)
+            .Include(s => s.Reviews)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -66,10 +70,12 @@ public class ServiceController : Controller
     }
     
     [AllowAnonymous]
-    public async Task<IActionResult> Details(int id)
+    public async Task<IActionResult> Details(int id, [FromQuery] List<int>? ratings)
     {
         var service = await _context.Services
             .Include(s => s.Freelancer)
+            .Include(s => s.Reviews)
+                .ThenInclude(r => r.User)
             .Include(s => s.Orders)
                 .ThenInclude(o => o.Client)
             .FirstOrDefaultAsync(s => s.Id == id);
@@ -78,6 +84,33 @@ public class ServiceController : Controller
         {
             return NotFound();
         }
+
+        var allReviews = service.Reviews?.ToList() ?? new List<Review>();
+
+        var averageRating = allReviews.Count > 0 ? allReviews.Average(r => r.Rating) : 0.0;
+        var reviewsCount = allReviews.Count;
+
+        var counts = Enumerable.Range(1, 5)
+            .ToDictionary(star => star, star => allReviews.Count(r => r.Rating == star));
+
+        var selected = (ratings ?? new List<int>())
+            .Where(star => star >= 1 && star <= 5)
+            .Distinct()
+            .OrderByDescending(x => x)
+            .ToList();
+
+        var filtered = selected.Any()
+            ? allReviews.Where(r => selected.Contains(r.Rating))
+            : allReviews;
+        
+        service.Reviews = filtered
+            .OrderByDescending(r => r.CreatedAt)
+            .ToList();
+        
+        ViewBag.AverageRating = averageRating;
+        ViewBag.ReviewsCount = reviewsCount;
+        ViewBag.ReviewCounts = counts;
+        ViewBag.SelectedRatings = selected;
         
         return View(service);
     }
@@ -195,6 +228,7 @@ public class ServiceController : Controller
         var myServices = await _context.Services
             .Where(s => s.FreelancerId == userId)
             .OrderByDescending(s => s.CreatedAt)
+            .Include(s => s.Reviews)
             .ToListAsync();
 
         return View(myServices);
@@ -335,5 +369,59 @@ public class ServiceController : Controller
         TempData["SuccessMessage"] = "Услуга успешно возобновлёна.";
         string? referer = Request.Headers["Referer"].ToString();
         return !string.IsNullOrEmpty(referer) ? Redirect(referer) : RedirectToAction("MyServices");
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Client")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddReview(int serviceId, string content, int rating)
+    {
+        var userId = _userManager.GetUserId(User);
+
+        if (rating < 1 || rating > 5)
+        {
+            TempData["ErrorMessage"] = "Оценка должна быть от 1 до 5.";
+            return RedirectToAction("Details", new { id = serviceId });
+        }
+
+        var hasOrdered = await _context.Orders
+            .AnyAsync(o => o.ServiceId == serviceId &&
+                           o.ClientId == userId &&
+                           o.Status == OrderStatus.Completed);
+
+        if (!hasOrdered)
+        {
+            TempData["ErrorMessage"] = "Оставить отзыв можно только после выполнения заказа.";
+            return RedirectToAction("Details", new { id = serviceId });
+        }
+
+        var existingReview = await _context.Reviews
+            .FirstOrDefaultAsync(r => r.ServiceId == serviceId && r.UserId == userId);
+
+        if (existingReview != null)
+        {
+            existingReview.Rating = rating;
+            existingReview.Comment = content;
+            existingReview.CreatedAt = DateTime.UtcNow;
+
+            _context.Reviews.Update(existingReview);
+        }
+        else
+        {
+            var review = new Review
+            {
+                ServiceId = serviceId,
+                UserId = userId!,
+                Rating = rating,
+                Comment = content,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Reviews.Add(review);
+        }
+        
+        await _context.SaveChangesAsync();
+        
+        return RedirectToAction("Details", new { id = serviceId });
     }
 }

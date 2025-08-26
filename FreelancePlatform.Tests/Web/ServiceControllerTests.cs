@@ -91,7 +91,7 @@ public class ServiceControllerTests
         _context.Services.Add(service);
         await _context.SaveChangesAsync();
 
-        var result = await _controller.Details(1);
+        var result = await _controller.Details(1, null);
 
         var view = Assert.IsType<ViewResult>(result);
         Assert.IsType<Service>(view.Model);
@@ -100,7 +100,7 @@ public class ServiceControllerTests
     [Fact]
     public async Task Details_ReturnsNotFound_WhenServiceMissing()
     {
-        var result = await _controller.Details(999);
+        var result = await _controller.Details(999, null);
         Assert.IsType<NotFoundResult>(result);
     }
 
@@ -374,5 +374,95 @@ public class ServiceControllerTests
         var result = await _controller.ResumeService(1);
 
         Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task AddReview_RatingOutOfRange_RedirectWithError()
+    {
+        SetUser("client1");
+
+        _controller.TempData = new TempDataDictionary(
+            new DefaultHttpContext(),
+            Mock.Of<ITempDataProvider>()
+        );
+        
+        var result = await _controller.AddReview(1, "Bad rating", 6);
+        
+        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal("Details", redirect.ActionName);
+        Assert.Equal("Оценка должна быть от 1 до 5.", _controller.TempData["ErrorMessage"]);
+    }
+
+    [Fact]
+    public async Task AddReview_NoCompletedOrder_RedirectWithError()
+    {
+        SetUser("client1");
+
+        _controller.TempData = new TempDataDictionary(
+            new DefaultHttpContext(),
+            Mock.Of<ITempDataProvider>()
+        );
+        
+        var service = new Service { Id = 1, Title = "s1", Description = "s1", Status = ServiceStatus.Available, FreelancerId = "freelancer1" };
+        _context.Services.Add(service);
+        await _context.SaveChangesAsync();
+        
+        var result = await _controller.AddReview(1, "Test rating", 4);
+        
+        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal("Details", redirect.ActionName);
+        Assert.Equal("Оставить отзыв можно только после выполнения заказа.", _controller.TempData["ErrorMessage"]);
+    }
+
+    [Fact]
+    public async Task AddReview_ExistingReview_UpdateReview()
+    {
+        SetUser("client1");
+
+        _controller.TempData = new TempDataDictionary(
+            new DefaultHttpContext(),
+            Mock.Of<ITempDataProvider>()
+        );
+        
+        var service = new Service { Id = 1, Title = "s1", Description = "s1", Status = ServiceStatus.Available, FreelancerId = "freelancer1" };
+        var order = new Order { Id = 1, ServiceId = 1, ClientId = "client1", Status = OrderStatus.Completed };
+        var review = new Review { Id = 1, ServiceId = 1, UserId = "client1", Rating = 4, Comment = "Test rating" };
+        _context.Services.Add(service);
+        _context.Orders.Add(order);
+        _context.Reviews.Add(review);
+        await _context.SaveChangesAsync();
+        
+        var result = await _controller.AddReview(1, "New rating", 5);
+        
+        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        var updatedReview = await _context.Reviews.FirstAsync();
+        Assert.Equal(5, updatedReview.Rating);
+        Assert.Equal("New rating", updatedReview.Comment);
+    }
+
+    [Fact]
+    public async Task AddReview_NewReview_CreateReview()
+    {
+        SetUser("client1");
+
+        _controller.TempData = new TempDataDictionary(
+            new DefaultHttpContext(),
+            Mock.Of<ITempDataProvider>()
+        );
+        
+        var service = new Service { Id = 1, Title = "s1", Description = "s1", Status = ServiceStatus.Available, FreelancerId = "freelancer1" };
+        var order = new Order { Id = 1, ServiceId = 1, ClientId = "client1", Status = OrderStatus.Completed };
+        _context.Services.Add(service);
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+        
+        var result = await _controller.AddReview(1, "Test rating", 5);
+        
+        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        var review = await _context.Reviews.FirstOrDefaultAsync();
+        Assert.NotNull(review);
+        Assert.Equal("client1", review!.UserId);
+        Assert.Equal(5, review.Rating);
+        Assert.Equal("Test rating", review.Comment);
     }
 }

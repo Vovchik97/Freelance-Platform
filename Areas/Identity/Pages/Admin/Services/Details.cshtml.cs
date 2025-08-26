@@ -20,6 +20,8 @@ public class DetailsModel : PageModel
     {
         Service = await _context.Services
             .Include(s => s.Freelancer) // загрузка данных фрилансера
+            .Include(s => s.Reviews)
+            .ThenInclude(r => r.User)
             .FirstOrDefaultAsync(s => s.Id == id);
 
         if (Service == null)
@@ -28,5 +30,19 @@ public class DetailsModel : PageModel
         }
 
         return Page();
+    }
+
+    public async Task<IActionResult> OnPostDeleteReviewAsync(int reviewId, int serviceId)
+    {
+        var review = await _context.Reviews.FindAsync(reviewId);
+        if (review == null)
+        {
+            return NotFound();
+        }
+
+        _context.Reviews.Remove(review);
+        await _context.SaveChangesAsync();
+        
+        return RedirectToPage(new { id = serviceId });
     }
 }

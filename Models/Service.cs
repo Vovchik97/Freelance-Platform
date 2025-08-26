@@ -15,6 +15,7 @@ public class Service
     public DateTime CreatedAt { get; set; }
     public ServiceStatus Status { get; set; }
     public List<Order> Orders { get; set; } = new List<Order>();
+    public List<Review> Reviews { get; set; } = new List<Review>();
     public string? SelectedClientId { get; set; }
 
     [ForeignKey("SelectedClientId")]

@@ -6,17 +6,28 @@
 @inject Microsoft.AspNetCore.Identity.UserManager<IdentityUser> UserManager
 
 @{
-ViewData["Title"] = "Моя страница";
-}
-
-@{
 var userId = UserManager.GetUserId(User);
 var isOwnProfile = userId == Model.UserId; // Model.UserId — id пользователя, чей профиль отображаем
+    
+ViewData["Title"] = isOwnProfile ? "Моя страница" : $"{Model.UserName} - Профиль";
 }
 
 <div class="container mt-4">
     <div class="header">
         <h1>@Model.UserName</h1>
+        @if (Model.AverageRating.HasValue)
+        {
+        <div class="star-rating mb-2" title="@($"{Model.AverageRating.Value:F1} из 5")">
+            <div class="back-stars">★★★★★
+                <div class="front-stars" style="width:@(Model.AverageRating.Value / 5.0 * 100)%">★★★★★</div>
+            </div>
+            <span class="ms-2 text-muted">(@Model.ReviewsCount отзывов)</span>
+        </div>
+        }
+        else
+        {
+        <p class="text-muted">Ещё нет отзывов</p>
+        }
     </div>
     
     <h2>О себе</h2>
@@ -62,6 +73,16 @@ var isOwnProfile = userId == Model.UserId; // Model.UserId — id пользов
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
                         <span>@service.CreatedAt.ToString("dd.MM.yyyy")</span>
+                    </div>
+                    <!-- Средний рейтинг и количество отзывов -->
+                    <div class="star-rating mb-2" title="@($"{(service.Reviews?.Any() == true ? service.Reviews.Average(r => r.Rating) : 0):F1} из 5")">
+                        <div class="back-stars">
+                            ★★★★★
+                            <div class="front-stars" style="width:@(service.Reviews?.Any() == true ? service.Reviews.Average(r => r.Rating) / 5.0 * 100 : 0)%">
+                                ★★★★★
+                            </div>
+                        </div>
+                        <span class="ms-2 text-muted">(@(service.Reviews?.Count ?? 0) отзывов)</span>
                     </div>
                 </div>
 

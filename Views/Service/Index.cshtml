@@ -109,6 +109,16 @@ ViewData["Title"] = "Каталог услуг";
                             </svg>
                             <span>@service.CreatedAt.ToString("dd.MM.yyyy")</span>
                         </div>
+                        <!-- Средний рейтинг и количество отзывов -->
+                        <div class="star-rating mb-2" title="@($"{(service.Reviews?.Any() == true ? service.Reviews.Average(r => r.Rating) : 0):F1} из 5")">
+                            <div class="back-stars">
+                                ★★★★★
+                                <div class="front-stars" style="width:@(service.Reviews?.Any() == true ? service.Reviews.Average(r => r.Rating) / 5.0 * 100 : 0)%">
+                                    ★★★★★
+                                </div>
+                            </div>
+                            <span class="ms-2 text-muted">(@(service.Reviews?.Count ?? 0) отзывов)</span>
+                        </div>
                     </div>
 
                     <div class="project-actions">

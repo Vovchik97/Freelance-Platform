@@ -14,6 +14,7 @@ public class AppDbContext : IdentityDbContext
     public DbSet<Service> Services { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<UserProfile> UserProfiles { get; set; }
+    public DbSet<Review> Reviews { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) 
     {

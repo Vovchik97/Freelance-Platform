@@ -1,4 +1,6 @@
-﻿namespace FreelancePlatform.Dto.Profiles;
+﻿using FreelancePlatform.Models;
+
+namespace FreelancePlatform.Dto.Profiles;
 
 public class ServiceInfoDto
 {
@@ -10,5 +12,7 @@ public class ServiceInfoDto
     public string? Status { get; set; }
     public double? Rating { get; set; } = null;
     public int OrdersCount { get; set; }
+    
+    public List<Review> Reviews { get; set; } = new List<Review>();
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

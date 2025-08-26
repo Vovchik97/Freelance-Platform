@@ -1,6 +1,9 @@
 ﻿@using System.Globalization
+@using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @model FreelancePlatform.Models.Service
+@inject Microsoft.AspNetCore.Identity.UserManager<IdentityUser> UserManager
+
 @{
     ViewData["Title"] = "Детали услуги";
 }
@@ -18,6 +21,18 @@
     <!-- Карточка услуги -->
     <div class="filters-card mx-auto mb-5" style="max-width: 900px;">
         <h2 class="filters-title mb-3">@Model.Title</h2>
+
+        <!-- Средний рейтинг и количество отзывов -->
+        <div class="star-rating mb-2" title="@($"{(Model.Reviews.Any() ? Model.Reviews.Average(r => r.Rating) : 0):F1} из 5")">
+            <div class="back-stars">
+                ★★★★★
+                <div class="front-stars" style="width:@(Model.Reviews.Any() ? Model.Reviews.Average(r => r.Rating) / 5.0 * 100 : 0)%">
+                    ★★★★★
+                </div>
+            </div>
+            <span class="ms-2 text-muted">(@(Model.Reviews?.Count ?? 0) отзывов)</span>
+        </div>
+        
         <div class="text-muted mb-3">Создана: @Model.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
 
         <p><strong>Описание:</strong> @Model.Description</p>
@@ -154,5 +169,75 @@
         {
             <p class="text-muted">Заказов пока нет.</p>
         }
+    }
+    @if (User.IsInRole("Client") && Model.Status == ServiceStatus.Available)
+    {
+        var userId = UserManager.GetUserId(User);
+        var existingReview = Model.Reviews?.FirstOrDefault(r => r.UserId == userId);
+    <h3 class="mt-4">@((existingReview != null) ? "Редактировать отзыв" : "Оставить отзыв")</h3>
+
+    <form asp-action="AddReview" asp-controller="Service" method="post">
+        <input type="hidden" name="serviceId" value="@Model.Id" />
+
+        <div class="mb-3">
+            <label for="rating" class="form-label">Оценка</label>
+            <select name="rating" class="form-select" required>
+                <option value="5">★★★★★</option>
+                <option value="4">★★★★☆</option>
+                <option value="3">★★★☆☆</option>
+                <option value="2">★★☆☆☆</option>
+                <option value="1">★☆☆☆☆</option>
+            </select>
+        </div>
+
+        <div class="input-group mb-3">
+            <label for="content" class="form-label">Комментарий</label>
+            <textarea name="content" class="form-input w-100" rows="3" style="resize: vertical;">@existingReview?.Comment</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">@((existingReview != null) ? "Обновить отзыв" : "Отправить")</button>
+    </form>
+    }
+
+    <h3 class="mt-4">Отзывы</h3>
+
+    <form method="get" asp-action="Details" asp-route-id="@Model.Id" class="mb-3">
+        <div class="d-flex gap-2">
+            @for (int i = 5; i >= 1; i--)
+            {
+            <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="ratings"
+                       value="@i"
+                       id="rating-@i"
+                       @(ViewBag.SelectedRatings != null && ((List<int>)ViewBag.SelectedRatings).Contains(i) ? "checked" : "") />
+                <label class="form-check-label" for="rating-@i">
+                    @i ★
+                </label>
+            </div>
+            }
+            <button type="submit" class="btn btn-primary">Фильтровать</button>
+        </div>
+    </form>
+
+
+    @if (Model.Reviews != null && Model.Reviews.Any())
+    {
+    <div class="list-group">
+        @foreach (var review in Model.Reviews)
+        {
+        <div class="project-card">
+            <strong>@review.UserId</strong> —
+            @for (int i = 0; i < review.Rating; i++) { <span>⭐</span> }
+            <p>@review.Comment</p>
+            <small class="text-muted">@review.CreatedAt.ToLocalTime()</small>
+        </div>
+        }
+    </div>
+    }
+    else
+    {
+    <p>Пока нет отзывов.</p>
     }
 </div>

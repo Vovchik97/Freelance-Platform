@@ -190,3 +190,26 @@
     color: var(--danger);
     border: 1px solid var(--danger);
 }
+
+/* Стили для среднего рейтинга звезд */
+.star-rating {
+    display: inline-block;
+    font-size: 1rem; /* размер звезд */
+    line-height: 1;
+    position: relative;
+}
+
+.back-stars {
+    color: #ddd; /* фоновые (пустые) звезды */
+    position: relative;
+    display: inline-block;
+}
+
+.front-stars {
+    color: #f5c518; /* заполненные звезды */
+    position: absolute;
+    top: 0;
+    left: 0;
+    overflow: hidden;
+    white-space: nowrap;
+}

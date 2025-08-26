@@ -36,25 +36,34 @@ public class PublicProfileController : Controller
 
         var services = await _context.Services
             .Where(s => s.FreelancerId == userId)
-            .Select(s => new ServiceInfoDto
-            {
-                Id = s.Id,
-                Title = s.Title,
-                Description = s.Description,
-                Price = s.Price,
-                Rating = null,
-                FreelancerId = s.FreelancerId,
-                Status = s.Status.ToString(),
-                OrdersCount = s.Orders.Count
-            })
+            .Include(s => s.Reviews)
+            .Include(s => s.Orders)
             .ToListAsync();
+
+        var serviceDtos = services.Select(s => new ServiceInfoDto
+        {
+            Id = s.Id,
+            Title = s.Title,
+            Description = s.Description,
+            Price = s.Price,
+            FreelancerId = s.FreelancerId,
+            Status = s.Status.ToString(),
+            Reviews = s.Reviews.ToList(),
+            OrdersCount = s.Orders.Count
+        }).ToList();
+        
+        var allReviews = services.SelectMany(s => s.Reviews).ToList();
+        double? avgRating = allReviews.Any() ? allReviews.Average(r => r.Rating) : null;
+        int reviewsCount = allReviews.Count;
 
         var dto = new PublicProfileDto
         {
             UserId = userId,
             UserName = user.UserName ?? "(Без имени)",
             AboutMe = profile?.AboutMe ?? string.Empty,
-            Services = services
+            Services = serviceDtos,
+            AverageRating = avgRating,
+            ReviewsCount = reviewsCount
         };
 
         return View(dto);

@@ -29,4 +29,39 @@
     </div>
 </div>
 
+<h3 class="mt-4">Отзывы</h3>
+
+@if (Model.Service?.Reviews != null && Model.Service.Reviews.Any())
+{
+<table class="custom-table table-bordered table-striped">
+    <thead>
+    <tr>
+        <th>Автор</th>
+        <th>Текст</th>
+        <th>Дата</th>
+        <th>Действия</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var review in Model.Service.Reviews)
+    {
+    <tr>
+        <td>@review.User?.UserName</td>
+        <td>@review.Comment</td>
+        <td>@review.CreatedAt.ToString("g", new CultureInfo("ru-RU"))</td>
+        <td>
+            <form method="post" asp-page-handler="DeleteReview" asp-route-reviewId="@review.Id" asp-route-serviceId="@Model.Service.Id" onsubmit="return confirm('Удалить отзыв?');">
+                <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+            </form>
+        </td>
+    </tr>
+    }
+    </tbody>
+</table>
+}
+else
+{
+<p>Отзывов пока нет.</p>
+}
+
 <a asp-page="/Admin/Services/Index" class="btn btn-secondary mt-3">Назад</a>
