@@ -35,6 +35,9 @@ ViewData["Title"] = "Заказ";
             case OrderStatus.Completed:
             <span class="status-badge status-completed">Выполнен</span>
             break;
+            case OrderStatus.Paid:
+            <span class="status-badge status-paid">Оплачен</span>
+            break;
             default:
             <span class="status-badge status-inprogress">Рассматривается</span>
             break;
@@ -51,7 +54,7 @@ ViewData["Title"] = "Заказ";
             </form>
             }
 
-            @if (Model.Status == OrderStatus.Accepted && User.Identity?.Name == Model.Client?.UserName)
+            @if (Model.Status == OrderStatus.Paid && User.Identity?.Name == Model.Client?.UserName)
             {
             <form method="post" asp-action="CompleteOrder" asp-route-id="@Model.Id" class="mt-3">
                 <button class="btn btn-outline-success">Заказ выполнен</button>
@@ -72,5 +75,12 @@ ViewData["Title"] = "Заказ";
         <a class="btn btn-primary mt-4" asp-controller="Service" asp-action="Details" asp-route-id="@Model.Service?.Id">
             Перейти к услуге
         </a>
+        @if (User.IsInRole("Client") && Model.Status == OrderStatus.Accepted)
+        {
+        <a asp-controller="Payment" asp-action="Create" asp-route-orderId="@Model.Id" class="btn btn-primary mt-4">
+            💳 Оплатить заказ
+        </a>
+        }
+
     </div>
 </div>

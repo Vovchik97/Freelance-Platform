@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -125,6 +126,21 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
+});
+
+var stripeSettings = builder.Configuration.GetSection("Stripe");
+
+StripeConfiguration.ApiKey = stripeSettings["SecretKey"];
+
+builder.Services.AddSingleton<IPaymentProvider>(sp =>
+{
+    var secretKey = stripeSettings["SecretKey"];
+    if (string.IsNullOrEmpty(secretKey))
+    {
+        throw new InvalidOperationException("Stripe SecretKey is missing in configuration");
+    }
+    
+    return new StripePaymentProvider(secretKey);
 });
 
 var app = builder.Build();

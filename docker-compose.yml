@@ -20,6 +20,8 @@ services:
       - Smtp__Username=${SMTP_USERNAME}
       - Smtp__Password=${SMTP_PASSWORD}
       - Smtp__FromEmail=${SMTP_FROM_EMAIL}
+      - Stripe__SecretKey=${STRIPE_SECRET_KEY}
+      - Stripe__PublishableKey=${STRIPE_PUBLISHABLE_KEY}
     env_file:
       - .env
   
