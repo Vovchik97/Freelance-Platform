@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using Xunit;
 
 namespace FreelancePlatform.FreelancePlatform.Tests.Web;
 
