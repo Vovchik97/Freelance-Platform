@@ -1,31 +1,34 @@
 ﻿@model FreelancePlatform.Models.Payment
 @{
-    ViewData["Title"] = "Оплата отменена";
+ViewData["Title"] = "Оплата отменена";
 }
+
 <div class="alert alert-warning mt-4">
     Оплата отменена пользователем.
 </div>
+
 @if (Model != null)
 {
-    <div class="project-card">
-        <div class="card-body">
-            <p>Номер заказа: <strong>@Model.OrderId</strong></p>
-            <p>Последний статус: @GetStatusText(Model.Status.ToString())</p>
-        </div>
+<div class="project-card">
+    <div class="card-body">
+        <p>@(Model.OrderId.HasValue ? "Номер заказа:" : "Номер проекта:") <strong>@(Model.OrderId.HasValue ? Model.OrderId.ToString() : Model.ProjectId.ToString())</strong></p>
+        <p>Последний статус: @GetStatusText(Model.Status.ToString())</p>
     </div>
+</div>
 }
+
 <a asp-action="My" class="btn btn-secondary mt-3">Мои платежи</a>
 
 @functions {
-    private string GetStatusText(string status)
-    {
-        return status switch
-        {
-            "Pending" => "Рассматривается",
-            "Succeeded" => "Успешно",
-            "Canceled" => "Отклонено",
-            "Failed" => "Неудачно",
-            _ => "Неизвестно"
-        };
-    }
+private string GetStatusText(string status)
+{
+return status switch
+{
+"Pending" => "Рассматривается",
+"Succeeded" => "Успешно",
+"Canceled" => "Отклонено",
+"Failed" => "Неудачно",
+_ => "Неизвестно"
+};
+}
 }

@@ -4,10 +4,13 @@ public class Payment
 {
     public int Id { get; set; }
     
-    public int OrderId { get; set; }
+    public int? OrderId { get; set; }
     public Order? Order { get; set; }
 
     public string PayerId { get; set; } = null!;
+    
+    public int? ProjectId { get; set; }
+    public Project? Project { get; set; }
     public long AmountMinor { get; set; }
     public string Currency { get; set; } = "RUB";
 

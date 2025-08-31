@@ -1,18 +1,26 @@
-﻿@using System.Security.AccessControl
-@model FreelancePlatform.Dto.Payment.PaymentCreateDto
+﻿@model FreelancePlatform.Dto.Payment.PaymentCreateDto
 @{
-    ViewData["Title"] = "Оплата заказа";
+ViewData["Title"] = Model.OrderId.HasValue ? $"Оплата заказа #{Model.OrderId}" : $"Оплата проекта #{Model.ProjectId}";
 }
+
 <div class="filters-card mx-auto mt-4" style="max-width:600px;">
-    <h2 class="filters-title mb-3">Оплата заказа #@Model.OrderId</h2>
-    <p><strong>Услуга:</strong> @Model.ServiceTitle</p>
+    <h2 class="filters-title mb-3">@ViewData["Title"]</h2>
+    <p><strong>@(Model.OrderId.HasValue ? "Услуга:" : "Проект:")</strong> @Model.Title</p>
     <p><strong>Сумма:</strong> @Model.Amount.ToString("C", new System.Globalization.CultureInfo("ru-RU"))</p>
 
     <form asp-action="Start" asp-controller="Payment" method="post">
+        @if (Model.OrderId.HasValue)
+        {
         <input type="hidden" name="orderId" value="@Model.OrderId" />
+        }
+        else if (Model.ProjectId.HasValue)
+        {
+        <input type="hidden" name="projectId" value="@Model.ProjectId" />
+        }
         <button type="submit" class="btn btn-primary">Перейти к оплате (Stripe Test)</button>
-        <a asp-controller="Order" asp-action="Details" asp-route-id="@Model.OrderId" class="btn btn-outline-secondary ms-2">Назад</a>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary ms-2">Назад</a>
     </form>
+
     <p class="text-muted mt-3">
         Используется Stripe в <strong>Test Mode</strong>. Карта: 4242 4242 4242 4242, любая дата и CVC.
     </p>

@@ -4,6 +4,7 @@ public enum ProjectStatus
 {
     Open,
     InProgress,
+    Paid,
     Completed,
     Cancelled
 }

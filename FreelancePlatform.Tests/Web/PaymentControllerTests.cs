@@ -60,7 +60,7 @@ public class PaymentControllerTests
         var controller = new PaymentController(context, userManager.Object, paymentProvider.Object);
         SetUser(controller, "test-user");
         
-        var result = await controller.Create(1);
+        var result = await controller.Create(1, null);
 
         Assert.IsType<NotFoundResult>(result);
     }
@@ -90,7 +90,7 @@ public class PaymentControllerTests
         var controller = new PaymentController(context, userManager.Object, new Mock<IPaymentProvider>().Object);
         SetUser(controller, "test-user");
         
-        var result = await controller.Create(1);
+        var result = await controller.Create(1,null);
 
         Assert.IsType<ForbidResult>(result);
     }
@@ -120,7 +120,7 @@ public class PaymentControllerTests
         var controller = new PaymentController(context, userManager.Object, new Mock<IPaymentProvider>().Object);
         SetUser(controller, "test-user");
         
-        var result = await controller.Create(1);
+        var result = await controller.Create(1, null);
 
         Assert.IsType<BadRequestResult>(result);
     }
@@ -151,12 +151,12 @@ public class PaymentControllerTests
         var controller = new PaymentController(context, userManager.Object, new Mock<IPaymentProvider>().Object);
         SetUser(controller, "test-user");
         
-        var result = await controller.Create(1);
+        var result = await controller.Create(1, null);
 
         var view = Assert.IsType<ViewResult>(result);
         var dto = Assert.IsType<PaymentCreateDto>(view.Model);
         Assert.Equal(order.Id, dto.OrderId);
-        Assert.Equal(order.Service.Title, dto.ServiceTitle);
+        Assert.Equal(order.Service.Title, dto.Title);
     }
 
     [Fact]
@@ -221,7 +221,7 @@ public class PaymentControllerTests
         var controller = new PaymentController(context, userManager.Object, new Mock<IPaymentProvider>().Object);
         SetUser(controller, "test-user");
         
-        var result = await controller.Cancel(10);
+        var result = await controller.Cancel(10, null);
 
         var view = Assert.IsType<ViewResult>(result);
         var updated = Assert.IsType<Payment>(view.Model);

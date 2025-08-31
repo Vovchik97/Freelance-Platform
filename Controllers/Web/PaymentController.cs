@@ -25,76 +25,165 @@ public class PaymentController : Controller
     
     // страница подтверждения оплаты
     [HttpGet]
-    public async Task<IActionResult> Create(int orderId)
+    public async Task<IActionResult> Create(int? orderId, int? projectId)
     {
         var userId = _userManager.GetUserId(User);
-        var order = await _context.Orders
-            .Include(o => o.Service)
-            .FirstOrDefaultAsync(o => o.Id == orderId);
 
-        if (order == null)
+        if (orderId.HasValue)
         {
-            return NotFound();
+            var order = await _context.Orders
+                .Include(o => o.Service)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            if (order.ClientId != userId)
+            {
+                return Forbid();
+            }
+
+            if (order.Status != OrderStatus.Accepted)
+            {
+                return BadRequest();
+            }
+
+            var dto = new PaymentCreateDto
+            {
+                OrderId = order.Id,
+                Title = order.Service!.Title,
+                Amount = order.Service.Price,
+                Currency = "RUB"
+            };
+
+            return View(dto);
         }
 
-        if (order.ClientId != userId)
+        else if (projectId.HasValue)
         {
-            return Forbid();
+            var project = await _context.Projects
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            if (project.ClientId != userId)
+            {
+                return Forbid();
+            }
+
+            if (project.Status != ProjectStatus.InProgress)
+            {
+                return BadRequest();
+            }
+
+            var dto = new PaymentCreateDto
+            {
+                ProjectId = project.Id,
+                Title = project.Title,
+                Amount = project.Budget,
+                Currency = "RUB"
+            };
+
+            return View(dto);
         }
 
-        if (order.Status != OrderStatus.Accepted)
+        else
         {
-            return BadRequest();
+            return BadRequest("Не указан ни orderId, ни projectId");
         }
-
-        var dto = new PaymentCreateDto
-        {
-            OrderId = order.Id,
-            ServiceTitle = order.Service!.Title,
-            Amount = order.Service.Price,
-            Currency = "RUB"
-        };
-
-        return View(dto);
     }
     
     // создаем Payment в БД и Stripe Session, редиректим на Stripe
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Start(int orderId)
+    public async Task<IActionResult> Start(int? orderId, int? projectId)
     {
         var userId = _userManager.GetUserId(User);
         var user = await _userManager.GetUserAsync(User);
-        var order = await _context.Orders
-            .Include(o => o.Service)
-            .FirstOrDefaultAsync(o => o.Id == orderId);
         
-        if (order == null)
+        Payment payment;
+        string description;
+        long amountMinor;
+
+        if (orderId.HasValue)
         {
-            return NotFound();
+            var order = await _context.Orders
+                .Include(o => o.Service)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+        
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            if (order.ClientId != userId)
+            {
+                return Forbid();
+            }
+        
+            if (order.Status != OrderStatus.Accepted)
+            {
+                return BadRequest();
+            }
+        
+            amountMinor = (long)(order.Service!.Price * 100m);
+        
+            payment = new Payment
+            {
+                OrderId = order.Id,
+                PayerId = user!.Id,
+                AmountMinor = amountMinor,
+                Currency = "RUB",
+                Provider = "Stripe",
+                Status = PaymentStatus.Pending
+            };
+            
+            description = $"Оплата заказа #{order.Id} {order.Service.Title}";
         }
 
-        if (order.ClientId != userId)
+        else if (projectId.HasValue)
         {
-            return Forbid();
+            var project = await _context.Projects
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+        
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            if (project.ClientId != userId)
+            {
+                return Forbid();
+            }
+        
+            if (project.Status != ProjectStatus.InProgress)
+            {
+                return BadRequest();
+            }
+        
+            amountMinor = (long)(project.Budget * 100m);
+        
+            payment = new Payment
+            {
+                ProjectId = project.Id,
+                PayerId = user!.Id,
+                AmountMinor = amountMinor,
+                Currency = "RUB",
+                Provider = "Stripe",
+                Status = PaymentStatus.Pending
+            };
+            
+            description = $"Оплата проекта #{project.Id} {project.Title}";
         }
-        
-        if (order.Status != OrderStatus.Accepted)
+        else
         {
-            return BadRequest();
+            return BadRequest("Не указан ни orderId, ни projectId");
         }
-        
-        var amountMinor = (long)(order.Service!.Price * 100m);
-        
-        var payment = new Payment
-        {
-            OrderId = order.Id,
-            PayerId = user!.Id,
-            AmountMinor = amountMinor,
-            Currency = "RUB",
-            Provider = "Stripe",
-            Status = PaymentStatus.Pending
-        };
 
         _context.Payments.Add(payment);
         await _context.SaveChangesAsync();
@@ -103,10 +192,10 @@ public class PaymentController : Controller
         {
             AmountMinor = amountMinor,
             Currency = "RUB",
-            Description = $"Оплата заказа #{order.Id}  {order.Service.Title}",
+            Description = description,
             CustomerEmail = user?.Email ?? "",
             SuccessUrl = Url.Action(nameof(Success), "Payment", null, Request.Scheme)!,
-            CancelUrl = Url.Action(nameof(Cancel), "Payment", new { orderId }, Request.Scheme)!,
+            CancelUrl = Url.Action(nameof(Cancel), "Payment", new { orderId, projectId }, Request.Scheme)!,
             MetadataPaymentId = payment.Id.ToString()
         };
         
@@ -130,6 +219,8 @@ public class PaymentController : Controller
         }
 
         var payment = await _context.Payments
+            .Include(o => o.Order)
+            .Include(p => p.Project)
             .FirstOrDefaultAsync(p => p.ProviderSessionId == session_id);
 
         if (payment == null)
@@ -146,10 +237,21 @@ public class PaymentController : Controller
             case ExternalPaymentsStatus.Succeeded:
                 payment.Status = PaymentStatus.Succeeded;
 
-                var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == payment.OrderId);
-                if (order != null && order.Status == OrderStatus.Accepted)
+                if (payment.OrderId.HasValue)
                 {
-                    order.Status = OrderStatus.Paid;
+                    var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == payment.OrderId);
+                    if (order != null && order.Status == OrderStatus.Accepted)
+                    {
+                        order.Status = OrderStatus.Paid;
+                    }
+                }
+                else if (payment.ProjectId.HasValue)
+                {
+                    var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == payment.ProjectId);
+                    if (project != null && project.Status == ProjectStatus.InProgress)
+                    {
+                        project.Status = ProjectStatus.Paid;
+                    }
                 }
                 break;
             
@@ -172,12 +274,29 @@ public class PaymentController : Controller
     // cancel URL - покупатель вернулся с отменой
     [AllowAnonymous]
     [HttpGet]
-    public async Task<IActionResult> Cancel(int orderId)
+    public async Task<IActionResult> Cancel(int? orderId, int? projectId)
     {
-        var payment = await _context.Payments
-            .Where(p => p.OrderId == orderId)
-            .OrderByDescending(p => p.Id)
-            .FirstOrDefaultAsync();
+        Payment? payment = null;
+        if (orderId.HasValue)
+        {
+            payment = await _context.Payments
+                .Where(p => p.OrderId == orderId)
+                .OrderByDescending(p => p.Id)
+                .FirstOrDefaultAsync();
+        }
+        
+        else if (projectId.HasValue)
+        {
+            payment = await _context.Payments
+                .Where(p => p.ProjectId == projectId)
+                .OrderByDescending(p => p.Id)
+                .FirstOrDefaultAsync();
+        }
+
+        else
+        {
+            return BadRequest("Не указан ни orderId, ни projectId");
+        }
 
         if (payment != null && payment.Status == PaymentStatus.Pending)
         {
@@ -196,6 +315,7 @@ public class PaymentController : Controller
         var items = await _context.Payments
             .Include(p => p.Order)
             .ThenInclude(o => o!.Service)
+            .Include(p => p.Project)
             .Where(p => p.PayerId == userId)
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();

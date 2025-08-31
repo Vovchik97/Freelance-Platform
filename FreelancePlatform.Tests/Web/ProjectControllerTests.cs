@@ -299,7 +299,7 @@ public class ProjectControllerTests
         var tempDataMock = new Mock<ITempDataDictionary>();
         _controller.TempData = tempDataMock.Object;
         
-        var project = new Project { Id = 1, Title = "p1", Description = "p1", Status = ProjectStatus.InProgress, ClientId = "client1", SelectedFreelancerId = "freelancer1"};
+        var project = new Project { Id = 1, Title = "p1", Description = "p1", Status = ProjectStatus.Paid, ClientId = "client1", SelectedFreelancerId = "freelancer1"};
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
         

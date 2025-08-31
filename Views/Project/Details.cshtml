@@ -37,6 +37,9 @@
                 case ProjectStatus.Cancelled:
                     <span class="status-badge status-cancelled">Отменён</span>
                     break;
+                case ProjectStatus.Paid:
+                    <span class="status-badge status-paid">Оплачен</span>
+                    break;
                 default:
                     <span class="status-badge">Неизвестно</span>
                     break;
@@ -75,7 +78,7 @@
             </div>
         }
 
-        @if (Model.Status == ProjectStatus.Cancelled)
+        @if (User.Identity?.Name == Model.Client?.UserName && Model.Status == ProjectStatus.Cancelled)
         {
             <form method="post" asp-controller="Project" asp-action="ResumeProject" asp-route-id="@Model.Id" class="mt-3">
                 <button type="submit" class="btn btn-outline-success">
@@ -88,6 +91,17 @@
                     Возобновить проект
                 </button>
             </form>
+        }
+        @if (User.Identity?.Name == Model.Client?.UserName && Model.Status == ProjectStatus.InProgress)
+        {
+            <a asp-controller="Payment" asp-action="Create" asp-route-projectId="@Model.Id" class="btn btn-primary mt-4">
+                💳 Оплатить проект
+            </a>
+        }
+        @if (User.Identity?.Name == Model.Client?.UserName && Model.Status == ProjectStatus.Paid)
+        {
+            <p class="text-muted">Вы оплатили этот проект, дождитесь пока фрилансер завершит работу над ним.</p>
+            
         }
 
         @{
@@ -109,7 +123,7 @@
 
         else if (User.IsInRole("Freelancer") && User.Identity?.Name == Model.SelectedFreelancer?.UserName)
         {
-            @if (Model.Status == ProjectStatus.InProgress)
+            @if (Model.Status == ProjectStatus.Paid)
             {
                 <form method="post" asp-action="CompleteProject" asp-route-id="@Model.Id" class="mt-3">
                     <button class="btn btn-outline-success">

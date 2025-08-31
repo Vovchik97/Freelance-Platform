@@ -303,7 +303,7 @@ public class ProjectController : Controller
             return Forbid();
         }
 
-        if (project.Status != ProjectStatus.InProgress)
+        if (project.Status != ProjectStatus.Paid)
         {
             return BadRequest("Проект не может быть завершён.");
         }

@@ -1,6 +1,6 @@
 ﻿@model IEnumerable<FreelancePlatform.Models.Payment>
 @{
-ViewData["Title"] = "Мои платежи";
+    ViewData["Title"] = "Мои платежи";
 }
 
 <div class="container mt-5">
@@ -14,8 +14,8 @@ ViewData["Title"] = "Мои платежи";
             <table class="custom-table">
                 <thead>
                 <tr>
-                    <th>Заказ</th>
-                    <th>Услуга</th>
+                    <th>Тип</th>
+                    <th>Название</th>
                     <th>Сумма</th>
                     <th>Статус</th>
                     <th>Создан</th>
@@ -27,9 +27,9 @@ ViewData["Title"] = "Мои платежи";
                 @foreach (var p in Model)
                 {
                     <tr>
-                        <td>@p.OrderId</td>
-                        <td>@p.Order?.Service?.Title</td>
-                        <td>@((p.AmountMinor/100.0M).ToString("C", new System.Globalization.CultureInfo("ru-RU")))</td>
+                        <td>@(p.OrderId.HasValue ? "Заказ" : "Проект")</td>
+                        <td>@(p.Order?.Service?.Title ?? p.Project?.Title)</td>
+                        <td>@((p.AmountMinor / 100.0M).ToString("C", new System.Globalization.CultureInfo("ru-RU")))</td>
                         <td>
                             <span class="status-badge @GetStatusClass(p.Status.ToString())">
                                 @GetStatusText(p.Status.ToString())
@@ -39,24 +39,30 @@ ViewData["Title"] = "Мои платежи";
                         <td>@p.UpdatedAt.ToLocalTime()</td>
                         <td>
                             <div class="d-flex flex-column gap-1">
-                                <a asp-controller="Order" asp-action="Details" asp-route-id="@p.Order?.Id" class="btn btn-sm btn-outline-primary">
-                                    <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                    Заказ
-                                </a>
-                                <a asp-controller="Service" asp-action="Details" asp-route-id="@p.Order?.Service?.Id" class="btn btn-sm btn-outline-secondary">
-                                    <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                    Услуга
-                                </a>
+                                @if(p.OrderId.HasValue)
+                                {
+                                    <a asp-controller="Order" asp-action="Details" asp-route-id="@p.Order?.Id" class="btn btn-sm btn-outline-primary">
+                                        <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        Заказ
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Project" asp-action="Details" asp-route-id="@p.Project?.Id" class="btn btn-sm btn-outline-primary">
+                                        <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        Проект
+                                    </a>
+                                }
                             </div>
                         </td>
                     </tr>
@@ -72,27 +78,21 @@ ViewData["Title"] = "Мои платежи";
 </div>
 
 @functions {
-    private string GetStatusClass(string status)
+    private string GetStatusClass(string status) => status switch
     {
-        return status switch
-        {
-            "Pending" => "status-pending",
-            "Succeeded" => "status-accepted",
-            "Canceled" => "status-rejected",
-            "Failed" => "status-completed",
-            _ => "status-pending"
-        };
-    }
+        "Pending" => "status-pending",
+        "Succeeded" => "status-accepted",
+        "Canceled" => "status-rejected",
+        "Failed" => "status-completed",
+        _ => "status-pending"
+    };
 
-    private string GetStatusText(string status)
+    private string GetStatusText(string status) => status switch
     {
-        return status switch
-        {
-            "Pending" => "Рассматривается",
-            "Succeeded" => "Успешно",
-            "Canceled" => "Отклонено",
-            "Failed" => "Неудачно",
-            _ => "Неизвестно"
-        };
-    }
+        "Pending" => "Рассматривается",
+        "Succeeded" => "Успешно",
+        "Canceled" => "Отклонено",
+        "Failed" => "Неудачно",
+        _ => "Неизвестно"
+    };
 }

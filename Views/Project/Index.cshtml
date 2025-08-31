@@ -41,6 +41,7 @@ ViewData["Title"] = "Каталог проектов";
                         <option value="">Все статусы</option>
                         <option value="Open" selected="@(ViewBag.Status == "Open")">Открыт</option>
                         <option value="InProgress" selected="@(ViewBag.Status == "InProgress")">В работе</option>
+                        <option value="Paid" selected="@(ViewBag.Status == "Paid")">Оплачен</option>
                         <option value="Cancelled" selected="@(ViewBag.Status == "Cancelled")">Отменен</option>
                         <option value="Completed" selected="@(ViewBag.Status == "Completed")">Завершён</option>
                     </select>
@@ -165,6 +166,7 @@ return status switch
 "InProgress" => "status-inprogress",
 "Cancelled" => "status-cancelled",
 "Completed" => "status-completed",
+"Paid" => "status-paid",
 _ => "status-open"
 };
 }
@@ -177,6 +179,7 @@ return status switch
 "InProgress" => "В работе",
 "Cancelled" => "Отменен",
 "Completed" => "Завершен",
+"Paid" => "Оплачен",
 _ => "Неизвестно"
 };
 }
