@@ -50,7 +50,7 @@ public class PaymentController : Controller
         var dto = new PaymentCreateDto
         {
             OrderId = order.Id,
-            ServiceTitle = order.Service.Title,
+            ServiceTitle = order.Service!.Title,
             Amount = order.Service.Price,
             Currency = "RUB"
         };
@@ -195,7 +195,7 @@ public class PaymentController : Controller
         var userId = _userManager.GetUserId(User);
         var items = await _context.Payments
             .Include(p => p.Order)
-            .ThenInclude(o => o.Service)
+            .ThenInclude(o => o!.Service)
             .Where(p => p.PayerId == userId)
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
