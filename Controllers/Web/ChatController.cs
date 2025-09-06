@@ -30,13 +30,13 @@ public class ChatController : Controller
             .ToListAsync();
         
         // Создаем список с дополнительной информацией о чатах
-        var chatViewModels = new List<ChatViewModel>();
+        var chatViewModels = new List<ChatDto>();
         foreach (var chat in chats)
         {
             var otherUserId = chat.ClientId == userId ? chat.FreelancerId : chat.ClientId;
             var otherUser = await _userManager.FindByIdAsync(otherUserId);
         
-            chatViewModels.Add(new ChatViewModel
+            chatViewModels.Add(new ChatDto
             {
                 Chat = chat,
                 OtherUserName = otherUser!.UserName!,

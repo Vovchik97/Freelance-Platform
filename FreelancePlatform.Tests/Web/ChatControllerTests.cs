@@ -83,7 +83,7 @@ public class ChatControllerTests
 
         var result = await _controller.Index();
         var viewResult = Assert.IsType<ViewResult>(result);
-        var model = Assert.IsAssignableFrom<List<ChatViewModel>>(viewResult.Model);
+        var model = Assert.IsAssignableFrom<List<ChatDto>>(viewResult.Model);
         Assert.Single(model);
         Assert.True(model[0].HasUnread);
         Assert.Equal("freelancer1@test.com", model[0].OtherUserName);
