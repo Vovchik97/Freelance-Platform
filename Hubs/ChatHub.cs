@@ -76,15 +76,18 @@ namespace FreelancePlatform.Hubs
             await Clients.Group(chatId.ToString())
                 .SendAsync("ReceiveMessage", newMessage.SenderId, newMessage.SenderName, newMessage.Text, newMessage.SentAt, attachmentsDto);
 
-            var otherUserId = chat.FreelancerId == user.Id ? chat.ClientId : chat.FreelancerId;
-            var otherUser = await _userManager.FindByIdAsync(otherUserId);
-            if (otherUser != null && !string.IsNullOrEmpty(otherUser.Email))
+            if (!chat.IsSupport)
             {
-                await _emailSender.SendEmailAsync(
-                    toEmail: otherUser.Email,
-                    subject: "Новое сообщение в чате",
-                    bodyHtml: $"Пользователь {userName} отправил новое сообщение."
-                );
+                var otherUserId = chat.FreelancerId == user.Id ? chat.ClientId : chat.FreelancerId;
+                var otherUser = await _userManager.FindByIdAsync(otherUserId);
+                if (otherUser != null && !string.IsNullOrEmpty(otherUser.Email))
+                {
+                    await _emailSender.SendEmailAsync(
+                        toEmail: otherUser.Email,
+                        subject: "Новое сообщение в чате",
+                        bodyHtml: $"Пользователь {userName} отправил новое сообщение."
+                    );
+                }
             }
 
             if (chat.IsSupport && chat.IsBotActive)
