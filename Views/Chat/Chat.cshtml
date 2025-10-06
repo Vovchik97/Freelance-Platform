@@ -10,18 +10,32 @@ ViewData["Title"] = "Чат";
 
 <div class="container">
     <div class="project-card">
-        <div class="card-header">Чат с @ViewBag.OtherUser</div>
+        <div class="card-header">
+            Чат с @(Model.IsSupport ? "Техподдержкой" : ViewBag.OtherUser)
+            @if (Model.IsSupport)
+            {
+            <span class="ms-2 text-muted small">(@(ViewBag.IsBotActive ? "Отвечает бот" : "Живой оператор"))</span>
+            }
+        </div>
         <div class="card-body" style="height: 400px; overflow-y: auto;">
             <ul id="messages" class="list-unstyled p-2">
-                @foreach (var msg in Model.Messages.Where(m => m.ParentMessageId == null))
+                @foreach (var msg in Model.Messages.Where(m => m.ParentMessageId == null).OrderBy(m => m.SentAt))
                 {
                 bool isMe = msg.SenderId == ViewBag.CurrentUserId;
                 <li class="d-flex mb-2 @(isMe ? "justify-content-end" : "justify-content-start")">
                     <div class="message-bubble @(isMe ? "me" : "other")">
+                        @if (!isMe)
+                        {
+                        <div class="message-sender">
+                            @(msg.SenderName ?? (Model.IsSupport && msg.SenderId == "BOT" ? "Бот поддержки" : "Собеседник"))
+                        </div>
+                        }
+
                         @if (!string.IsNullOrEmpty(msg.Text))
                         {
                         <div>@msg.Text</div>
                         }
+
                         @if (msg.Attachments != null && msg.Attachments.Any())
                         {
                         var images = msg.Attachments
@@ -51,7 +65,7 @@ ViewData["Title"] = "Чат";
                         </div>
                         }
 
-                        @if (videos.Any())
+                        if (videos.Any())
                         {
                         <div class="image-grid">
                             @foreach (var vid in videos)
@@ -62,7 +76,7 @@ ViewData["Title"] = "Чат";
                         </div>
                         }
 
-                        @if (audios.Any())
+                        if (audios.Any())
                         {
                         <div class="audio-grid">
                             @foreach (var aud in audios)
@@ -71,7 +85,6 @@ ViewData["Title"] = "Чат";
                             }
                         </div>
                         }
-
 
                         if (files.Any())
                         {
@@ -90,21 +103,15 @@ ViewData["Title"] = "Чат";
                         }
                         }
 
-
-
-
                         <div class="message-time">@msg.SentAt.ToLocalTime().ToString("g")</div>
                     </div>
                 </li>
                 }
             </ul>
         </div>
-        <div class="card-footer d-flex flex-column">
 
-            @* Блок превью вложений будет отрисован только если есть вложения *@
-            <div id="attachmentsPreview" class="attachments-preview flex-wrap mb-2" style="display:none;">
-                <!-- JS вставляет сюда превью -->
-            </div>
+        <div class="card-footer d-flex flex-column">
+            <div id="attachmentsPreview" class="attachments-preview flex-wrap mb-2" style="display:none;"></div>
 
             <div class="d-flex align-items-center w-100">
                 <div class="position-relative flex-grow-1 me-2">
@@ -128,7 +135,7 @@ ViewData["Title"] = "Чат";
     </div>
 </div>
 
-@* Модальное окно для просмотра фото *@
+<!-- Модал для изображения -->
 <div id="imageModal" class="modal" style="display:none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8);">
     <span id="modalClose" style="position: absolute; top: 20px; right: 35px; color: white; font-size: 40px; font-weight: bold; cursor: pointer;">&times;</span>
     <img id="modalImage" style="margin: auto; display: block; max-width: 90%; max-height: 90vh; border-radius: 8px;" />

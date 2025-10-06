@@ -7,6 +7,8 @@ public class Message
     public Chat Chat { get; set; } = null!;
 
     public string SenderId { get; set; } = null!;
+    public string? SenderName { get; set; }
+    
     public string Text { get; set; } = null!;
     public DateTime SentAt { get; set; } = DateTime.UtcNow;
 

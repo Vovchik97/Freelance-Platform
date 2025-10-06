@@ -1,6 +1,8 @@
 ﻿using System.Security.Claims;
 using FreelancePlatform.Context;
+using FreelancePlatform.Hubs;
 using FreelancePlatform.Models;
+using FreelancePlatform.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,16 +15,47 @@ public class ChatController : Controller
 {
     private readonly AppDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly SupportBotService _botService;
 
-    public ChatController(AppDbContext context, UserManager<IdentityUser> userManager)
+    public ChatController(AppDbContext context, UserManager<IdentityUser> userManager, SupportBotService botService)
     {
         _context = context;
         _userManager = userManager;
+        _botService = botService;
     }
 
     public async Task<IActionResult> Index()
     {
         var userId = _userManager.GetUserId(User);
+        
+        var supportChat = await _context.Chats
+            .Include(c => c.Messages)
+            .FirstOrDefaultAsync(c => c.IsSupport && c.ClientId == userId);
+
+        if (supportChat == null)
+        {
+            supportChat = new Chat
+            {
+                IsSupport = true,
+                IsBotActive = true,
+                ClientId = userId!,
+                FreelancerId = userId!, // placeholder: в UI будем показывать "Техподдержка"
+            };
+            _context.Chats.Add(supportChat);
+            await _context.SaveChangesAsync();
+
+            var (reply, escalate) = _botService.GetReply("");
+            var botMessage = new Message
+            {
+                ChatId = supportChat.Id,
+                SenderId = ChatHub.BotSenderId,
+                SenderName = "Бот поддержки",
+                Text = reply,
+                SentAt = DateTime.UtcNow
+            };
+            _context.Messages.Add(botMessage);
+            await _context.SaveChangesAsync();
+        }
 
         var chats = await _context.Chats
             .Include(c => c.Messages)
@@ -33,13 +66,22 @@ public class ChatController : Controller
         var chatViewModels = new List<ChatDto>();
         foreach (var chat in chats)
         {
-            var otherUserId = chat.ClientId == userId ? chat.FreelancerId : chat.ClientId;
-            var otherUser = await _userManager.FindByIdAsync(otherUserId);
+            string otherUserName;
+            if (chat.IsSupport)
+            {
+                otherUserName = "Техподдержка";
+            }
+            else
+            {
+                var otherUserId = chat.ClientId == userId ? chat.FreelancerId : chat.ClientId;
+                var otherUser = await _userManager.FindByIdAsync(otherUserId);
+                otherUserName = otherUser!.UserName ?? "Пользователь";
+            }
         
             chatViewModels.Add(new ChatDto
             {
                 Chat = chat,
-                OtherUserName = otherUser!.UserName!,
+                OtherUserName = otherUserName,
                 HasUnread = chat.Messages.Any(m => !m.IsRead && m.SenderId != userId)
             });
         }
@@ -54,12 +96,14 @@ public class ChatController : Controller
             .ThenInclude(m => m.Attachments)
             .FirstOrDefaultAsync(c => c.Id == chatId);
 
+        if (chat == null)
+        {
+            return NotFound();
+        }
 
         var userId = _userManager.GetUserId(User);
-        var otherUserId = chat?.ClientId == userId ? chat?.FreelancerId : chat?.ClientId;
-        var otherUser = await _userManager.FindByIdAsync(otherUserId!);
 
-        if (chat == null || (chat.ClientId != userId && chat.FreelancerId != userId))
+        if (chat.ClientId != userId && chat.FreelancerId != userId && !chat.IsSupport)
         {
             return NotFound();
         }
@@ -71,8 +115,10 @@ public class ChatController : Controller
         await _context.SaveChangesAsync();
         
         ViewBag.UserName = User.Identity!.Name;
-        ViewBag.OtherUser = otherUser!.UserName;
+        ViewBag.OtherUser = chat.IsSupport ? "Техподдержка" : (chat.ClientId == userId ? (await _userManager.FindByIdAsync(chat.FreelancerId))?.UserName : (await _userManager.FindByIdAsync(chat.ClientId))?.UserName);
         ViewBag.CurrentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        ViewBag.IsSupport = chat.IsSupport;
+        ViewBag.IsBotActive = chat.IsBotActive;
         return View(chat);
     }
     

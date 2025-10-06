@@ -30,6 +30,8 @@ builder.Services.AddSignalR(options =>
 });
 builder.Services.AddTransient<SmtpEmailSender>();
 builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
+builder.Services.AddSingleton<SupportBotService>();
+
 
 
 

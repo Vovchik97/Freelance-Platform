@@ -3,6 +3,7 @@ using System.Text;
 using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Web;
 using FreelancePlatform.Models;
+using FreelancePlatform.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ public class ChatControllerTests
 {
     private readonly AppDbContext _context;
     private readonly Mock<UserManager<IdentityUser>> _mockUserManager;
+    private readonly Mock<SupportBotService> _mockBotService;
     private readonly ChatController _controller;
 
     public ChatControllerTests()
@@ -25,7 +27,8 @@ public class ChatControllerTests
         _context = new AppDbContext(options);
         
         _mockUserManager = GetMockUserManager();
-        _controller = new ChatController(_context, _mockUserManager.Object);
+        _mockBotService = new Mock<SupportBotService>();
+        _controller = new ChatController(_context, _mockUserManager.Object, _mockBotService.Object);
     }
 
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()
@@ -79,14 +82,30 @@ public class ChatControllerTests
                 new Message { Id = 1, SenderId = "freelancer1", IsRead = false, Text = "test" }
             }
         });
+        
+        _context.Chats.Add(new Chat
+        {
+            Id = 2,
+            ClientId = "client1",
+            FreelancerId = "support-bot",
+            IsSupport = true,
+            IsBotActive = true,
+            Messages = new List<Message>()
+        });
         await _context.SaveChangesAsync();
 
         var result = await _controller.Index();
         var viewResult = Assert.IsType<ViewResult>(result);
         var model = Assert.IsAssignableFrom<List<ChatDto>>(viewResult.Model);
-        Assert.Single(model);
-        Assert.True(model[0].HasUnread);
+        
+        var normalChat = model.SingleOrDefault(c => c.OtherUserName == "freelancer1@test.com");
+        Assert.NotNull(normalChat);
+        Assert.True(normalChat.HasUnread);
         Assert.Equal("freelancer1@test.com", model[0].OtherUserName);
+
+        var supportChat = model.SingleOrDefault(c => c.OtherUserName == "Техподдержка");
+        Assert.NotNull(supportChat);
+        Assert.False(supportChat.HasUnread);
     }
 
     [Fact]

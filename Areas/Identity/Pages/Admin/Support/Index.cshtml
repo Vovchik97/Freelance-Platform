@@ -1,0 +1,42 @@
+﻿@page
+@model FreelancePlatform.Areas.Identity.Pages.Admin.Support.IndexModel
+@{
+    ViewData["Title"] = "Поддержка";
+}
+
+<h2 class="text-center mb-4">Обращения пользователей</h2>
+
+<table class="custom-table table-bordered table-striped">
+    <thead>
+    <tr>
+        <th>Пользователь</th>
+        <th>Проблема</th>
+        <th>Дата</th>
+        <th>Действия</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var chat in Model.SupportChats)
+    {
+        <tr>
+            <td>@chat.UserName</td>
+            <td>@chat.Problem</td>
+            <td>@chat.LastUpdated.ToString("g")</td>
+            <td>
+                <a asp-controller="Chat" asp-action="Chat" asp-route-chatId="@chat.Id" class="btn btn-sm btn-primary">
+                    Открыть
+                </a>
+                <button class="btn btn-sm btn-danger close-chat-btn"
+                        data-chat-id="@chat.Id" title="Покинуть чат">
+                    Закрыть
+                </button>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.2/signalr.min.js"></script>
+    <script src="~/js/admin-support.js"></script>
+}

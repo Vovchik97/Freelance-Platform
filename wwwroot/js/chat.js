@@ -204,9 +204,10 @@
         .withUrl("/chatHub")
         .build();
 
-    connection.on("ReceiveMessage", function (senderId, message, sentAt, attachments) {
+    connection.on("ReceiveMessage", function (senderId, senderName, message, sentAt, attachments) {
         const currentUserId = currentUserIdInput.value;
         const isMe = senderId === currentUserId;
+        const displayName = senderName || (isMe ? "Вы" : "Собеседник");
 
         const messageElement = document.createElement("li");
         messageElement.className = `d-flex mb-2 ${isMe ? "justify-content-end" : "justify-content-start"}`;
@@ -214,8 +215,18 @@
         const bubble = document.createElement("div");
         bubble.className = `message-bubble ${isMe ? "me" : "other"}`;
 
+        // Отображаем имя отправителя (для бота или админа)
+        if (!isMe) {
+            const nameEl = document.createElement("div");
+            nameEl.className = "message-sender";
+            nameEl.textContent = displayName;
+            bubble.appendChild(nameEl);
+        }
+
         if (message) {
-            bubble.innerHTML += message;
+            const textEl = document.createElement("div");
+            textEl.innerHTML = message;
+            bubble.appendChild(textEl);
         }
 
         if (attachments && attachments.length > 0) {
@@ -312,13 +323,6 @@
             }
         }
 
-        function formatFileSize(bytes) {
-            const sizes = ['Б', 'КБ', 'МБ', 'ГБ'];
-            if (!bytes) return '';
-            const i = Math.floor(Math.log(bytes) / Math.log(1024));
-            return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + sizes[i];
-        }
-
         const time = document.createElement("div");
         time.className = "message-time";
         time.textContent = new Date(sentAt).toLocaleString();
@@ -332,8 +336,9 @@
     connection.start()
         .then(() => {
             const chatId = chatIdInput.value;
-            return connection.invoke("JoinChat", chatId);
-        });
+            connection.invoke("JoinChat", chatId);
+        })
+        .catch(err => console.error(err.toString()));
 
     function scrollToBottom() {
         const container = messagesList.parentElement;
