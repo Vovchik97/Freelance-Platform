@@ -301,6 +301,7 @@
       <_ContentIncludedByDefault Remove="Views\Portfolio\Public.cshtml" />
       <_ContentIncludedByDefault Remove="Views\Support\Details.cshtml" />
       <_ContentIncludedByDefault Remove="Views\Support\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Balance\Index.cshtml" />
     </ItemGroup>
 
     <ItemGroup>

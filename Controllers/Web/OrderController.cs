@@ -18,12 +18,14 @@ public class OrderController : Controller
     private readonly AppDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
     private readonly IEmailSender _emailSender;
+    private readonly BalanceService _balanceService;
 
-    public OrderController(AppDbContext context, UserManager<IdentityUser> userManager, IEmailSender emailSender)
+    public OrderController(AppDbContext context, UserManager<IdentityUser> userManager, IEmailSender emailSender, BalanceService balanceService)
     {
         _context = context;
         _userManager = userManager;
         _emailSender = emailSender;
+        _balanceService = balanceService;
     }
 
     [AllowAnonymous]
@@ -211,6 +213,14 @@ public class OrderController : Controller
         {
             return Forbid();
         }
+
+        var freelancerId = order.Service!.FreelancerId!;
+        await _balanceService.ReleaseForOrderAsync(
+            order.ClientId,
+            freelancerId,
+            order.Service.Price,
+            order.Id
+        );
         
         order.Status = OrderStatus.Completed;
         await _context.SaveChangesAsync();

@@ -10,6 +10,7 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Stripe;
+using BalanceService = FreelancePlatform.Services.BalanceService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,8 +32,8 @@ builder.Services.AddSignalR(options =>
 builder.Services.AddTransient<SmtpEmailSender>();
 builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
 builder.Services.AddSingleton<SupportBotService>();
-
-
+builder.Services.AddScoped<BalanceService>();
+builder.Services.AddScoped<IBalanceService>(sp => sp.GetRequiredService<BalanceService>());
 
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)

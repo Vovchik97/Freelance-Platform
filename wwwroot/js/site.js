@@ -256,3 +256,27 @@ document.addEventListener("DOMContentLoaded", function () {
     updateUnreadBadge();
     setInterval(updateUnreadBadge, 30000);
 });
+
+document.addEventListener("DOMContentLoaded", function () {
+    const balanceValue = document.querySelector('.navbar-balance-value');
+    if (!balanceValue) return;
+
+    async function updateBalance() {
+        try {
+            const response = await fetch('/Payment/GetMyBalance');
+            if (!response.ok) throw new Error("HTTP " + response.status);
+
+            const data = await response.json();
+            // тут обращаемся к внутреннему полю balance
+            const bal = parseFloat(data.balance?.balance) || 0;
+            balanceValue.innerHTML = `${bal.toFixed(2)} <span class="navbar-balance-currency">₽</span>`;
+        } catch (err) {
+            console.warn("Не удалось получить баланс:", err);
+        }
+    }
+
+    updateBalance();
+    // обновление каждые 30 сек
+    setInterval(updateBalance, 30000);
+});
+

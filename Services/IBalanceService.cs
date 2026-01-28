@@ -1,0 +1,21 @@
+﻿using FreelancePlatform.Models;
+
+namespace FreelancePlatform.Services;
+
+public interface IBalanceService
+{
+    Task DepositAsync(string userId, decimal amount, int paymentId);
+    
+    Task FreezeForOrderAsync(string userId, decimal amount, int orderId);
+    Task FreezeForProjectAsync(string userId, decimal amount, int projectId);
+    
+    Task RefundForOrderAsync(string userId, decimal amount, int orderId);
+    Task RefundForProjectAsync(string userId, decimal amount, int projectId);
+    
+    Task ReleaseForOrderAsync(string clientId, string freelancerId, decimal amount, int orderId);
+    Task ReleaseForProjectAsync(string clientId, string freelancerId, decimal amount, int projectId);
+    
+    Task WithdrawAsync(string userId, decimal amount, int paymentId);
+    
+    Task<UserBalance> GetAsync(string userId);
+}

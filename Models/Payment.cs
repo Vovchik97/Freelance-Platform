@@ -15,6 +15,7 @@ public class Payment
     public string Currency { get; set; } = "RUB";
 
     public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
+    public PaymentType Type { get; set; }
     
     public string? Provider { get; set; }
     public string? ProviderSessionId { get; set; }

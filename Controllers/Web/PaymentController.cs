@@ -9,18 +9,20 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Controllers.Web;
 
-[Authorize(Roles = "Client")]
+[Authorize(Roles = "Client, Freelancer")]
 public class PaymentController : Controller
 {
     private readonly AppDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
     private readonly IPaymentProvider _paymentProvider;
+    private readonly IBalanceService _balanceService;
 
-    public PaymentController(AppDbContext context, UserManager<IdentityUser> userManager, IPaymentProvider paymentProvider)
+    public PaymentController(AppDbContext context, UserManager<IdentityUser> userManager, IPaymentProvider paymentProvider, IBalanceService balanceService)
     {
         _context = context;
         _userManager = userManager;
         _paymentProvider = paymentProvider;
+        _balanceService = balanceService;
     }
     
     // страница подтверждения оплаты
@@ -55,7 +57,8 @@ public class PaymentController : Controller
                 OrderId = order.Id,
                 Title = order.Service!.Title,
                 Amount = order.Service.Price,
-                Currency = "RUB"
+                Currency = "RUB",
+                Type = PaymentType.Order
             };
 
             return View(dto);
@@ -86,7 +89,8 @@ public class PaymentController : Controller
                 ProjectId = project.Id,
                 Title = project.Title,
                 Amount = project.Budget,
-                Currency = "RUB"
+                Currency = "RUB",
+                Type = PaymentType.Project
             };
 
             return View(dto);
@@ -232,39 +236,55 @@ public class PaymentController : Controller
         payment.ProviderPaymentIntentId = pi;
         payment.UpdatedAt = DateTime.UtcNow;
 
-        switch (status)
+        if (status == ExternalPaymentsStatus.Succeeded &&
+            payment.Status != PaymentStatus.Succeeded)
         {
-            case ExternalPaymentsStatus.Succeeded:
-                payment.Status = PaymentStatus.Succeeded;
+            payment.Status = PaymentStatus.Succeeded;
+            
+            var amount = payment.AmountMinor / 100m;
 
-                if (payment.OrderId.HasValue)
+            switch (payment.Type)
+            {
+                case PaymentType.Deposit:
+                    await _balanceService.DepositAsync(payment.PayerId, amount, payment.Id);
+                    break;
+                case PaymentType.Order:
+                case PaymentType.Project:
+                case PaymentType.Withdrawal:
+                    await _balanceService.WithdrawAsync(payment.PayerId, amount, payment.Id);
+                    break;
+            }
+            
+            var balance = await _balanceService.GetAsync(payment.PayerId);
+            TempData["NewBalance"] = balance.Balance.ToString("F2");
+
+            if (payment.OrderId.HasValue)
+            {
+                var order = await _context.Orders.FindAsync(payment.OrderId);
+                if (order != null && order.Status == OrderStatus.Accepted)
                 {
-                    var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == payment.OrderId);
-                    if (order != null && order.Status == OrderStatus.Accepted)
-                    {
-                        order.Status = OrderStatus.Paid;
-                    }
+                    order.Status = OrderStatus.Paid;
                 }
-                else if (payment.ProjectId.HasValue)
+            }
+
+            if (payment.ProjectId.HasValue)
+            {
+                var project = await _context.Projects.FindAsync(payment.ProjectId);
+                if (project != null && project.Status == ProjectStatus.InProgress)
                 {
-                    var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == payment.ProjectId);
-                    if (project != null && project.Status == ProjectStatus.InProgress)
-                    {
-                        project.Status = ProjectStatus.Paid;
-                    }
+                    project.Status = ProjectStatus.Paid;
                 }
-                break;
-            
-            case ExternalPaymentsStatus.Canceled:
-                payment.Status = PaymentStatus.Canceled;
-                break;
-            
-            case ExternalPaymentsStatus.Failed:
-                payment.Status = PaymentStatus.Failed;
-                break;
-            
-            default:
-                break;
+            }
+        }
+        
+        else if (status == ExternalPaymentsStatus.Canceled)
+        {
+            payment.Status = PaymentStatus.Canceled;
+        }
+        
+        else if (status == ExternalPaymentsStatus.Failed)
+        {
+            payment.Status = PaymentStatus.Failed;
         }
 
         await _context.SaveChangesAsync();
@@ -321,5 +341,131 @@ public class PaymentController : Controller
             .ToListAsync();
 
         return View(items);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Deposit()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Deposit(decimal amount)
+    {
+        if (amount <= 0)
+        {
+            ModelState.AddModelError("", "Сумма должна быть больше 0");
+            return View();
+        }
+        
+        var userId = _userManager.GetUserId(User);
+        var user = await _userManager.GetUserAsync(User);
+        var balance = await _balanceService.GetAsync(userId); 
+        
+        long amountMinor = (long)(amount * 100m);
+
+        var payment = new Payment
+        {
+            PayerId = user!.Id,
+            AmountMinor = amountMinor,
+            Currency = "RUB",
+            Provider = "Stripe",
+            Status = PaymentStatus.Pending,
+            Type = PaymentType.Deposit
+        };
+        
+        _context.Payments.Add(payment);
+        await _context.SaveChangesAsync();
+        
+        var req = new CreateCheckoutSessionRequest
+        {
+            AmountMinor = amountMinor,
+            Currency = "RUB",
+            Description = $"Пополнение баланса на {amount:C} RUB",
+            CustomerEmail = user.Email ?? "",
+            SuccessUrl = Url.Action(nameof(Success), "Payment", null, Request.Scheme)!,
+            CancelUrl = Url.Action(nameof(Deposit), "Payment", null, Request.Scheme)!,
+            MetadataPaymentId = payment.Id.ToString()
+        };
+
+        var session = await _paymentProvider.CreateCheckoutSessionAsync(req);
+        payment.ProviderSessionId = session.SessionId;
+        payment.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        TempData["NewBalance"] = balance.Balance.ToString("F2");
+        return Redirect(session.SessionUrl);
+    }
+    
+    [HttpGet]
+    public async Task<IActionResult> Withdraw()
+    {
+        var userId = _userManager.GetUserId(User);
+        var balance = await _balanceService.GetAsync(userId);
+        return View(balance);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Withdraw(decimal amount)
+    {
+        if (amount <= 0)
+        {
+            ModelState.AddModelError("", "Сумма должна быть больше 0");
+            return View();
+        }
+        
+        var userId = _userManager.GetUserId(User);
+        var user = await _userManager.GetUserAsync(User);
+        var balance = await _balanceService.GetAsync(userId); 
+        
+        long amountMinor = (long)(amount * 100m);
+        
+        var payment = new Payment
+        {
+            PayerId = userId,
+            AmountMinor = (long)(amount * 100m),
+            Currency = "RUB",
+            Provider = "Stripe",
+            Status = PaymentStatus.Pending,
+            Type = PaymentType.Withdrawal
+        };
+        
+        _context.Payments.Add(payment);
+        await _context.SaveChangesAsync();
+        
+        var req = new CreateCheckoutSessionRequest
+        {
+            AmountMinor = amountMinor,
+            Currency = "RUB",
+            Description = $"Вывод средств на сумму {amount:C} RUB",
+            CustomerEmail = user.Email ?? "",
+            SuccessUrl = Url.Action(nameof(Success), "Payment", null, Request.Scheme)!,
+            CancelUrl = Url.Action(nameof(Deposit), "Payment", null, Request.Scheme)!,
+            MetadataPaymentId = payment.Id.ToString()
+        };
+        
+        var session = await _paymentProvider.CreateCheckoutSessionAsync(req);
+        payment.ProviderSessionId = session.SessionId;
+        payment.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        TempData["NewBalance"] = balance.Balance.ToString("F2");
+        TempData["SuccessMessage"] = "Запрос на вывод средств успешно создан.";
+        return Redirect(session.SessionUrl);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetMyBalance()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Json(new { balance = 0 });
+        }
+
+        var balance = await _balanceService.GetAsync(user.Id);
+        return Json(new { balance });
     }
 }

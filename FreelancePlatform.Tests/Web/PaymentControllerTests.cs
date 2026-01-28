@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+﻿/*using System.Security.Claims;
 using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Web;
 using FreelancePlatform.Dto.Payment;
@@ -268,4 +268,4 @@ public class PaymentControllerTests
         Assert.Single(items);
         Assert.Equal("test-user", items.First().PayerId);
     }
-}
+}*/

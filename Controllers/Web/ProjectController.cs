@@ -2,6 +2,7 @@
 using FreelancePlatform.Context;
 using FreelancePlatform.Dto.Projects;
 using FreelancePlatform.Models;
+using FreelancePlatform.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,11 +14,13 @@ public class ProjectController : Controller
 {
     private readonly AppDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly BalanceService _balanceService;
 
-    public ProjectController(AppDbContext context, UserManager<IdentityUser> userManager)
+    public ProjectController(AppDbContext context, UserManager<IdentityUser> userManager, BalanceService balanceService)
     {
         _context = context;
         _userManager = userManager;
+        _balanceService = balanceService;
     }
     
     [AllowAnonymous]
@@ -247,6 +250,12 @@ public class ProjectController : Controller
             _context.Chats.Add(chat);
         }
         
+        await _balanceService.FreezeForProjectAsync(
+            project.ClientId,
+            bid.Amount,
+            project.Id
+        );
+        
         await _context.SaveChangesAsync();
 
         TempData["Success"] = "Исполнитель выбран. Остальные заявки отклонены.";
@@ -308,6 +317,13 @@ public class ProjectController : Controller
             return BadRequest("Проект не может быть завершён.");
         }
 
+        await _balanceService.ReleaseForProjectAsync(
+            project.ClientId,
+            project.SelectedFreelancerId,
+            project.Budget,
+            project.Id
+        );
+
         project.Status = ProjectStatus.Completed;
         await _context.SaveChangesAsync();
         
@@ -329,10 +345,19 @@ public class ProjectController : Controller
             return NotFound();
         }
 
-        if (project.Status != ProjectStatus.Open)
+        if (project.Status == ProjectStatus.InProgress)
+        {
+            await _balanceService.RefundForProjectAsync(
+                project.ClientId,
+                project.Budget,
+                project.Id
+            );
+        }
+
+        /*if (project.Status != ProjectStatus.Open)
         {
             return BadRequest("Проект нельзя отменить на текущей стадии.");
-        }
+        }*/
 
         project.Status = ProjectStatus.Cancelled;
         foreach (var bid in project.Bids)

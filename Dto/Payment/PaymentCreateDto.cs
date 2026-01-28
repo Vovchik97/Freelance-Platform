@@ -1,4 +1,6 @@
-﻿namespace FreelancePlatform.Dto.Payment;
+﻿using FreelancePlatform.Models;
+
+namespace FreelancePlatform.Dto.Payment;
 
 public class PaymentCreateDto
 {
@@ -7,4 +9,5 @@ public class PaymentCreateDto
     public string Title { get; set; } = null!;
     public decimal Amount { get; set; }
     public string Currency { get; set; } = "RUB";
+    public PaymentType Type { get; set; }
 }

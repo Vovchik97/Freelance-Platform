@@ -27,8 +27,41 @@
                 @foreach (var p in Model)
                 {
                     <tr>
-                        <td>@(p.OrderId.HasValue ? "Заказ" : "Проект")</td>
-                        <td>@(p.Order?.Service?.Title ?? p.Project?.Title)</td>
+                        <td>
+                            @switch(p.Type)
+                            {
+                                case PaymentType.Order:
+                                    <span class="badge bg-info">Заказ</span>
+                                    break;
+                                case PaymentType.Project:
+                                    <span class="badge bg-primary">Проект</span>
+                                    break;
+                                case PaymentType.Deposit:
+                                    <span class="badge bg-success">Пополнение</span>
+                                    break;
+                                case PaymentType.Withdrawal:
+                                    <span class="badge bg-warning">Вывод</span>
+                                    break;
+                            }
+                        </td>
+                        <td>
+                            @if(p.Type == PaymentType.Order)
+                            {
+                                @p.Order?.Service?.Title
+                            }
+                            else if(p.Type == PaymentType.Project)
+                            {
+                                @p.Project?.Title
+                            }
+                            else if(p.Type == PaymentType.Deposit)
+                            {
+                                <span>Пополнение баланса</span>
+                            }
+                            else if(p.Type == PaymentType.Withdrawal)
+                            {
+                                <span>Вывод средств</span>
+                            }
+                        </td>
                         <td>@((p.AmountMinor / 100.0M).ToString("C", new System.Globalization.CultureInfo("ru-RU")))</td>
                         <td>
                             <span class="status-badge @GetStatusClass(p.Status.ToString())">
@@ -39,29 +72,13 @@
                         <td>@p.UpdatedAt.ToLocalTime()</td>
                         <td>
                             <div class="d-flex flex-column gap-1">
-                                @if(p.OrderId.HasValue)
+                                @if(p.Type == PaymentType.Order && p.OrderId.HasValue)
                                 {
-                                    <a asp-controller="Order" asp-action="Details" asp-route-id="@p.Order?.Id" class="btn btn-sm btn-outline-primary">
-                                        <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                        Заказ
-                                    </a>
+                                    <a asp-controller="Order" asp-action="Details" asp-route-id="@p.Order?.Id" class="btn btn-sm btn-outline-primary">Заказ</a>
                                 }
-                                else
+                                else if(p.Type == PaymentType.Project && p.ProjectId.HasValue)
                                 {
-                                    <a asp-controller="Project" asp-action="Details" asp-route-id="@p.Project?.Id" class="btn btn-sm btn-outline-primary">
-                                        <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                        Проект
-                                    </a>
+                                    <a asp-controller="Project" asp-action="Details" asp-route-id="@p.Project?.Id" class="btn btn-sm btn-outline-primary">Проект</a>
                                 }
                             </div>
                         </td>

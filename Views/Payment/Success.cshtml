@@ -1,6 +1,6 @@
 ﻿@model FreelancePlatform.Models.Payment
 @{
-ViewData["Title"] = "Оплата успешна";
+    ViewData["Title"] = "Оплата успешна";
 }
 
 <div class="alert alert-success mt-4">
@@ -9,26 +9,41 @@ ViewData["Title"] = "Оплата успешна";
 
 <div class="project-card">
     <div class="card-body">
-        <p>@(Model.OrderId.HasValue ? "Номер заказа:" : "Номер проекта:") <strong>@(Model.OrderId.HasValue ? Model.OrderId.ToString() : Model.ProjectId.ToString())</strong></p>
+        <p>@(Model.OrderId.HasValue ? "Номер заказа:" : "Номер проекта:") 
+            <strong>@(Model.OrderId.HasValue ? Model.OrderId.ToString() : Model.ProjectId.ToString())</strong></p>
         <p>Название: <strong>@(Model.Order?.Service?.Title ?? Model.Project?.Title)</strong></p>
         <p>Сумма: <strong>@((Model.AmountMinor / 100.0M).ToString("C", new System.Globalization.CultureInfo("ru-RU")))</strong></p>
         <p>Платёжная система: @Model.Provider</p>
         <p>Статус: @GetStatusText(Model.Status.ToString())</p>
+
+        @* Escrow info *@
+        @if(Model.Status == PaymentStatus.Pending)
+        {
+            <p class="text-warning"><strong>Средства заморожены (Escrow)</strong></p>
+        }
+        else if(Model.Status == PaymentStatus.Succeeded)
+        {
+            <p class="text-success"><strong>Средства выплачены фрилансеру</strong></p>
+        }
+        else if(Model.Status == PaymentStatus.Canceled)
+        {
+            <p class="text-danger"><strong>Платёж отменён, средства возвращены</strong></p>
+        }
     </div>
 </div>
 
 <a asp-action="My" class="btn btn-secondary mt-3">Мои платежи</a>
 
 @functions {
-private string GetStatusText(string status)
-{
-return status switch
-{
-"Pending" => "Рассматривается",
-"Succeeded" => "Успешно",
-"Canceled" => "Отклонено",
-"Failed" => "Неудачно",
-_ => "Неизвестно"
-};
-}
+    private string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "Pending" => "Рассматривается",
+            "Succeeded" => "Успешно",
+            "Canceled" => "Отклонено",
+            "Failed" => "Неудачно",
+            _ => "Неизвестно"
+        };
+    }
 }

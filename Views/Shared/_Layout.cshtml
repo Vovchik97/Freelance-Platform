@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="~/css/chat.css" asp-append-version="true"/>
     <link rel="stylesheet" href="~/FreelancePlatform.styles.css" asp-append-version="true"/>
 </head>
-<body сlass="min-vh-100">
+<body class="min-vh-100">
 
 <header>
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom box-shadow mb-3">
@@ -47,65 +47,105 @@
                 </ul>
 
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    <!-- Все остальные пункты (Мои проекты, чаты, профиль, выход) -->
+                    <!-- Пункты для клиентов -->
                     @if (User.IsInRole("Client"))
                     { 
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Payment" asp-action="My">Мои платежи</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Project" asp-action="MyProjects">Мои проекты</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Order" asp-action="MyOrders">Мои заказы</a>
-                    </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Payment" asp-action="My">Мои платежи</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Project" asp-action="MyProjects">Мои проекты</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Order" asp-action="MyOrders">Мои заказы</a>
+                        </li>
                     }
 
+                    <!-- Пункты для фрилансеров -->
                     @if (User.IsInRole("Freelancer"))
                     {
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Bid" asp-action="MyBids">Мои отклики</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Service" asp-action="MyServices">Мои услуги</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="PublicProfile" asp-action="My">Моя страница</a>
-                    </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Bid" asp-action="MyBids">Мои отклики</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Service" asp-action="MyServices">Мои услуги</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="PublicProfile" asp-action="My">Моя страница</a>
+                        </li>
                     }
 
+                    <!-- Чат и баланс для всех аутентифицированных пользователей -->
                     @if (User.Identity!.IsAuthenticated)
                     {
-                    if (User.IsInRole("Client") || User.IsInRole("Freelancer"))
-                    {
-                    <li class="nav-item position-relative">
-                        <a id="chatLink" class="nav-link" asp-controller="Chat" asp-action="Index">Чаты</a>
-                        <span id="chatUnreadBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; padding: 0.35em 0.5em; display: none;">
-                                <span id="chatUnreadCount">0</span>
-                            </span>
-                    </li>
-                    }
-                    @if (User.IsInRole("Admin"))
-                    {
-                    <li class="nav-item">
-                        <a class="nav-link" asp-area="Identity" asp-page="/Admin/Index">Админка</a>
-                    </li>
-                    }
-                    <li class="nav-item">
-                        <a class="nav-link" asp-area="Identity" asp-page="/Account/Manage/Index">Личный кабинет</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-area="Identity" asp-page="/Account/Logout">Выход</a>
-                    </li>
+                        if (User.IsInRole("Client") || User.IsInRole("Freelancer"))
+                        {
+                            <!-- Баланс -->
+                            <li class="nav-item d-flex align-items-center ms-3">
+                                <div class="dropdown">
+                                    <a class="navbar-balance dropdown-toggle" href="#" id="balanceDropdown"
+                                       role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <span class="navbar-balance-value">
+                                            0 <span class="navbar-balance-currency">₽</span>
+                                        </span>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="balanceDropdown">
+                                        <li><a class="dropdown-item" asp-controller="Payment" asp-action="Deposit">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="me-2">
+                                                <path d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z"/>
+                                            </svg>
+                                            Пополнить
+                                        </a></li>
+                                        <li><a class="dropdown-item" asp-controller="Payment" asp-action="Withdraw">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="me-2">
+                                                <path d="M8 15a.5.5 0 0 1-.5-.5V2.707L4.354 6.854a.5.5 0 1 1-.708-.708l4-4a.5.5 0 0 1 .708 0l4 4a.5.5 0 0 1-.708.708L8.5 2.707V14.5a.5.5 0 0 1-.5.5z"/>
+                                            </svg>
+                                            Вывести
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" asp-controller="Payment" asp-action="My">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="me-2">
+                                                <path d="M1.5 1a.5.5 0 0 0-.5.5v12a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-12a.5.5 0 0 0-.5-.5H1.5zm13 1v2H2v-2h12zm0 3v8H2v-8h12z"/>
+                                            </svg>
+                                            История платежей
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </li>
+
+                            <!-- Чат -->
+                            <li class="nav-item position-relative ms-2">
+                                <a id="chatLink" class="nav-link" asp-controller="Chat" asp-action="Index">Чаты</a>
+                                <span id="chatUnreadBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; padding: 0.35em 0.5em; display: none;">
+                                    <span id="chatUnreadCount">0</span>
+                                </span>
+                            </li>
+                        }
+
+                        <!-- Админка -->
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item ms-2">
+                                <a class="nav-link" asp-area="Identity" asp-page="/Admin/Index">Админка</a>
+                            </li>
+                        }
+
+                        <!-- Личный кабинет и выход -->
+                        <li class="nav-item ms-2">
+                            <a class="nav-link" asp-area="Identity" asp-page="/Account/Manage/Index">Личный кабинет</a>
+                        </li>
+                        <li class="nav-item ms-2">
+                            <a class="nav-link" asp-area="Identity" asp-page="/Account/Logout">Выход</a>
+                        </li>
                     }
                     else
                     {
-                    <li class="nav-item">
-                        <a class="nav-link" asp-area="Identity" asp-page="/Account/Login">Вход</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-area="Identity" asp-page="/Account/Register">Регистрация</a>
-                    </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="Identity" asp-page="/Account/Login">Вход</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="Identity" asp-page="/Account/Register">Регистрация</a>
+                        </li>
                     }
                 </ul>
             </div>
