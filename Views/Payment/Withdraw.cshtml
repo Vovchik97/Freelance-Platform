@@ -3,6 +3,15 @@
     ViewData["Title"] = "Вывести средства";
 }
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success text-center">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger text-center">@TempData["ErrorMessage"]</div>
+}
+
 <div class="filters-card mx-auto mt-4" style="max-width:600px;">
     <h2 class="filters-title mb-3">Вывести средства</h2>
     <p class="text-muted">Текущий баланс: <strong>@Model.Balance.ToString("C", new System.Globalization.CultureInfo("ru-RU"))</strong></p>

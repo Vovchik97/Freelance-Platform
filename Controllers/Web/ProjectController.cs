@@ -250,12 +250,6 @@ public class ProjectController : Controller
             _context.Chats.Add(chat);
         }
         
-        await _balanceService.FreezeForProjectAsync(
-            project.ClientId,
-            bid.Amount,
-            project.Id
-        );
-        
         await _context.SaveChangesAsync();
 
         TempData["Success"] = "Исполнитель выбран. Остальные заявки отклонены.";
@@ -301,6 +295,7 @@ public class ProjectController : Controller
     {
         var userId = _userManager.GetUserId(User);
         var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == id);
+        var acceptBid = await _context.Bids.FirstOrDefaultAsync(b => b.ProjectId == project.Id && b.Status == BidStatus.Accepted);
         
         if (project == null)
         {
@@ -320,7 +315,7 @@ public class ProjectController : Controller
         await _balanceService.ReleaseForProjectAsync(
             project.ClientId,
             project.SelectedFreelancerId,
-            project.Budget,
+            acceptBid.Amount,
             project.Id
         );
 
@@ -354,10 +349,10 @@ public class ProjectController : Controller
             );
         }
 
-        /*if (project.Status != ProjectStatus.Open)
+        if (project.Status != ProjectStatus.Open)
         {
             return BadRequest("Проект нельзя отменить на текущей стадии.");
-        }*/
+        }
 
         project.Status = ProjectStatus.Cancelled;
         foreach (var bid in project.Bids)

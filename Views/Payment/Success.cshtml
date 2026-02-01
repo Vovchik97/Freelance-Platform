@@ -1,38 +1,108 @@
 ﻿@model FreelancePlatform.Models.Payment
 @{
-    ViewData["Title"] = "Оплата успешна";
+    ViewData["Title"] = Model.Type switch
+    {
+        PaymentType.Deposit => "Пополнение баланса",
+        PaymentType.Withdrawal => "Вывод средств",
+        PaymentType.Order => "Оплата заказ",
+        PaymentType.Project => "Оплата проекта",
+        _ => "Платёж"
+    };
 }
 
-<div class="alert alert-success mt-4">
-    Оплата прошла успешно.
+<div class="@(Model.Status == PaymentStatus.Succeeded ? "alert alert-success" : 
+                Model.Status == PaymentStatus.Failed ? "alert alert-danger" :
+                Model.Status == PaymentStatus.Canceled ? "alert alert-warning" :
+                "alert alert-info") mt-4">
+    @switch (Model.Status)
+    {
+        case PaymentStatus.Succeeded:
+            @switch (Model.Type)
+            {
+                case PaymentType.Deposit:
+                    <strong>Баланс успено пополнен</strong>
+                    break;
+                case PaymentType.Withdrawal:
+                    <strong>Средства успешно выведены</strong>
+                    break;
+                case PaymentType.Order:
+                    <strong>Заказ успешно оплачен</strong>
+                    break;
+                case PaymentType.Project:
+                    <strong>Проект успешно оплачен</strong>
+                    break;
+            }
+            break;
+        case PaymentStatus.Pending:
+            <strong>Платёж в обработке</strong>
+            break;
+        case PaymentStatus.Canceled:
+            <strong>Платёж отменен</strong>
+            break;
+        case PaymentStatus.Failed:
+            <strong>Платёж не удался</strong>
+            break;
+    }
 </div>
 
 <div class="project-card">
     <div class="card-body">
-        <p>@(Model.OrderId.HasValue ? "Номер заказа:" : "Номер проекта:") 
-            <strong>@(Model.OrderId.HasValue ? Model.OrderId.ToString() : Model.ProjectId.ToString())</strong></p>
-        <p>Название: <strong>@(Model.Order?.Service?.Title ?? Model.Project?.Title)</strong></p>
-        <p>Сумма: <strong>@((Model.AmountMinor / 100.0M).ToString("C", new System.Globalization.CultureInfo("ru-RU")))</strong></p>
-        <p>Платёжная система: @Model.Provider</p>
-        <p>Статус: @GetStatusText(Model.Status.ToString())</p>
+        @if (Model.Type == PaymentType.Order && Model.Order != null)
+        {
+            <p><strong>Тип:</strong> Оплата заказа</p>
+            <p><strong>Номер заказа:</strong> #@Model.OrderId</p>
+            <p><strong>Услуга:</strong> @Model.Order.Service?.Title</p>
+        }
+        else if (Model.Type == PaymentType.Project && Model.Project != null)
+        {
+            <p><strong>Тип:</strong> Оплата проекта</p>
+            <p><strong>Номер проекта:</strong> #@Model.ProjectId</p>
+            <p><strong>Проект:</strong> @Model.Project.Title</p>
+        }
+        else if (Model.Type == PaymentType.Deposit)
+        {
+            <p><strong>Тип:</strong> Пополнение баланса</p>
+        }
+        else if (Model.Type == PaymentType.Withdrawal)
+        {
+            <p><strong>Тип:</strong> Выод средств</p>
+        }
 
-        @* Escrow info *@
-        @if(Model.Status == PaymentStatus.Pending)
+        <p><strong>Сумма:</strong> @((Model.AmountMinor / 100.0M).ToString("C", new System.Globalization.CultureInfo("ru-Ru")))</p>
+        <p><strong>Валюта:</strong> @Model.Currency</p>
+        <p><strong>Платёжная система:</strong> @Model.Provider</p>
+        <p><strong>Дата:</strong> @Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</p>
+        <p><strong>Статус:</strong> @GetStatusText(Model.Status.ToString())</p>
+        
+        @if (Model.Status == PaymentStatus.Succeeded)
         {
-            <p class="text-warning"><strong>Средства заморожены (Escrow)</strong></p>
+            @if (Model.Type == PaymentType.Deposit)
+            {
+                <p class="text-success mt-3"><strong>Средства зачислены на ваш баланс</strong></p>
+            }
+            else if (Model.Type == PaymentType.Withdrawal)
+            {
+                <p class="text-success mt-3"><strong>Средства выведены с вашего баланса</strong></p>
+            }
+            else if (Model.Type == PaymentType.Order || Model.Type == PaymentType.Project)
+            {
+                <p class="text-success mt-3"><strong>Средства выплачены фрилансеру</strong></p>
+            }
         }
-        else if(Model.Status == PaymentStatus.Succeeded)
+        else if (Model.Status == PaymentStatus.Canceled)
         {
-            <p class="text-success"><strong>Средства выплачены фрилансеру</strong></p>
-        }
-        else if(Model.Status == PaymentStatus.Canceled)
-        {
-            <p class="text-danger"><strong>Платёж отменён, средства возвращены</strong></p>
+            <p class="text-warning mt-3"><strong>Средства возвращены на ваш баланс</strong></p>
         }
     </div>
 </div>
 
-<a asp-action="My" class="btn btn-secondary mt-3">Мои платежи</a>
+<div class="mt-3">
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <a asp-action="My" class="btn btn-secondary">Мои платежи</a>
+    }
+    <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">На главную</a>
+</div>
 
 @functions {
     private string GetStatusText(string status)

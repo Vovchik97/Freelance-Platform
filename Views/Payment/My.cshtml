@@ -72,11 +72,12 @@
                         <td>@p.UpdatedAt.ToLocalTime()</td>
                         <td>
                             <div class="d-flex flex-column gap-1">
-                                @if(p.Type == PaymentType.Order && p.OrderId.HasValue)
+                                <a asp-controller="Payment" asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary">Подробнее</a>
+                                @if (p.Type == PaymentType.Order && p.OrderId.HasValue)
                                 {
                                     <a asp-controller="Order" asp-action="Details" asp-route-id="@p.Order?.Id" class="btn btn-sm btn-outline-primary">Заказ</a>
                                 }
-                                else if(p.Type == PaymentType.Project && p.ProjectId.HasValue)
+                                else if (p.Type == PaymentType.Project && p.ProjectId.HasValue)
                                 {
                                     <a asp-controller="Project" asp-action="Details" asp-route-id="@p.Project?.Id" class="btn btn-sm btn-outline-primary">Проект</a>
                                 }

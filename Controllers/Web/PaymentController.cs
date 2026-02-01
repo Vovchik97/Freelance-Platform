@@ -67,7 +67,11 @@ public class PaymentController : Controller
         else if (projectId.HasValue)
         {
             var project = await _context.Projects
+                .Include(p => p.Bids)
                 .FirstOrDefaultAsync(p => p.Id == projectId);
+
+            var acceptBid = await _context.Bids
+                .FirstOrDefaultAsync(b => b.ProjectId == projectId && b.Status == BidStatus.Accepted);
 
             if (project == null)
             {
@@ -88,7 +92,7 @@ public class PaymentController : Controller
             {
                 ProjectId = project.Id,
                 Title = project.Title,
-                Amount = project.Budget,
+                Amount = acceptBid.Amount,
                 Currency = "RUB",
                 Type = PaymentType.Project
             };
@@ -102,17 +106,12 @@ public class PaymentController : Controller
         }
     }
     
-    // создаем Payment в БД и Stripe Session, редиректим на Stripe
+    
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Start(int? orderId, int? projectId)
     {
         var userId = _userManager.GetUserId(User);
-        var user = await _userManager.GetUserAsync(User);
-        
-        Payment payment;
-        string description;
-        long amountMinor;
 
         if (orderId.HasValue)
         {
@@ -134,27 +133,48 @@ public class PaymentController : Controller
             {
                 return BadRequest();
             }
-        
-            amountMinor = (long)(order.Service!.Price * 100m);
-        
-            payment = new Payment
+
+            try
+            {
+                await _balanceService.FreezeForOrderAsync(
+                    userId,
+                    order.Service!.Price,
+                    order.Id
+                );
+            }
+            catch (InvalidOperationException exception)
+            {
+                TempData["ErrorMessage"] = exception.Message;
+                return RedirectToAction("Details", "Order", new { id = order.Id });
+            }
+
+            order.Status = OrderStatus.Paid;
+
+            _context.Payments.Add(new Payment
             {
                 OrderId = order.Id,
-                PayerId = user!.Id,
-                AmountMinor = amountMinor,
+                PayerId = userId,
+                AmountMinor = (long)(order.Service.Price * 100),
                 Currency = "RUB",
-                Provider = "Stripe",
-                Status = PaymentStatus.Pending
-            };
-            
-            description = $"Оплата заказа #{order.Id} {order.Service.Title}";
+                Provider = "Internal",
+                Status = PaymentStatus.Succeeded,
+                Type = PaymentType.Order
+            });
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Заказ успешно оплачен";
+
+            return RedirectToAction("MyOrders", "Order");
         }
 
-        else if (projectId.HasValue)
+        if (projectId.HasValue)
         {
             var project = await _context.Projects
                 .FirstOrDefaultAsync(p => p.Id == projectId);
-        
+            
+            var acceptBid = await _context.Bids
+                .FirstOrDefaultAsync(b => b.ProjectId == projectId && b.Status == BidStatus.Accepted);
+            
             if (project == null)
             {
                 return NotFound();
@@ -170,46 +190,40 @@ public class PaymentController : Controller
                 return BadRequest();
             }
         
-            amountMinor = (long)(project.Budget * 100m);
-        
-            payment = new Payment
+            try
+            {
+                await _balanceService.FreezeForProjectAsync(
+                    userId,
+                    acceptBid.Amount,
+                    project.Id
+                );
+            }
+            catch (InvalidOperationException exception)
+            {
+                TempData["ErrorMessage"] = exception.Message;
+                return RedirectToAction("Details", "Project", new { id = project.Id });
+            }
+
+            project.Status = ProjectStatus.Paid;
+
+            _context.Payments.Add(new Payment
             {
                 ProjectId = project.Id,
-                PayerId = user!.Id,
-                AmountMinor = amountMinor,
+                PayerId = userId,
+                AmountMinor = (long)(acceptBid.Amount * 100),
                 Currency = "RUB",
-                Provider = "Stripe",
-                Status = PaymentStatus.Pending
-            };
+                Provider = "Internal",
+                Status = PaymentStatus.Succeeded,
+                Type = PaymentType.Project
+            });
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Проект успешно оплачен";
             
-            description = $"Оплата проекта #{project.Id} {project.Title}";
-        }
-        else
-        {
-            return BadRequest("Не указан ни orderId, ни projectId");
-        }
-
-        _context.Payments.Add(payment);
-        await _context.SaveChangesAsync();
+            return RedirectToAction("MyProjects", "Project");
+        } 
         
-        var req = new CreateCheckoutSessionRequest
-        {
-            AmountMinor = amountMinor,
-            Currency = "RUB",
-            Description = description,
-            CustomerEmail = user?.Email ?? "",
-            SuccessUrl = Url.Action(nameof(Success), "Payment", null, Request.Scheme)!,
-            CancelUrl = Url.Action(nameof(Cancel), "Payment", new { orderId, projectId }, Request.Scheme)!,
-            MetadataPaymentId = payment.Id.ToString()
-        };
-        
-        var session = await _paymentProvider.CreateCheckoutSessionAsync(req);
-
-        payment.ProviderSessionId = session.SessionId;
-        payment.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
-        
-        return Redirect(session.SessionUrl);
+        return BadRequest("Не указан ни orderId, ни projectId");
     }
     
     // success URL - подтверждаем у провайдера статус и проставляем в БД
@@ -251,7 +265,15 @@ public class PaymentController : Controller
                 case PaymentType.Order:
                 case PaymentType.Project:
                 case PaymentType.Withdrawal:
-                    await _balanceService.WithdrawAsync(payment.PayerId, amount, payment.Id);
+                    try
+                    {
+                        await _balanceService.WithdrawAsync(payment.PayerId, amount, payment.Id);
+                    }
+                    catch (InvalidOperationException exception)
+                    {
+                        TempData["ErrorMessage"] = exception.Message;
+                        return View("Details", payment);
+                    }
                     break;
             }
             
@@ -418,7 +440,13 @@ public class PaymentController : Controller
         
         var userId = _userManager.GetUserId(User);
         var user = await _userManager.GetUserAsync(User);
-        var balance = await _balanceService.GetAsync(userId); 
+        var balance = await _balanceService.GetAsync(userId);
+
+        if (balance.Balance < amount)
+        {
+            TempData["ErrorMessage"] = "Недостаточно средств";
+            return RedirectToAction(nameof(Withdraw));
+        }
         
         long amountMinor = (long)(amount * 100m);
         
@@ -452,7 +480,6 @@ public class PaymentController : Controller
         await _context.SaveChangesAsync();
 
         TempData["NewBalance"] = balance.Balance.ToString("F2");
-        TempData["SuccessMessage"] = "Запрос на вывод средств успешно создан.";
         return Redirect(session.SessionUrl);
     }
 
@@ -467,5 +494,28 @@ public class PaymentController : Controller
 
         var balance = await _balanceService.GetAsync(user.Id);
         return Json(new { balance });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Details(int id)
+    {
+        var payment = await _context.Payments
+            .Include(o => o.Order)
+            .ThenInclude(o => o!.Service)
+            .Include(p => p.Project)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (payment == null)
+        {
+            return NotFound();
+        }
+        
+        var userId = _userManager.GetUserId(User);
+        if (payment.PayerId != userId)
+        {
+            return Forbid();
+        }
+
+        return View("Success", payment);
     }
 }
