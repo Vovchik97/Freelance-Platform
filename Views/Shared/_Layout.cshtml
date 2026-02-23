@@ -49,10 +49,7 @@
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     <!-- Пункты для клиентов -->
                     @if (User.IsInRole("Client"))
-                    { 
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Payment" asp-action="My">Мои платежи</a>
-                        </li>
+                    {
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Project" asp-action="MyProjects">Мои проекты</a>
                         </li>

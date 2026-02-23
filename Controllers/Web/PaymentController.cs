@@ -354,15 +354,40 @@ public class PaymentController : Controller
     public async Task<IActionResult> My()
     {
         var userId = _userManager.GetUserId(User);
-        var items = await _context.Payments
-            .Include(p => p.Order)
-            .ThenInclude(o => o!.Service)
-            .Include(p => p.Project)
-            .Where(p => p.PayerId == userId)
-            .OrderByDescending(p => p.CreatedAt)
-            .ToListAsync();
+        var userRoles = await _userManager.GetRolesAsync(await _userManager.GetUserAsync(User));
+        var isFreelancer = userRoles.Contains("Freelancer");
 
-        return View(items);
+        IQueryable<Payment> query = _context.Payments
+            .Include(p => p.Order)
+            .ThenInclude(o => o!.Service);
+            
+        query = query.Include(p => p.Project);
+
+        if (isFreelancer)
+        {
+            // Для фрилансера показываем:
+            // 1. Платежи, где он платит (пополнения, выводы)
+            // 2. Платежи от заказов, где он владелец сервиса
+            // 3. Платежи от проектов, где он выбран как фрилансер
+            var payments = await query.ToListAsync();
+            var items = payments.Where(p =>
+                p.PayerId == userId || // платежи где фрилансер платит
+                (p.Type == PaymentType.Order && p.Order?.Service?.FreelancerId == userId) || // заказы его сервисов
+                (p.Type == PaymentType.Project && p.Project?.SelectedFreelancerId == userId) // выбранные проекты
+            ).OrderByDescending(p => p.CreatedAt).ToList();
+
+            return View(items);
+        }
+        else
+        {
+            // Для клиента показываем только его платежи
+            var items = await query
+                .Where(p => p.PayerId == userId)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+
+            return View(items);
+        }
     }
 
     [HttpGet]

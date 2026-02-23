@@ -1,11 +1,11 @@
 ﻿@model IEnumerable<FreelancePlatform.Models.Payment>
 @{
-    ViewData["Title"] = "Мои платежи";
+    ViewData["Title"] = "История платежей";
 }
 
 <div class="container mt-5">
     <div class="header">
-        <h1>Мои платежи</h1>
+        <h1>История платежей</h1>
     </div>
 
     @if (Model.Any())
@@ -19,13 +19,15 @@
                     <th>Сумма</th>
                     <th>Статус</th>
                     <th>Создан</th>
-                    <th>Обновлён</th>
                     <th>Действия</th>
                 </tr>
                 </thead>
                 <tbody>
                 @foreach (var p in Model)
                 {
+                    
+                    var actualStatus = GetActualStatus(p);
+                    
                     <tr>
                         <td>
                             @switch(p.Type)
@@ -62,17 +64,49 @@
                                 <span>Вывод средств</span>
                             }
                         </td>
-                        <td>@((p.AmountMinor / 100.0M).ToString("C", new System.Globalization.CultureInfo("ru-RU")))</td>
                         <td>
-                            <span class="status-badge @GetStatusClass(p.Status.ToString())">
-                                @GetStatusText(p.Status.ToString())
+                            @{
+                                var culture = new System.Globalization.CultureInfo("ru-RU");
+                                var currentUserId = ViewContext.HttpContext.User
+                                    .FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+                                bool isIncoming = false;
+
+                                switch (p.Type)
+                                {
+                                    case PaymentType.Deposit:
+                                        isIncoming = true;
+                                        break;
+
+                                    case PaymentType.Withdrawal:
+                                        isIncoming = false;
+                                        break;
+
+                                    case PaymentType.Order:
+                                    case PaymentType.Project:
+                                        isIncoming = p.PayerId != currentUserId;
+                                        break;
+                                }
+
+                                var amount = (p.AmountMinor / 100.0M).ToString("C", culture);
+                            }
+
+                            <span class="@(isIncoming ? "text-success fw-semibold" : "text-danger fw-semibold")">
+                                @(isIncoming ? "+" : "-") @amount
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-badge @GetStatusClass(actualStatus)">
+                                @GetStatusText(actualStatus)
                             </span>
                         </td>
                         <td>@p.CreatedAt.ToLocalTime()</td>
-                        <td>@p.UpdatedAt.ToLocalTime()</td>
                         <td>
                             <div class="d-flex flex-column gap-1">
-                                <a asp-controller="Payment" asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary">Подробнее</a>
+                                @if (p.Type == PaymentType.Deposit || p.Type == PaymentType.Withdrawal || p.PayerId == ViewContext.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)
+                                {
+                                    <a asp-controller="Payment" asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary">Подробнее</a>
+                                }
                                 @if (p.Type == PaymentType.Order && p.OrderId.HasValue)
                                 {
                                     <a asp-controller="Order" asp-action="Details" asp-route-id="@p.Order?.Id" class="btn btn-sm btn-outline-primary">Заказ</a>
@@ -113,4 +147,14 @@
         "Failed" => "Неудачно",
         _ => "Неизвестно"
     };
+
+    private string GetActualStatus(Payment payment)
+    {
+        if (payment.Status == PaymentStatus.Pending &&
+            (payment.Type == PaymentType.Deposit || payment.Type == PaymentType.Withdrawal))
+        {
+            return "Canceled";
+        }
+        return payment.Status.ToString(); 
+    }
 }

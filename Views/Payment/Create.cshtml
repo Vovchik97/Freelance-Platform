@@ -17,11 +17,7 @@ ViewData["Title"] = Model.OrderId.HasValue ? $"Оплата заказа #{Model
         {
         <input type="hidden" name="projectId" value="@Model.ProjectId" />
         }
-        <button type="submit" class="btn btn-primary">Перейти к оплате (Stripe Test)</button>
+        <button type="submit" class="btn btn-primary">Оплатить</button>
         <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary ms-2">Назад</a>
     </form>
-
-    <p class="text-muted mt-3">
-        Используется Stripe в <strong>Test Mode</strong>. Карта: 4242 4242 4242 4242, любая дата и CVC.
-    </p>
 </div>
