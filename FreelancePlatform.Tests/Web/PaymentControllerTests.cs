@@ -1,4 +1,4 @@
-﻿/*using System.Security.Claims;
+﻿using System.Security.Claims;
 using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Web;
 using FreelancePlatform.Dto.Payment;
@@ -6,9 +6,12 @@ using FreelancePlatform.Models;
 using FreelancePlatform.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using Stripe;
 using Xunit;
+using Service = FreelancePlatform.Models.Service;
 
 namespace FreelancePlatform.FreelancePlatform.Tests.Web;
 
@@ -34,6 +37,9 @@ public class PaymentControllerTests
         mgr.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>()))
             .ReturnsAsync(new IdentityUser { Id = "test-user", Email = "test@example.com" });
 
+        mgr.Setup(x => x.GetRolesAsync(It.IsAny<IdentityUser>()))
+            .ReturnsAsync(new List<string> { "Client" });
+
         return mgr;
     }
     
@@ -57,7 +63,8 @@ public class PaymentControllerTests
         using var context = GetDbContext();
         var userManager = GetUserManagerMock();
         var paymentProvider = new Mock<IPaymentProvider>();
-        var controller = new PaymentController(context, userManager.Object, paymentProvider.Object);
+        var balanceService = new Mock<IBalanceService>();
+        var controller = new PaymentController(context, userManager.Object, paymentProvider.Object, balanceService.Object);
         SetUser(controller, "test-user");
         
         var result = await controller.Create(1, null);
@@ -87,7 +94,8 @@ public class PaymentControllerTests
         await context.SaveChangesAsync();
         
         var userManager = GetUserManagerMock();
-        var controller = new PaymentController(context, userManager.Object, new Mock<IPaymentProvider>().Object);
+        var balanceService = new Mock<IBalanceService>();
+        var controller = new PaymentController(context, userManager.Object, new Mock<IPaymentProvider>().Object, balanceService.Object);
         SetUser(controller, "test-user");
         
         var result = await controller.Create(1,null);
@@ -117,7 +125,8 @@ public class PaymentControllerTests
         await context.SaveChangesAsync();
         
         var userManager = GetUserManagerMock();
-        var controller = new PaymentController(context, userManager.Object, new Mock<IPaymentProvider>().Object);
+        var balanceService = new Mock<IBalanceService>();
+        var controller = new PaymentController(context, userManager.Object, new Mock<IPaymentProvider>().Object, balanceService.Object);
         SetUser(controller, "test-user");
         
         var result = await controller.Create(1, null);
@@ -148,7 +157,8 @@ public class PaymentControllerTests
         await context.SaveChangesAsync();
         
         var userManager = GetUserManagerMock();
-        var controller = new PaymentController(context, userManager.Object, new Mock<IPaymentProvider>().Object);
+        var balanceService = new Mock<IBalanceService>();
+        var controller = new PaymentController(context, userManager.Object, new Mock<IPaymentProvider>().Object, balanceService.Object);
         SetUser(controller, "test-user");
         
         var result = await controller.Create(1, null);
@@ -167,9 +177,27 @@ public class PaymentControllerTests
         var providerMock = new Mock<IPaymentProvider>();
         providerMock.Setup(p => p.GetSessionStatusAsync("sess123"))
             .ReturnsAsync((ExternalPaymentsStatus.Succeeded, "pi_123"));
+        var balanceService = new Mock<IBalanceService>();
+        
+        balanceService
+            .Setup(x => x.WithdrawAsync(It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
 
-        var controller = new PaymentController(context, userManager.Object, providerMock.Object);
+        balanceService
+            .Setup(x => x.GetAsync(It.IsAny<string>()))
+            .ReturnsAsync(new UserBalance
+            {
+                UserId = "test-user",
+                Balance = 1000
+            });
+
+        var controller = new PaymentController(context, userManager.Object, providerMock.Object, balanceService.Object);
         SetUser(controller, "test-user");
+
+        controller.TempData = new TempDataDictionary(
+            new DefaultHttpContext(),
+            Mock.Of<ITempDataProvider>()
+        );
         
         var order = new Order
         {
@@ -189,10 +217,12 @@ public class PaymentControllerTests
         var payment = new Payment
         {
             Id = 1, 
-            OrderId = 1, 
+            OrderId = 1,
             ProviderSessionId = "sess123", 
             Status = PaymentStatus.Pending,
             PayerId = "test-user",
+            Type = PaymentType.Order,
+            AmountMinor = 100
         };
         context.Orders.Add(order);
         context.Payments.Add(payment);
@@ -218,7 +248,8 @@ public class PaymentControllerTests
         await context.SaveChangesAsync();
         
         var userManager = GetUserManagerMock();
-        var controller = new PaymentController(context, userManager.Object, new Mock<IPaymentProvider>().Object);
+        var balanceService = new Mock<IBalanceService>();
+        var controller = new PaymentController(context, userManager.Object, new Mock<IPaymentProvider>().Object, balanceService.Object);
         SetUser(controller, "test-user");
         
         var result = await controller.Cancel(10, null);
@@ -258,7 +289,8 @@ public class PaymentControllerTests
         await context.SaveChangesAsync();
         
         var userManager = GetUserManagerMock();
-        var controller = new PaymentController(context, userManager.Object, new Mock<IPaymentProvider>().Object);
+        var balanceService = new Mock<IBalanceService>();
+        var controller = new PaymentController(context, userManager.Object, new Mock<IPaymentProvider>().Object, balanceService.Object);
         SetUser(controller, "test-user");
         
         var result = await controller.My();
@@ -268,4 +300,4 @@ public class PaymentControllerTests
         Assert.Single(items);
         Assert.Equal("test-user", items.First().PayerId);
     }
-}*/
+}

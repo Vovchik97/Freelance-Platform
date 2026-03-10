@@ -1,8 +1,9 @@
-﻿/*using System.Security.Claims;
+﻿using System.Security.Claims;
 using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Web;
 using FreelancePlatform.Dto.Orders;
 using FreelancePlatform.Models;
+using FreelancePlatform.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ public class OrderControllerTests
 {
     private readonly AppDbContext _context;
     private readonly Mock<UserManager<IdentityUser>> _mockUserManager;
+    private readonly Mock<BalanceService> _mockBalanceService;
     private readonly OrderController _controller;
 
     public OrderControllerTests()
@@ -26,7 +28,8 @@ public class OrderControllerTests
         
         var emailSender = new FakeEmailSender();
         _mockUserManager = GetMockUserManager();
-        _controller = new OrderController(_context, _mockUserManager.Object, emailSender);
+        _mockBalanceService = new Mock<BalanceService>(_context);
+        _controller = new OrderController(_context, _mockUserManager.Object, emailSender, _mockBalanceService.Object);
     }
     
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()
@@ -213,4 +216,4 @@ public class OrderControllerTests
         Assert.Equal(2, model.Count());
 
     }
-}*/
+}

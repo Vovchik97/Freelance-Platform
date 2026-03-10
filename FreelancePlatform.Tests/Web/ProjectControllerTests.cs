@@ -1,8 +1,9 @@
-﻿/*using System.Security.Claims;
+﻿using System.Security.Claims;
 using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Web;
 using FreelancePlatform.Dto.Projects;
 using FreelancePlatform.Models;
+using FreelancePlatform.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
@@ -17,6 +18,7 @@ public class ProjectControllerTests
 {
     private readonly AppDbContext _context;
     private readonly Mock<UserManager<IdentityUser>> _mockUserManager;
+    private readonly Mock<BalanceService> _balanceService;
     private readonly ProjectController _controller;
 
     public ProjectControllerTests()
@@ -25,9 +27,10 @@ public class ProjectControllerTests
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         _context = new AppDbContext(options);
+        _balanceService = new Mock<BalanceService>(_context);
         
         _mockUserManager = GetMockUserManager();
-        _controller = new ProjectController(_context, _mockUserManager.Object);
+        _controller = new ProjectController(_context, _mockUserManager.Object, _balanceService.Object);
     }
     
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()
@@ -298,8 +301,27 @@ public class ProjectControllerTests
         
         var tempDataMock = new Mock<ITempDataDictionary>();
         _controller.TempData = tempDataMock.Object;
-        
-        var project = new Project { Id = 1, Title = "p1", Description = "p1", Status = ProjectStatus.Paid, ClientId = "client1", SelectedFreelancerId = "freelancer1"};
+
+        var project = new Project
+        {
+            Id = 1, 
+            Title = "p1", 
+            Description = "p1", 
+            Status = ProjectStatus.Paid, 
+            ClientId = "client1", 
+            SelectedFreelancerId = "freelancer1"
+        };
+
+        var bid = new Bid
+        {
+            Id = 1,
+            ProjectId = 1,
+            FreelancerId = "freelancer1",
+            Status = BidStatus.Accepted,
+            Amount = 100
+        };
+
+        _context.Bids.Add(bid);
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
         
@@ -393,4 +415,4 @@ public class ProjectControllerTests
 
         Assert.IsType<BadRequestObjectResult>(result);
     }
-}*/
+}
