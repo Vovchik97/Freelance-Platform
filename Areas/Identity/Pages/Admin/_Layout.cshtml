@@ -43,6 +43,9 @@ bool hasNewSupport = ViewData["HasNewSupport"] as bool? ?? false;
                 <span class="badge bg-danger ms-1">!</span>
             }
         </a>
+        <a asp-page="/Admin/Payments/Index" class="nav-link">💰 Платежи</a>
+        <a asp-page="/Admin/Transactions/Index" class="nav-link">📊 Транзакции</a>
+        <a asp-page="/Admin/Finance/DashBoard" class="nav-link">📋 Финансовая сводка</a>
         <a asp-action="Index" asp-controller="Home" class="nav-link text-danger mt-4">🚪 Выйти</a>
     </nav>
 </div>

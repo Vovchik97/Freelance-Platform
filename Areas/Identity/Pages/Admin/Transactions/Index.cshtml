@@ -1,0 +1,37 @@
+﻿@page
+@model FreelancePlatform.Areas.Identity.Pages.Admin.Transactions.IndexModel
+@{
+    ViewData["Title"] = "Транзакции";
+}
+
+<h2>Транзакции</h2>
+
+<table class="custom-table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Пользователь</th>
+            <th>Тип</th>
+            <th>Сумма</th>
+            <th>Дата</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.Transactions)
+        {
+            <tr>
+                <td>@item.Transaction.Id</td>
+                <td>@item.UserEmail</td>
+                <td>@item.Transaction.Type</td>
+                <td>@item.Transaction.Amount.ToString("C")</td>
+                <td>@item.Transaction.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                <td>
+                    <a asp-page="Details" asp-route-id="@item.Transaction.Id" class="btn btn-sm btn-primary">
+                        Подробнее
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

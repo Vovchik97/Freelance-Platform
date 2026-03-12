@@ -153,7 +153,7 @@ public class BalanceService : IBalanceService
                new BalanceTransaction
                {
                     UserId = "PLATFORM",
-                    Amount = amount,
+                    Amount = commission,
                     OrderId = orderId,
                     Type = BalanceTransactionType.Commission
                }
@@ -185,7 +185,7 @@ public class BalanceService : IBalanceService
                new BalanceTransaction
                {
                     UserId = "PLATFORM",
-                    Amount = amount,
+                    Amount = commission,
                     ProjectId = projectId,
                     Type = BalanceTransactionType.Commission
                }

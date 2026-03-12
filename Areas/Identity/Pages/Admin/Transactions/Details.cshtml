@@ -1,0 +1,21 @@
+﻿@page "{id:int}"
+@model FreelancePlatform.Areas.Identity.Pages.Admin.Transactions.DetailsModel
+@{
+    ViewData["Title"] = "Транзакция #" + Model.Transaction.Id;
+}
+
+<h2>Транзакция #@Model.Transaction.Id</h2>
+
+<div class="project-card">
+    <div class="card-body">
+        <p><strong>Пользователь:</strong> @Model.UserEmail</p>
+        <p><strong>Тип:</strong> @Model.Transaction.Type</p>
+        <p><strong>Сумма:</strong> @Model.Transaction.Amount.ToString("C")</p>
+        <p><strong>Payment ID:</strong> @(Model.Transaction.PaymentId?.ToString() ?? "—")</p>
+        <p><strong>Order ID:</strong> @(Model.Transaction.OrderId?.ToString() ?? "—")</p>
+        <p><strong>Project ID:</strong> @(Model.Transaction.ProjectId?.ToString() ?? "—")</p>
+        <p><strong>Дата:</strong> @Model.Transaction.CreatedAt.ToString("dd.MM.yyyy HH:mm")</p>
+    </div>
+</div>
+
+<a asp-page="Index" class="btn btn-secondary">← Назад</a>

@@ -1,0 +1,63 @@
+﻿@page
+@model FreelancePlatform.Areas.Identity.Pages.Admin.Finance.DashboardModel
+@{
+    ViewData["Title"] = "Финансовый дашборд";
+}
+
+<h2>Финансовый дашборд</h2>
+
+<div class="row g-3 mt-2">
+    <div class="col-md-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Всего депозитов</h5>
+                <p class="card-text fs-4">@Model.TotalDeposits.ToString("C")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <h5 class="card-title">Всего возвратов</h5>
+                <p class="card-text fs-4">@Model.TotalRefunds.ToString("C")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Всего выводов</h5>
+                <p class="card-text fs-4">@Model.TotalWithdrawals.ToString("C")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">Заморожено сейчас</h5>
+                <p class="card-text fs-4">@Model.TotalFrozen.ToString("C")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Балансы пользователей</h5>
+                <p class="card-text fs-4">@Model.TotalUserBalances.ToString("C")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5 class="card-title">Платежей / Транзакций</h5>
+                <p class="card-text fs-4">@Model.PaymentsCount / @Model.TransactionsCount</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a asp-page="/Admin/Payments/Index" class="btn btn-outline-primary me-2">Платежи</a>
+    <a asp-page="/Admin/Transactions/Index" class="btn btn-outline-secondary">Транзакции</a>
+</div>

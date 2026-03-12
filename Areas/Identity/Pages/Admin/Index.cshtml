@@ -79,5 +79,35 @@ ViewData["Title"] = "Панель администратора";
             </div>
         </div>
     </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="project-card">
+            <div class="card-body">
+                <h5 class="card-title">💰 Платежи</h5>
+                <p class="card-text">История оплат от клиентов.</p>
+                <a asp-page="/Admin/Payments/Index" class="btn btn-primary w-100">Перейти</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="project-card">
+            <div class="card-body">
+                <h5 class="card-title">📊 Транзакции</h5>
+                <p class="card-text">Движения средств по счетам.</p>
+                <a asp-page="/Admin/Transactions/Index" class="btn btn-primary w-100">Перейти</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="project-card">
+            <div class="card-body">
+                <h5 class="card-title">📋 Финансовая сводка</h5>
+                <p class="card-text">Ключевые финансовые показатели.</p>
+                <a asp-page="/Admin/Finance/Dashboard" class="btn btn-primary w-100">Перейти</a>
+            </div>
+        </div>
+    </div>
 
 </div>

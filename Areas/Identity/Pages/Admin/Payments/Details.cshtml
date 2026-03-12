@@ -1,0 +1,30 @@
+﻿@page "{id:int}"
+@model FreelancePlatform.Areas.Identity.Pages.Admin.Payments.DetailsModel
+@{
+    ViewData["Title"] = "Платёж #" + Model.Payment.Id;
+}
+
+<h2>Платёж #@Model.Payment.Id</h2>
+
+<div class="project-card">
+    <div class="card-body">
+        <p><strong>Пользователь:</strong> @Model.PayerEmail</p>
+        <p><strong>Сумма:</strong> @(Model.Payment.AmountMinor / 100m) @Model.Payment.Currency</p>
+        <p><strong>Тип:</strong> @Model.Payment.Type</p>
+        <p><strong>Статус:</strong> @Model.Payment.Status</p>
+        <p><strong>Stripe Payment Intent:</strong> @Model.Payment.ProviderPaymentIntentId</p>
+        <p><strong>Дата:</strong> @Model.Payment.CreatedAt.ToString("dd.MM.yyyy HH:mm")</p>
+    </div>
+</div>
+
+@if (Model.Payment.Status == FreelancePlatform.Models.PaymentStatus.Succeeded)
+{
+    <form method="post" asp-page-handler="Refund" asp-route-id="@Model.Payment.Id"
+          onsubmit="return confirm('Вы уверены? Средства будут возвращены пользователю через Stripe.')">
+        <button type="submit" class="btn btn-danger">
+            Вернуть средства (Refund)
+        </button>
+    </form>
+}
+
+<a asp-page="Index" class="btn btn-secondary mt-3">← Назад</a>
