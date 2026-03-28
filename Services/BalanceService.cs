@@ -98,6 +98,12 @@ public class BalanceService : IBalanceService
      {
           var balance = await GetAsync(userId);
 
+          if (balance.Frozen < amount)
+          {
+               throw new InvalidOperationException(
+                    $"Невозможно вернуть {amount}: замороженных средств только {balance.Frozen}");
+          }
+
           balance.Frozen -= amount;
           balance.Balance += amount;
 
@@ -115,6 +121,12 @@ public class BalanceService : IBalanceService
      public async Task RefundForProjectAsync(string userId, decimal amount, int projectId)
      {
           var balance = await GetAsync(userId);
+          
+          if (balance.Frozen < amount)
+          {
+               throw new InvalidOperationException(
+                    $"Невозможно вернуть {amount}: замороженных средств только {balance.Frozen}");
+          }
 
           balance.Frozen -= amount;
           balance.Balance += amount;
@@ -129,11 +141,39 @@ public class BalanceService : IBalanceService
 
           await _context.SaveChangesAsync();
      }
+
+     public async Task RefundDepositAsync(string userId, decimal amount, int paymentId)
+     {
+          var balance = await GetAsync(userId);
+          
+          if (balance.Balance < amount)
+          {
+               throw new InvalidOperationException(
+                    $"Невозможно вернуть {amount}: на балансе только {balance.Balance}");
+          }
+
+          balance.Balance -= amount;
+
+          _context.BalanceTransactions.Add(new BalanceTransaction
+          {
+               UserId = userId,
+               Amount = amount,
+               PaymentId = paymentId,
+               Type = BalanceTransactionType.Refund
+          });
+
+          await _context.SaveChangesAsync();
+     }
      
      public async Task ReleaseForOrderAsync(string clientId, string freelancerId, decimal amount, int orderId)
      {
           var client = await GetAsync(clientId);
           var freelancer = await GetAsync(freelancerId);
+
+          if (client.Frozen < amount)
+          {
+               throw new InvalidOperationException("Недостаточно замороженных средств");
+          }
 
           const decimal commissonPercent = 0.1m;
           var commission = amount * commissonPercent;
@@ -166,6 +206,11 @@ public class BalanceService : IBalanceService
      {
           var client = await GetAsync(clientId);
           var freelancer = await GetAsync(freelancerId);
+
+          if (client.Frozen < amount)
+          {
+               throw new InvalidOperationException("Недостаточно замороженных средств");
+          }
 
           const decimal commissonPercent = 0.1m;
           var commission = amount * commissonPercent;

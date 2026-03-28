@@ -11,6 +11,7 @@ public interface IBalanceService
     
     Task RefundForOrderAsync(string userId, decimal amount, int orderId);
     Task RefundForProjectAsync(string userId, decimal amount, int projectId);
+    Task RefundDepositAsync(string clientId, decimal amount, int paymentId);
     
     Task ReleaseForOrderAsync(string clientId, string freelancerId, decimal amount, int orderId);
     Task ReleaseForProjectAsync(string clientId, string freelancerId, decimal amount, int projectId);

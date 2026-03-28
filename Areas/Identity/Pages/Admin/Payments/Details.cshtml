@@ -6,6 +6,15 @@
 
 <h2>Платёж #@Model.Payment.Id</h2>
 
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success">@Model.SuccessMessage</div>
+}
+
 <div class="project-card">
     <div class="card-body">
         <p><strong>Пользователь:</strong> @Model.PayerEmail</p>
@@ -25,6 +34,12 @@
             Вернуть средства (Refund)
         </button>
     </form>
+}
+else if (Model.Payment.Status == FreelancePlatform.Models.PaymentStatus.Refunded)
+{
+    <div class="alert alert-warning mt-3">
+        Средства по этому платежу уже были возвращены
+    </div>
 }
 
 <a asp-page="Index" class="btn btn-secondary mt-3">← Назад</a>

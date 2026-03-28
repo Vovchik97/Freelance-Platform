@@ -197,6 +197,12 @@
     border: 1px solid var(--bs-blue);
 }
 
+.status-refunded {
+    background: rgba(255, 193, 7, 0.1); 
+    color: #d97706; 
+    border: 1px solid #d97706;
+}
+
 /* Стили для среднего рейтинга звезд */
 .star-rating {
     display: inline-block;

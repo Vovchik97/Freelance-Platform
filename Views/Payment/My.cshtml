@@ -136,6 +136,7 @@
         "Succeeded" => "status-accepted",
         "Canceled" => "status-rejected",
         "Failed" => "status-completed",
+        "Refunded" => "status-refunded",
         _ => "status-pending"
     };
 
@@ -145,6 +146,7 @@
         "Succeeded" => "Успешно",
         "Canceled" => "Отклонено",
         "Failed" => "Неудачно",
+        "Refunded" => "Возвращено",
         _ => "Неизвестно"
     };
 
@@ -154,6 +156,11 @@
             (payment.Type == PaymentType.Deposit || payment.Type == PaymentType.Withdrawal))
         {
             return "Canceled";
+        }
+
+        if (payment.Status == PaymentStatus.Refunded)
+        {
+            return "Refunded";
         }
         return payment.Status.ToString(); 
     }

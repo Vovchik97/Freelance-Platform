@@ -25,6 +25,12 @@ public class DetailsModel : PageModel
 
     public Payment Payment { get; set; } = null!;
     public string? PayerEmail { get; set; }
+    
+    [TempData]
+    public string ErrorMessage { get; set; }
+    
+    [TempData]
+    public string? SuccessMessage { get; set; }
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
@@ -44,7 +50,7 @@ public class DetailsModel : PageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostAsync(int id)
+    public async Task<IActionResult> OnPostRefundAsync(int id)
     {
         var payment = await _context.Payments
             .FirstOrDefaultAsync(p => p.Id == id);
@@ -52,6 +58,18 @@ public class DetailsModel : PageModel
         if (payment == null)
         {
             return NotFound();
+        }
+
+        if (payment.Status == PaymentStatus.Refunded)
+        {
+            ErrorMessage = "Этот платеж уже был возвращен";
+            return RedirectToPage(new { id });
+        }
+
+        if (payment.Status != PaymentStatus.Succeeded)
+        {
+            ErrorMessage = $"Возврат невозможен: статус платежа - {payment.Status}";
+            return RedirectToPage(new { id });
         }
 
         var amount = payment.AmountMinor / 100m;
@@ -65,6 +83,22 @@ public class DetailsModel : PageModel
         {
             await _balanceService.RefundForProjectAsync(payment.PayerId, amount, payment.ProjectId.Value);
         }
+        
+        else if (payment.Type == PaymentType.Deposit)
+        {
+            await _balanceService.RefundDepositAsync(payment.PayerId, amount, payment.Id);
+        }
+
+        else
+        {
+            ErrorMessage = "Неизвестный тип платежа для возврата";
+            return RedirectToPage(new { id });
+        }
+        
+        payment.Status = PaymentStatus.Refunded;
+        await _context.SaveChangesAsync();
+
+        SuccessMessage = $"Средства ({amount} {payment.Currency}) возвращены";
         
         return RedirectToPage(new { id });
     }
