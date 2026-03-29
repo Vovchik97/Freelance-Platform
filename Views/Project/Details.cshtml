@@ -170,7 +170,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var bid in Model.Bids)
+                            @foreach (var bid in Model.Bids.OrderByDescending(b => b.CreatedAt))
                             {
                                 <tr>
                                     <td><a asp-controller="PublicProfile" asp-action="Public" asp-route-userId="@bid.FreelancerId">@bid.Freelancer?.UserName</a></td>
