@@ -1,0 +1,33 @@
+﻿@page "{id:int}"
+@model FreelancePlatform.Areas.Identity.Pages.Admin.Categories.EditModel
+@{
+    ViewData["Title"] = "Редактировать категорию";
+}
+
+<div class="container">
+    <div class="header">
+        <h1>Редактировать категорию</h1>
+    </div>
+
+    <div class="filters-card">
+        <form method="post">
+            <input type="hidden" asp-for="Id" />
+            <div class="mb-3">
+                <label class="form-label">Название</label>
+                <input asp-for="Name" class="form-input" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Описание</label>
+                <textarea asp-for="Description" class="form-input" rows="3"></textarea>
+            </div>
+            <div class="mb-3">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input asp-for="IsActive" type="checkbox" /> Активна
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <a asp-page="Index" class="btn btn-outline">Отмена</a>
+        </form>
+    </div>
+</div>

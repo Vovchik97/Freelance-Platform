@@ -1,0 +1,32 @@
+﻿@page
+@model FreelancePlatform.Areas.Identity.Pages.Admin.Categories.CreateModel
+@{
+    ViewData["Title"] = "Новая категория";
+}
+
+<div class="container">
+    <div class="header">
+        <h1>Создать категорию</h1>
+    </div>
+
+    <div class="filters-card">
+        <form method="post">
+            <div class="mb-3">
+                <label class="form-label">Название</label>
+                <input asp-for="Name" class="form-input" placeholder="Например: Веб-разработка" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Описание</label>
+                <textarea asp-for="Description" class="form-input" rows="3" placeholder="Краткое описание"></textarea>
+            </div>
+            <div class="mb-3">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input asp-for="IsActive" type="checkbox" /> Активна
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary">Создать</button>
+            <a asp-page="Index" class="btn btn-outline">Отмена</a>
+        </form>
+    </div>
+</div>
