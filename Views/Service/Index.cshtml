@@ -2,7 +2,9 @@
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @model IEnumerable<FreelancePlatform.Models.Service>
 @{
-ViewData["Title"] = "Каталог услуг";
+    ViewData["Title"] = "Каталог услуг";
+    var allCategories = ViewBag.AllCategories as List<FreelancePlatform.Models.Category> ?? new List<FreelancePlatform.Models.Category>();
+    var selectedCategories = ViewBag.SelectedCategories as List<int> ?? new List<int>();
 }
 
 <div class="container">
@@ -21,7 +23,7 @@ ViewData["Title"] = "Каталог услуг";
             Фильтры поиска
         </div>
 
-        <form method="get">
+        <form method="get" id="filterForm">
             <!-- Блок поиска -->
             <div class="filters-search mb-3">
                 <label for="search" class="form-label">Поиск по названию</label>
@@ -29,9 +31,34 @@ ViewData["Title"] = "Каталог услуг";
                     <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
-                    <input type="text" id="search" name="search" value="@ViewBag.Search" class="form-input" placeholder="Введите название проекта..." />
+                    <input type="text" id="search" name="search" value="@ViewBag.Search" class="form-input" placeholder="Введите название услуги..." />
                 </div>
             </div>
+
+            <!-- Категории -->
+            @if (allCategories.Any())
+            {
+                <div class="mb-3">
+                    <label class="form-label">Категории</label>
+                    <div class="category-actions" style="margin-bottom: 8px; display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="selectAllCategories()">Выбрать все</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="clearAllCategories()">Очистить все</button>
+                    </div>
+                    <div class="category-chips" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        @foreach (var cat in allCategories)
+                        {
+                            var isChecked = selectedCategories.Contains(cat.Id);
+                            <label class="category-chip @(isChecked ? "category-chip-active" : "")" style="cursor: pointer; display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 20px; border: 2px solid #6c63ff; background: @(isChecked ? "#6c63ff" : "transparent"); color: @(isChecked ? "#fff" : "#6c63ff"); font-size: 14px; font-weight: 500; transition: all 0.2s; user-select: none;">
+                                <input type="checkbox" name="categories" value="@cat.Id"
+                                       @(isChecked ? "checked" : "")
+                                       style="display: none;"
+                                       onchange="toggleChip(this)" />
+                                @cat.Name
+                            </label>
+                        }
+                    </div>
+                </div>
+            }
 
             <!-- Остальные фильтры и кнопка -->
             <div class="filters-row">
@@ -73,7 +100,6 @@ ViewData["Title"] = "Каталог услуг";
                 </div>
             </div>
         </form>
-
     </div>
 
     <!-- Services List -->
@@ -89,6 +115,19 @@ ViewData["Title"] = "Каталог услуг";
                             @GetStatusText(service.Status.ToString())
                         </span>
                     </div>
+
+                    <!-- Категории услуги -->
+                    @if (service.Categories != null && service.Categories.Any())
+                    {
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;">
+                            @foreach (var cat in service.Categories)
+                            {
+                                <span style="display: inline-block; padding: 2px 10px; border-radius: 12px; background: #e8e6ff; color: #6c63ff; font-size: 12px; font-weight: 500;">
+                                    @cat.Name
+                                </span>
+                            }
+                        </div>
+                    }
 
                     <div class="project-meta">
                         <div class="meta-item">
@@ -164,24 +203,51 @@ ViewData["Title"] = "Каталог услуг";
     </div>
 </div>
 
-@functions {
-private string GetStatusClass(string status)
-{
-return status switch
-{
-"Available" => "status-open",
-"Unavailable" => "status-cancelled",
-_ => "status-open"
-};
-}
+<script>
+    function toggleChip(checkbox) {
+        var label = checkbox.parentElement;
+        if (checkbox.checked) {
+            label.style.background = '#6c63ff';
+            label.style.color = '#fff';
+        } else {
+            label.style.background = 'transparent';
+            label.style.color = '#6c63ff';
+        }
+    }
 
-private string GetStatusText(string status)
-{
-return status switch
-{
-"Available" => "Открыта",
-"Unavailable" => "Закрыта",
-_ => "Неизвестно"
-};
-}
+    function selectAllCategories() {
+        document.querySelectorAll('input[name="categories"]').forEach(function(cb) {
+            cb.checked = true;
+            toggleChip(cb);
+        });
+    }
+
+    function clearAllCategories() {
+        document.querySelectorAll('input[name="categories"]').forEach(function(cb) {
+            cb.checked = false;
+            toggleChip(cb);
+        });
+    }
+</script>
+
+@functions {
+    private string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            "Available" => "status-open",
+            "Unavailable" => "status-cancelled",
+            _ => "status-open"
+        };
+    }
+
+    private string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "Available" => "Открыта",
+            "Unavailable" => "Закрыта",
+            _ => "Неизвестно"
+        };
+    }
 }

@@ -304,6 +304,7 @@
       <_ContentIncludedByDefault Remove="Views\Balance\Index.cshtml" />
       <_ContentIncludedByDefault Remove="Views\BalanceHistory\Index.cshtml" />
       <_ContentIncludedByDefault Remove="Views\Balance\History.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Admin\Category\Categories.cshtml" />
     </ItemGroup>
 
     <ItemGroup>

@@ -32,26 +32,38 @@ ViewData["Title"] = "Мои проекты";
                 <h3 class="project-title">@project.Title</h3>
                 @switch (project.Status)
                 {
-                case ProjectStatus.Open:
-                <span class="status-badge status-open">Открыт</span>
-                break;
-                case ProjectStatus.InProgress:
-                <span class="status-badge status-inprogress">В работе</span>
-                break;
-                case ProjectStatus.Completed:
-                <span class="status-badge status-completed">Завершён</span>
-                break;
-                case ProjectStatus.Cancelled:
-                <span class="status-badge status-cancelled">Отменён</span>
-                break;
-                case ProjectStatus.Paid:
-                <span class="status-badge status-paid">Оплачен</span>
-                break;
-                default:
-                <span class="status-badge">Неизвестно</span>
-                break;
+                    case ProjectStatus.Open:
+                        <span class="status-badge status-open">Открыт</span>
+                        break;
+                    case ProjectStatus.InProgress:
+                        <span class="status-badge status-inprogress">В работе</span>
+                        break;
+                    case ProjectStatus.Completed:
+                        <span class="status-badge status-completed">Завершён</span>
+                        break;
+                    case ProjectStatus.Cancelled:
+                        <span class="status-badge status-cancelled">Отменён</span>
+                        break;
+                    case ProjectStatus.Paid:
+                        <span class="status-badge status-paid">Оплачен</span>
+                        break;
+                    default:
+                        <span class="status-badge">Неизвестно</span>
+                        break;
                 }
             </div>
+            
+            @if (project.Categories != null && project.Categories.Any())
+            {
+                <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;">
+                    @foreach (var cat in project.Categories)
+                    {
+                        <span style="display: inline-block; padding: 2px 10px; border-radius: 12px; background: #e8e6ff; color: #6c63ff; font-size: 12px; font-weight: 500;">
+                            @cat.Name
+                        </span>
+                    }
+                </div>
+            }
 
             <div class="project-meta">
                 <div class="meta-item">

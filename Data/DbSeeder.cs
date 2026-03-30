@@ -174,5 +174,25 @@ public static class DbSeeder
             await context.SaveChangesAsync();
         }
 
+        if (!await context.Categories.AnyAsync())
+        {
+            var categories = new[]
+            {
+                new Category { Name = "Веб-разработка", Description = "Создание сайтов и веб-приложений", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new Category { Name = "Мобильная разработка", Description = "Разработка мобильных приложений", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new Category { Name = "Дизайн", Description = "Графический и UI/UX дизайн", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new Category { Name = "Маркетинг", Description = "Интернет-маркетинг и SMM", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new Category { Name = "Копирайтинг", Description = "Написание текстов и контента", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new Category { Name = "SEO", Description = "Поисковая оптимизация", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new Category { Name = "Тестирование", Description = "QA и тестирование ПО", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new Category { Name = "Администрирование", Description = "Системное администрирование и DevOps", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new Category { Name = "Аналитика", Description = "Бизнес-аналитика и Data Science", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new Category { Name = "Другое", Description = "Прочие услуги и проекты", IsActive = true, CreatedAt = DateTime.UtcNow }
+            };
+            
+            await context.Categories.AddRangeAsync(categories);
+            await context.SaveChangesAsync();
+        }
+
     }
 }

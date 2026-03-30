@@ -13,4 +13,5 @@ public class UpdateProjectDto
     [Range(1, int.MaxValue, ErrorMessage = "Укажите корректный бюджет.")]
     public decimal Budget { get; set; }
     public ProjectStatus Status { get; set; }
+    public List<int> CategoryIds { get; set; } = new();
 }

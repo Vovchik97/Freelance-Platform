@@ -16,6 +16,8 @@ public class Service
     public ServiceStatus Status { get; set; }
     public List<Order> Orders { get; set; } = new List<Order>();
     public List<Review> Reviews { get; set; } = new List<Review>();
+    public ICollection<Category> Categories { get; set; } = new List<Category>();
+    
     public string? SelectedClientId { get; set; }
 
     [ForeignKey("SelectedClientId")]

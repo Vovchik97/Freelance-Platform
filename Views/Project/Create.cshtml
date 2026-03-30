@@ -2,6 +2,10 @@
 @model FreelancePlatform.Dto.Projects.CreateProjectDto
 @{
 ViewData["Title"] = "Создать проект";
+var allCategories = ViewBag.AllCategories as List<FreelancePlatform.Models.Category> 
+                    ?? new List<FreelancePlatform.Models.Category>();
+var selectedIds = ViewBag.SelectedCategoryIds as List<int> 
+                  ?? new List<int>();
 }
 
 <div class="container mt-5">
@@ -36,6 +40,38 @@ ViewData["Title"] = "Создать проект";
                 <input asp-for="Budget" class="form-input w-100" type="number" min="0" step="any" />
                 <span asp-validation-for="Budget" class="text-danger small"></span>
             </div>
+            
+            @if (allCategories.Any())
+            {
+                <div class="input-group mt-3">
+                    <label class="form-label">Категории</label>
+                    <div style="margin-bottom: 8px; display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-outline btn-sm" 
+                                onclick="selectAllCategories()">Выбрать все</button>
+                        <button type="button" class="btn btn-outline btn-sm" 
+                                onclick="clearAllCategories()">Очистить все</button>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        @foreach (var cat in allCategories)
+                        {
+                            var isChecked = selectedIds.Contains(cat.Id);
+                            <label style="cursor: pointer; display: inline-flex; align-items: center; 
+                                          padding: 6px 14px; border-radius: 20px; 
+                                          border: 2px solid #6c63ff; 
+                                          background: @(isChecked ? "#6c63ff" : "transparent"); 
+                                          color: @(isChecked ? "#fff" : "#6c63ff"); 
+                                          font-size: 14px; font-weight: 500; 
+                                          transition: all 0.2s; user-select: none;">
+                                <input type="checkbox" name="CategoryIds" value="@cat.Id"
+                                       @(isChecked ? "checked" : "")
+                                       style="display: none;"
+                                       onchange="toggleChip(this)" />
+                                @cat.Name
+                            </label>
+                        }
+                    </div>
+                </div>
+            }
 
             <!-- Кнопка -->
             <div class="text-end mt-4">
@@ -53,3 +89,29 @@ ViewData["Title"] = "Создать проект";
 @section Scripts {
 @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }
+<script>
+    function toggleChip(checkbox) {
+        var label = checkbox.parentElement;
+        if (checkbox.checked) {
+            label.style.background = '#6c63ff';
+            label.style.color = '#fff';
+        } else {
+            label.style.background = 'transparent';
+            label.style.color = '#6c63ff';
+        }
+    }
+
+    function selectAllCategories() {
+        document.querySelectorAll('input[name="CategoryIds"]').forEach(function(cb) {
+            cb.checked = true;
+            toggleChip(cb);
+        });
+    }
+
+    function clearAllCategories() {
+        document.querySelectorAll('input[name="CategoryIds"]').forEach(function(cb) {
+            cb.checked = false;
+            toggleChip(cb);
+        });
+    }
+</script>

@@ -15,6 +15,7 @@ public class Project
     public DateTime CreatedAt { get; set; }
     public ProjectStatus Status { get; set; }
     public List<Bid> Bids { get; set; } = new List<Bid>();
+    public ICollection<Category> Categories { get; set; } = new List<Category>();
     
     public string? SelectedFreelancerId { get; set; }
 

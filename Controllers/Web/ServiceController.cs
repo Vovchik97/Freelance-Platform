@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿// Controllers/Web/ServiceController.cs
+using System.Security.Claims;
 using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Api;
 using FreelancePlatform.Dto.Projects;
@@ -8,7 +9,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Xunit.Sdk;
 
 namespace FreelancePlatform.Controllers.Web;
 
@@ -24,11 +24,18 @@ public class ServiceController : Controller
     }
     
     [AllowAnonymous]
-    public async Task<IActionResult> Index(string? search, string? status, decimal? minPrice, decimal? maxPrice, string sort)
+    public async Task<IActionResult> Index(
+        string? search, 
+        string? status, 
+        decimal? minPrice, 
+        decimal? maxPrice, 
+        string sort,
+        [FromQuery] List<int>? categories)
     {
         var query = _context.Services
             .Include(s => s.Freelancer)
             .Include(s => s.Reviews)
+            .Include(s => s.Categories)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -50,6 +57,12 @@ public class ServiceController : Controller
         {
             query = query.Where(s => s.Price <= maxPrice);
         }
+
+        // Фильтр по категориям
+        if (categories != null && categories.Any())
+        {
+            query = query.Where(s => s.Categories.Any(c => categories.Contains(c.Id)));
+        }
         
         if (sort == "price_desc")
             query = query.OrderByDescending(s => s.Price);
@@ -60,10 +73,17 @@ public class ServiceController : Controller
         
         var services = await query.ToListAsync();
 
-        ViewBag.Searcg = search;
+        // Все активные категории для фильтра
+        ViewBag.AllCategories = await _context.Categories
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+        ViewBag.SelectedCategories = categories ?? new List<int>();
+
+        ViewBag.Search = search;
         ViewBag.Status = status;
-        ViewBag.MinBudget = minPrice;
-        ViewBag.MaxBudget = maxPrice;
+        ViewBag.MinPrice = minPrice;
+        ViewBag.MaxPrice = maxPrice;
         ViewBag.Sort = sort;
         
         return View(services);
@@ -74,6 +94,7 @@ public class ServiceController : Controller
     {
         var service = await _context.Services
             .Include(s => s.Freelancer)
+            .Include(s => s.Categories)
             .Include(s => s.Reviews)
                 .ThenInclude(r => r.User)
             .Include(s => s.Orders)
@@ -116,8 +137,13 @@ public class ServiceController : Controller
     }
 
     [Authorize(Roles = "Freelancer")]
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
+        ViewBag.AllCategories = await _context.Categories
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+        ViewBag.SelectedCategoryIds = new List<int>();
         return View();
     }
     
@@ -128,6 +154,11 @@ public class ServiceController : Controller
     {
         if (!ModelState.IsValid)
         {
+            ViewBag.AllCategories = await _context.Categories
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+            ViewBag.SelectedCategoryIds = dto.CategoryIds;
             return View(dto);
         }
         
@@ -137,6 +168,10 @@ public class ServiceController : Controller
             return Unauthorized();
         }
 
+        var selectedCategories = await _context.Categories
+            .Where(c => dto.CategoryIds.Contains(c.Id) && c.IsActive)
+            .ToListAsync();
+
         var service = new Service
         {
             Title = dto.Title,
@@ -144,12 +179,13 @@ public class ServiceController : Controller
             Price = dto.Price,
             Status = dto.Status,
             FreelancerId = freelancerId,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            Categories = selectedCategories
         };
         
         await _context.Services.AddAsync(service);
         await _context.SaveChangesAsync();
-        
+        ViewBag.SelectedCategoryIds = dto.CategoryIds;
         return RedirectToAction(nameof(MyServices));
     }
     
@@ -157,7 +193,9 @@ public class ServiceController : Controller
     public async Task<IActionResult> Edit(int id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var service = await _context.Services.FirstOrDefaultAsync(s => s.Id == id && s.FreelancerId == userId);
+        var service = await _context.Services
+            .Include(s => s.Categories)
+            .FirstOrDefaultAsync(s => s.Id == id && s.FreelancerId == userId);
         
         if (service == null)
         {
@@ -169,8 +207,16 @@ public class ServiceController : Controller
             Title = service.Title,
             Description = service.Description,
             Price = service.Price,
-            Status = service.Status
+            Status = service.Status,
+            CategoryIds = service.Categories.Select(c => c.Id).ToList()
         };
+        
+        ViewBag.AllCategories = await _context.Categories
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+        
+        ViewBag.SelectedCategoryIds = dto.CategoryIds;
         
         return View(dto);
     }
@@ -182,11 +228,17 @@ public class ServiceController : Controller
     {
         if (!ModelState.IsValid)
         {
+            ViewBag.AllCategories = await _context.Categories
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
             return View(dto);
         }
         
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var service = await _context.Services.FirstOrDefaultAsync(s => s.Id == id && s.FreelancerId == userId);
+        var service = await _context.Services
+            .Include(s => s.Categories)
+            .FirstOrDefaultAsync(s => s.Id == id && s.FreelancerId == userId);
 
         if (service == null)
         {
@@ -198,7 +250,18 @@ public class ServiceController : Controller
         service.Price = dto.Price;
         service.Status = dto.Status;
 
+        // Обновление категорий
+        service.Categories.Clear();
+        var selectedCategories = await _context.Categories
+            .Where(c => dto.CategoryIds.Contains(c.Id) && c.IsActive)
+            .ToListAsync();
+        foreach (var cat in selectedCategories)
+        {
+            service.Categories.Add(cat);
+        }
+
         await _context.SaveChangesAsync();
+        ViewBag.SelectedCategoryIds = dto.CategoryIds;
         return RedirectToAction(nameof(MyServices));
     }
 
@@ -229,6 +292,7 @@ public class ServiceController : Controller
             .Where(s => s.FreelancerId == userId)
             .OrderByDescending(s => s.CreatedAt)
             .Include(s => s.Reviews)
+            .Include(s => s.Categories)
             .ToListAsync();
 
         return View(myServices);

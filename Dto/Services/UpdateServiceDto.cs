@@ -13,4 +13,5 @@ public class UpdateServiceDto
     [Range(1, int.MaxValue, ErrorMessage = "Укажите корректную цену.")]
     public decimal Price { get; set; }
     public ServiceStatus Status { get; set; }
+    public List<int> CategoryIds { get; set; } = new();
 }

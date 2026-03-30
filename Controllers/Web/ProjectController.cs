@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿// Controllers/Web/ProjectController.cs
+using System.Security.Claims;
 using FreelancePlatform.Context;
 using FreelancePlatform.Dto.Projects;
 using FreelancePlatform.Models;
@@ -24,9 +25,18 @@ public class ProjectController : Controller
     }
     
     [AllowAnonymous]
-    public async Task<IActionResult> Index(string? search, string? status, decimal? minBudget, decimal? maxBudget, string sort)
+    public async Task<IActionResult> Index(
+        string? search, 
+        string? status, 
+        decimal? minBudget, 
+        decimal? maxBudget, 
+        string sort,
+        [FromQuery] List<int>? categories)
     {
-        var query = _context.Projects.Include(p => p.Client).AsQueryable();
+        var query = _context.Projects
+            .Include(p => p.Client)
+            .Include(p => p.Categories)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -47,6 +57,12 @@ public class ProjectController : Controller
         {
             query = query.Where(p => p.Budget <= maxBudget);
         }
+
+        // Фильтр по категориям
+        if (categories != null && categories.Any())
+        {
+            query = query.Where(p => p.Categories.Any(c => categories.Contains(c.Id)));
+        }
         
         if (sort == "budget_desc")
             query = query.OrderByDescending(p => p.Budget);
@@ -57,7 +73,14 @@ public class ProjectController : Controller
         
         var projects = await query.ToListAsync();
 
-        ViewBag.Searcg = search;
+        // Все активные категории для фильтра
+        ViewBag.AllCategories = await _context.Categories
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+        ViewBag.SelectedCategories = categories ?? new List<int>();
+
+        ViewBag.Search = search;
         ViewBag.Status = status;
         ViewBag.MinBudget = minBudget;
         ViewBag.MaxBudget = maxBudget;
@@ -71,6 +94,7 @@ public class ProjectController : Controller
     {
         var project = await _context.Projects
             .Include(p => p.Client)
+            .Include(p => p.Categories)
             .Include(p => p.Bids)
                 .ThenInclude(b => b.Freelancer)
             .FirstOrDefaultAsync(p => p.Id == id);
@@ -84,8 +108,13 @@ public class ProjectController : Controller
     }
 
     [Authorize(Roles = "Client")]
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
+        ViewBag.AllCategories = await _context.Categories
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+        ViewBag.SelectedCategoryIds = new List<int>();
         return View();
     }
     
@@ -96,6 +125,11 @@ public class ProjectController : Controller
     {
         if (!ModelState.IsValid)
         {
+            ViewBag.AllCategories = await _context.Categories
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+            ViewBag.SelectedCategoryIds = dto.CategoryIds;
             return View(dto);
         }
         
@@ -105,6 +139,10 @@ public class ProjectController : Controller
             return Unauthorized();
         }
 
+        var selectedCategories = await _context.Categories
+            .Where(c => dto.CategoryIds.Contains(c.Id) && c.IsActive)
+            .ToListAsync();
+
         var project = new Project
         {
             Title = dto.Title,
@@ -112,12 +150,13 @@ public class ProjectController : Controller
             Budget = dto.Budget,
             Status = dto.Status,
             ClientId = clientId,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            Categories = selectedCategories
         };
         
         await _context.Projects.AddAsync(project);
         await _context.SaveChangesAsync();
-        
+        ViewBag.SelectedCategoryIds = dto.CategoryIds;
         return RedirectToAction(nameof(MyProjects));
     }
     
@@ -125,7 +164,9 @@ public class ProjectController : Controller
     public async Task<IActionResult> Edit(int id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
+        var project = await _context.Projects
+            .Include(p => p.Categories)
+            .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
         
         if (project == null)
         {
@@ -137,8 +178,15 @@ public class ProjectController : Controller
             Title = project.Title,
             Description = project.Description,
             Budget = project.Budget,
-            Status = project.Status
+            Status = project.Status,
+            CategoryIds = project.Categories.Select(c => c.Id).ToList()
         };
+        
+        ViewBag.AllCategories = await _context.Categories
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+        ViewBag.SelectedCategoryIds = dto.CategoryIds; 
         
         return View(dto);
     }
@@ -150,11 +198,17 @@ public class ProjectController : Controller
     {
         if (!ModelState.IsValid)
         {
+            ViewBag.AllCategories = await _context.Categories
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
             return View(dto);
         }
         
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
+        var project = await _context.Projects
+            .Include(p => p.Categories)
+            .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
 
         if (project == null)
         {
@@ -165,8 +219,18 @@ public class ProjectController : Controller
         project.Description = dto.Description;
         project.Budget = dto.Budget;
         project.Status = dto.Status;
+        
+        project.Categories.Clear();
+        var selectedCategories = await _context.Categories
+            .Where(c => dto.CategoryIds.Contains(c.Id) && c.IsActive)
+            .ToListAsync();
+        foreach (var cat in selectedCategories)
+        {
+            project.Categories.Add(cat);
+        }
 
         await _context.SaveChangesAsync();
+        ViewBag.SelectedCategoryIds = dto.CategoryIds;
         return RedirectToAction(nameof(MyProjects));
     }
 
@@ -196,6 +260,7 @@ public class ProjectController : Controller
         var myProjects = await _context.Projects
             .Where(p => p.ClientId == userId)
             .OrderByDescending(p => p.CreatedAt)
+            .Include(p => p.Categories)
             .ToListAsync();
 
         return View(myProjects);

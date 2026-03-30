@@ -18,6 +18,7 @@ public class AppDbContext : IdentityDbContext
     public DbSet<Payment> Payments { get; set; }
     public DbSet<UserBalance> UserBalances { get; set; }
     public DbSet<BalanceTransaction> BalanceTransactions { get; set; }
+    public DbSet<Category> Categories { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) 
     {

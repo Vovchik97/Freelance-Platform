@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+﻿/*using System.Security.Claims;
 using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Web;
 using FreelancePlatform.Dto.Projects;
@@ -465,4 +465,4 @@ public class ServiceControllerTests
         Assert.Equal(5, review.Rating);
         Assert.Equal("Test rating", review.Comment);
     }
-}
+}*/

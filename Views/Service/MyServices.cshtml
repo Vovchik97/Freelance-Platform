@@ -32,17 +32,29 @@ ViewData["Title"] = "Мои услуги";
                 <h3 class="project-title">@service.Title</h3>
                 @switch (service.Status)
                 {
-                case ServiceStatus.Available:
-                <span class="status-badge status-open">Открыта</span>
-                break;
-                case ServiceStatus.Unavailable:
-                <span class="status-badge status-inprogress">Закрыта</span>
-                break;
-                default:
-                <span class="status-badge">Неизвестно</span>
-                break;
+                    case ServiceStatus.Available:
+                        <span class="status-badge status-open">Открыта</span>
+                        break;
+                    case ServiceStatus.Unavailable:
+                        <span class="status-badge status-inprogress">Закрыта</span>
+                        break;
+                    default:
+                        <span class="status-badge">Неизвестно</span>
+                        break;
                 }
             </div>
+            
+            @if (service.Categories != null && service.Categories.Any())
+            {
+                <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;">
+                    @foreach (var cat in service.Categories)
+                    {
+                        <span style="display: inline-block; padding: 2px 10px; border-radius: 12px; background: #e8e6ff; color: #6c63ff; font-size: 12px; font-weight: 500;">
+                            @cat.Name
+                        </span>
+                    }
+                </div>
+            }
 
             <div class="project-meta">
                 <div class="meta-item">
