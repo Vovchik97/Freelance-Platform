@@ -1,6 +1,6 @@
-﻿// Controllers/Web/ProjectController.cs
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using FreelancePlatform.Context;
+using FreelancePlatform.Dto.Categories;
 using FreelancePlatform.Dto.Projects;
 using FreelancePlatform.Models;
 using FreelancePlatform.Services;
@@ -16,12 +16,14 @@ public class ProjectController : Controller
     private readonly AppDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
     private readonly BalanceService _balanceService;
+    private readonly CategorySuggestionService _categorySuggestionService;
 
-    public ProjectController(AppDbContext context, UserManager<IdentityUser> userManager, BalanceService balanceService)
+    public ProjectController(AppDbContext context, UserManager<IdentityUser> userManager, BalanceService balanceService, CategorySuggestionService categorySuggestionService)
     {
         _context = context;
         _userManager = userManager;
         _balanceService = balanceService;
+        _categorySuggestionService = categorySuggestionService;
     }
     
     [AllowAnonymous]
@@ -139,6 +141,11 @@ public class ProjectController : Controller
             return Unauthorized();
         }
 
+        if (dto.CategoryIds == null || !dto.CategoryIds.Any())
+        {
+            dto.CategoryIds = await _categorySuggestionService.SuggestCategoryIdsAsync(dto.Title, dto.Description);
+        }
+
         var selectedCategories = await _context.Categories
             .Where(c => dto.CategoryIds.Contains(c.Id) && c.IsActive)
             .ToListAsync();
@@ -219,6 +226,11 @@ public class ProjectController : Controller
         project.Description = dto.Description;
         project.Budget = dto.Budget;
         project.Status = dto.Status;
+
+        if (dto.CategoryIds == null || !dto.CategoryIds.Any())
+        {
+            dto.CategoryIds = await _categorySuggestionService.SuggestCategoryIdsAsync(dto.Title, dto.Description);
+        }
         
         project.Categories.Clear();
         var selectedCategories = await _context.Categories
@@ -457,5 +469,19 @@ public class ProjectController : Controller
         TempData["SuccessMessage"] = "Проект успешно возобновлён.";
         string? referer = Request.Headers["Referer"].ToString();
         return !string.IsNullOrEmpty(referer) ? Redirect(referer) : RedirectToAction("MyProjects");
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Client")]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> SuggestCategories([FromBody] SuggestCategoriesRequest request)
+    {
+        if (request  == null)
+        {
+            return Json(new List<int>());
+        }
+        
+        var suggestedIds = await _categorySuggestionService.SuggestCategoryIdsAsync(request.Title, request.Description);
+        return Json(suggestedIds);
     }
 }

@@ -2,10 +2,10 @@
 @model FreelancePlatform.Dto.Projects.UpdateProjectDto
 @{
 ViewData["Title"] = "Редактировать проект";
-var allCategories = ViewBag.AllCategories as List<FreelancePlatform.Models.Category> 
-                    ?? new List<FreelancePlatform.Models.Category>();
-var selectedIds = ViewBag.SelectedCategoryIds as List<int> 
-                  ?? new List<int>();
+var allCategories = ViewBag.AllCategories as List<FreelancePlatform.Models.Category>
+?? new List<FreelancePlatform.Models.Category>();
+var selectedIds = ViewBag.SelectedCategoryIds as List<int>
+?? new List<int>();
 }
 
 <div class="container mt-5">
@@ -17,7 +17,6 @@ var selectedIds = ViewBag.SelectedCategoryIds as List<int>
     </div>
 
     <!-- Форма -->
-    <!-- Форма -->
     <div class="filters-card mx-auto" style="max-width: 700px;">
         <form asp-action="Edit" method="post" novalidate>
             @Html.AntiForgeryToken()
@@ -25,11 +24,11 @@ var selectedIds = ViewBag.SelectedCategoryIds as List<int>
             <!-- Название -->
             <div class="input-group">
                 <label asp-for="Title" class="form-label">Название</label>
-                <input asp-for="Title" class="form-input" />
+                <input asp-for="Title" class="form-input" id="projectTitle" />
                 <span asp-validation-for="Title" class="text-danger small"></span>
             </div>
 
-            <!-- Бюджет + Статус в одной строке -->
+            <!-- Бюджет + Статус -->
             <div class="filters-row">
                 <div class="input-group flex-fill">
                     <label asp-for="Budget" class="form-label">Бюджет</label>
@@ -39,7 +38,8 @@ var selectedIds = ViewBag.SelectedCategoryIds as List<int>
 
                 <div class="input-group flex-fill">
                     <label asp-for="Status" class="form-label">Статус</label>
-                    <select asp-for="Status" class="form-input w-100" asp-items="Html.GetEnumSelectList<FreelancePlatform.Models.ProjectStatus>()"></select>
+                    <select asp-for="Status" class="form-input w-100"
+                            asp-items="Html.GetEnumSelectList<FreelancePlatform.Models.ProjectStatus>()"></select>
                     <span asp-validation-for="Status" class="text-danger small"></span>
                 </div>
             </div>
@@ -47,47 +47,71 @@ var selectedIds = ViewBag.SelectedCategoryIds as List<int>
             <!-- Описание -->
             <div class="input-group mt-3">
                 <label asp-for="Description" class="form-label">Описание</label>
-                <textarea asp-for="Description" class="form-input w-100" rows="5" style="resize: vertical;"></textarea>
+                <textarea asp-for="Description" class="form-input w-100" rows="5"
+                          style="resize: vertical;" id="projectDescription"></textarea>
                 <span asp-validation-for="Description" class="text-danger small"></span>
             </div>
-            
+
             @if (allCategories.Any())
             {
-                <div class="input-group mt-3">
-                    <label class="form-label">Категории</label>
-                    <div style="margin-bottom: 8px; display: flex; gap: 8px;">
-                        <button type="button" class="btn btn-outline btn-sm" 
-                                onclick="selectAllCategories()">Выбрать все</button>
-                        <button type="button" class="btn btn-outline btn-sm" 
-                                onclick="clearAllCategories()">Очистить все</button>
-                    </div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                        @foreach (var cat in allCategories)
-                        {
-                            var isChecked = selectedIds.Contains(cat.Id);
-                            <label style="cursor: pointer; display: inline-flex; align-items: center; 
-                                          padding: 6px 14px; border-radius: 20px; 
-                                          border: 2px solid #6c63ff; 
-                                          background: @(isChecked ? "#6c63ff" : "transparent"); 
-                                          color: @(isChecked ? "#fff" : "#6c63ff"); 
-                                          font-size: 14px; font-weight: 500; 
-                                          transition: all 0.2s; user-select: none;">
-                                <input type="checkbox" name="CategoryIds" value="@cat.Id"
-                                       @(isChecked ? "checked" : "")
-                                       style="display: none;"
-                                       onchange="toggleChip(this)" />
-                                @cat.Name
-                            </label>
-                        }
-                    </div>
+            <div class="input-group mt-3">
+                <label class="form-label">Категории</label>
+                <div style="margin-bottom: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-outline btn-sm"
+                            onclick="selectAllCategories()">Выбрать все</button>
+                    <button type="button" class="btn btn-outline btn-sm"
+                            onclick="clearAllCategories()">Очистить все</button>
+                    <!-- ★ Кнопка автоподбора -->
+                    <button type="button" class="btn btn-sm" id="suggestBtn"
+                            style="background: linear-gradient(135deg, #6c63ff 0%, #48c6ef 100%); 
+                                       color: #fff; border: none; border-radius: 20px; 
+                                       padding: 6px 16px; font-weight: 500; cursor: pointer;
+                                       transition: opacity 0.2s;"
+                            onmouseover="this.style.opacity='0.85'"
+                            onmouseout="this.style.opacity='1'"
+                            onclick="suggestCategories()">
+                        <svg style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                        Подобрать автоматически
+                    </button>
                 </div>
+
+                <!-- Сообщение-результат автоподбора -->
+                <div id="suggestMessage" style="display: none; margin-bottom: 8px; 
+                                padding: 8px 14px; border-radius: 8px; font-size: 13px;">
+                </div>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    @foreach (var cat in allCategories)
+                    {
+                    var isChecked = selectedIds.Contains(cat.Id);
+                    <label style="cursor: pointer; display: inline-flex; align-items: center;
+                        padding: 6px 14px; border-radius: 20px;
+                        border: 2px solid #6c63ff;
+                        background: @(isChecked ? "#6c63ff" : "transparent");
+                        color: @(isChecked ? "#fff" : "#6c63ff");
+                        font-size: 14px; font-weight: 500;
+                        transition: all 0.2s; user-select: none;">
+                        <input type="checkbox" name="CategoryIds" value="@cat.Id"
+                               @(isChecked ? "checked" : "")
+                               style="display: none;"
+                               onchange="toggleChip(this)" />
+                        @cat.Name
+                    </label>
+                    }
+                </div>
+            </div>
             }
 
             <!-- Кнопка -->
             <div class="text-end mt-4">
                 <button type="submit" class="btn btn-primary">
                     <svg class="meta-icon me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M5 13l4 4L19 7" />
                     </svg>
                     Сохранить
                 </button>
@@ -143,5 +167,77 @@ var selectedIds = ViewBag.SelectedCategoryIds as List<int>
             cb.checked = false;
             toggleChip(cb);
         });
+    }
+
+    async function suggestCategories() {
+        var title = document.getElementById('projectTitle').value;
+        var description = document.getElementById('projectDescription').value;
+        var msgEl = document.getElementById('suggestMessage');
+        var btn = document.getElementById('suggestBtn');
+
+        if (!title.trim() && !description.trim()) {
+            msgEl.style.display = 'block';
+            msgEl.style.background = '#fff3cd';
+            msgEl.style.color = '#856404';
+            msgEl.textContent = 'Введите название или описание проекта для автоподбора категорий.';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Анализируем...';
+
+        try {
+            var response = await fetch('@Url.Action("SuggestCategories", "Project")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ title: title, description: description })
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка сервера: ' + response.status);
+            }
+
+            var responseText = await response.text();
+            var parsed = JSON.parse(responseText);
+            var suggestedIds = parsed.$values || parsed;
+
+            if (!Array.isArray(suggestedIds) || suggestedIds.length === 0) {
+                msgEl.style.display = 'block';
+                msgEl.style.background = '#f8f9fa';
+                msgEl.style.color = '#6c757d';
+                msgEl.textContent = 'Не удалось определить категории автоматически. Выберите вручную.';
+            } else {
+                document.querySelectorAll('input[name="CategoryIds"]').forEach(function (cb) {
+                    cb.checked = false;
+                    toggleChip(cb);
+                });
+
+                suggestedIds.forEach(function (id) {
+                    var cb = document.querySelector('input[name="CategoryIds"][value="' + id + '"]');
+                    if (cb) {
+                        cb.checked = true;
+                        toggleChip(cb);
+                    }
+                });
+
+                msgEl.style.display = 'block';
+                msgEl.style.background = '#d4edda';
+                msgEl.style.color = '#155724';
+                msgEl.textContent = 'Подобрано категорий: ' + suggestedIds.length +
+                    '. Вы можете изменить выбор вручную.';
+            }
+        } catch (e) {
+            console.error('Suggest error:', e);
+            msgEl.style.display = 'block';
+            msgEl.style.background = '#f8d7da';
+            msgEl.style.color = '#721c24';
+            msgEl.textContent = 'Произошла ошибка при автоподборе: ' + e.message;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>Подобрать автоматически';
+        }
     }
 </script>

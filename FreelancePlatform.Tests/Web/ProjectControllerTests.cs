@@ -1,6 +1,7 @@
-﻿/*using System.Security.Claims;
+﻿using System.Security.Claims;
 using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Web;
+using FreelancePlatform.Dto.Categories;
 using FreelancePlatform.Dto.Projects;
 using FreelancePlatform.Models;
 using FreelancePlatform.Services;
@@ -19,6 +20,7 @@ public class ProjectControllerTests
     private readonly AppDbContext _context;
     private readonly Mock<UserManager<IdentityUser>> _mockUserManager;
     private readonly Mock<BalanceService> _balanceService;
+    private readonly CategorySuggestionService _categorySuggestionService;
     private readonly ProjectController _controller;
 
     public ProjectControllerTests()
@@ -28,9 +30,14 @@ public class ProjectControllerTests
             .Options;
         _context = new AppDbContext(options);
         _balanceService = new Mock<BalanceService>(_context);
+        _categorySuggestionService = new CategorySuggestionService(_context);
         
         _mockUserManager = GetMockUserManager();
-        _controller = new ProjectController(_context, _mockUserManager.Object, _balanceService.Object);
+        _controller = new ProjectController(
+            _context,
+            _mockUserManager.Object,
+            _balanceService.Object,
+            _categorySuggestionService);
     }
     
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()
@@ -64,7 +71,7 @@ public class ProjectControllerTests
     }
     
     [Fact]
-    public async Task Index_WithFilters_ReturnsFilteredServices()
+    public async Task Index_WithFilters_ReturnsFilteredProjects()
     {
         var client1 = new IdentityUser { Id = "c1", UserName = "c1@test.com" };
         var client2 = new IdentityUser { Id = "c2", UserName = "c2@test.com" };
@@ -76,11 +83,34 @@ public class ProjectControllerTests
         );
         await _context.SaveChangesAsync();
 
-        var result = await _controller.Index("One", ProjectStatus.Open.ToString(), 50, 300, null!);
+        var result = await _controller.Index("One", ProjectStatus.Open.ToString(), 50, 300, null!, null);
         var view = Assert.IsType<ViewResult>(result);
         var model = Assert.IsAssignableFrom<IEnumerable<Project>>(view.Model);
         Assert.Single(model);
         Assert.Equal("One", model.First().Title);
+    }
+    
+    [Fact]
+    public async Task Index_WithCategoryFilter_ReturnsFilteredProjects()
+    {
+        var client = new IdentityUser { Id = "c1", UserName = "c1@test.com" };
+        await _context.Users.AddAsync(client);
+
+        var cat1 = new Category { Id = 1, Name = "Веб-разработка", IsActive = true, CreatedAt = DateTime.UtcNow };
+        var cat2 = new Category { Id = 2, Name = "Дизайн", IsActive = true, CreatedAt = DateTime.UtcNow };
+        _context.Categories.AddRange(cat1, cat2);
+
+        _context.Projects.AddRange(
+            new Project { Title = "Web project", Description = "d", ClientId = "c1", Status = ProjectStatus.Open, Budget = 100, CreatedAt = DateTime.UtcNow, Categories = new List<Category> { cat1 } },
+            new Project { Title = "Design project", Description = "d", ClientId = "c1", Status = ProjectStatus.Open, Budget = 200, CreatedAt = DateTime.UtcNow, Categories = new List<Category> { cat2 } }
+        );
+        await _context.SaveChangesAsync();
+
+        var result = await _controller.Index(null, null, null, null, null!, new List<int> { 1 });
+        var view = Assert.IsType<ViewResult>(result);
+        var model = Assert.IsAssignableFrom<IEnumerable<Project>>(view.Model);
+        Assert.Single(model);
+        Assert.Equal("Web project", model.First().Title);
     }
 
     [Fact]
@@ -108,9 +138,9 @@ public class ProjectControllerTests
     }
 
     [Fact]
-    public void Create_Get_ReturnsView()
+    public async Task Create_Get_ReturnsView()
     {
-        var result = _controller.Create();
+        var result = await _controller.Create();
         var view = Assert.IsType<ViewResult>(result);
     }
     
@@ -131,6 +161,70 @@ public class ProjectControllerTests
 
         var redirect = Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal(nameof(ProjectController.MyProjects), redirect.ActionName);
+    }
+
+    [Fact]
+    public async Task Create_Post_AutoAssignsCategories_WhenNoneSelected()
+    {
+        SetUser("client1");
+
+        var client = new IdentityUser { Id = "client1", Email = "client1@test.com" };
+        _context.Users.Add(client);
+
+        var cat = new Category { Id = 1, Name = "Веб-разработка", IsActive = true, CreatedAt = DateTime.UtcNow };
+        _context.Categories.Add(cat);
+        await _context.SaveChangesAsync();
+
+        var dto = new CreateProjectDto
+        {
+            Title = "Нужен сайт на React",
+            Description = "Создание лендинга",
+            Budget = 500,
+            Status = ProjectStatus.Open,
+            CategoryIds = new List<int>()
+        };
+
+        var result = await _controller.Create(dto);
+
+        Assert.IsType<RedirectToActionResult>(result);
+
+        var created = await _context.Projects
+            .Include(p => p.Categories)
+            .FirstAsync(p => p.Title == "Нужен сайт на React");
+        Assert.NotEmpty(created.Categories);
+        Assert.Contains(created.Categories, c => c.Name == "Веб-разработка");
+    }
+
+    [Fact]
+    public async Task Create_Post_AssignsOther_WhenNoKeywordsMatch()
+    {
+        SetUser("client1");
+
+        var client = new IdentityUser { Id = "client1", Email = "client1@test.com" };
+        _context.Users.Add(client);
+        
+        var catOther = new Category { Id = 1, Name = "Другое", IsActive = true, CreatedAt = DateTime.UtcNow };
+        _context.Categories.Add(catOther);
+        await _context.SaveChangesAsync();
+        
+        var dto = new CreateProjectDto
+        {
+            Title = "Выгулять собаку",
+            Description = "нужно погулять с псом",
+            Budget = 500,
+            Status = ProjectStatus.Open,
+            CategoryIds = new List<int>()
+        };
+
+        var result = await _controller.Create(dto);
+
+        Assert.IsType<RedirectToActionResult>(result);
+
+        var created = await _context.Projects
+            .Include(p => p.Categories)
+            .FirstAsync(p => p.Title == "Выгулять собаку");
+        Assert.Single(created.Categories);
+        Assert.Equal("Другое", created.Categories.First().Name);
     }
     
     [Fact]
@@ -177,6 +271,41 @@ public class ProjectControllerTests
         var dto = new UpdateProjectDto { Title = "updated" };
         var result = await _controller.Edit(999, dto);
         Assert.IsType<NotFoundResult>(result);
+    }
+
+    [Fact]
+    public async Task Edit_Post_AutoAssignsCategories_WhenAllRemoved()
+    {
+        SetUser("client1");
+        var cat = new Category { Id = 1, Name = "Другое", IsActive = true, CreatedAt = DateTime.UtcNow };
+        _context.Categories.Add(cat);
+
+        var project = new Project
+        {
+            Id = 1,
+            Title = "Какой-то проект",
+            Description = "Без ключевых слов",
+            ClientId = "client1",
+            Categories = new List<Category> { cat }
+        };
+        _context.Projects.Add(project);
+        await _context.SaveChangesAsync();
+
+        var dto = new UpdateProjectDto
+        {
+            Title = "Какой-то проект",
+            Description = "Без ключевых слов",
+            CategoryIds = new List<int>()
+        };
+        
+        var result = await _controller.Edit(1, dto);
+
+        Assert.IsType<RedirectToActionResult>(result);
+
+        var updated = await _context.Projects
+            .Include(p => p.Categories)
+            .FirstAsync(p => p.Id == 1);
+        Assert.NotEmpty(updated.Categories);
     }
     
     [Fact]
@@ -298,9 +427,15 @@ public class ProjectControllerTests
     public async Task CompleteProject_UpdatesStatus()
     {
         SetUser("freelancer1");
-        
+    
         var tempDataMock = new Mock<ITempDataDictionary>();
         _controller.TempData = tempDataMock.Object;
+
+        // Подготовка балансов для BalanceService
+        _context.UserBalances.AddRange(
+            new UserBalance { UserId = "client1", Balance = 0, Frozen = 100 },
+            new UserBalance { UserId = "freelancer1", Balance = 0, Frozen = 0 }
+        );
 
         var project = new Project
         {
@@ -324,7 +459,7 @@ public class ProjectControllerTests
         _context.Bids.Add(bid);
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
-        
+    
         var result = await _controller.CompleteProject(1);
 
         Assert.IsType<RedirectToActionResult>(result);
@@ -415,4 +550,51 @@ public class ProjectControllerTests
 
         Assert.IsType<BadRequestObjectResult>(result);
     }
-}*/
+    
+    [Fact]
+    public async Task SuggestCategories_ReturnsSuggestedIds()
+    {
+        SetUser("client1");
+
+        var cat = new Category { Id = 1, Name = "Веб-разработка", IsActive = true, CreatedAt = DateTime.UtcNow };
+        _context.Categories.Add(cat);
+        await _context.SaveChangesAsync();
+
+        var request = new SuggestCategoriesRequest { Title = "Нужен сайт", Description = "на React" };
+        var result = await _controller.SuggestCategories(request);
+
+        var jsonResult = Assert.IsType<JsonResult>(result);
+        var ids = Assert.IsAssignableFrom<List<int>>(jsonResult.Value);
+        Assert.Contains(1, ids);
+    }
+
+    [Fact]
+    public async Task SuggestCategories_ReturnsOther_WhenNoMatch()
+    {
+        SetUser("client1");
+
+        var catOther = new Category { Id = 1, Name = "Другое", IsActive = true, CreatedAt = DateTime.UtcNow };
+        _context.Categories.Add(catOther);
+        await _context.SaveChangesAsync();
+
+        var request = new SuggestCategoriesRequest { Title = "Выгулять собаку", Description = "" };
+        var result = await _controller.SuggestCategories(request);
+
+        var jsonResult = Assert.IsType<JsonResult>(result);
+        var ids = Assert.IsAssignableFrom<List<int>>(jsonResult.Value);
+        Assert.Single(ids);
+        Assert.Contains(1, ids);
+    }
+
+    [Fact]
+    public async Task SuggestCategories_ReturnsEmpty_WhenRequestNull()
+    {
+        SetUser("client1");
+
+        var result = await _controller.SuggestCategories(null!);
+
+        var jsonResult = Assert.IsType<JsonResult>(result);
+        var ids = Assert.IsAssignableFrom<List<int>>(jsonResult.Value);
+        Assert.Empty(ids);
+    }
+}

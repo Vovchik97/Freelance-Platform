@@ -1,10 +1,11 @@
-﻿// Controllers/Web/ServiceController.cs
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Api;
+using FreelancePlatform.Dto.Categories;
 using FreelancePlatform.Dto.Projects;
 using FreelancePlatform.Dto.Services;
 using FreelancePlatform.Models;
+using FreelancePlatform.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -16,11 +17,13 @@ public class ServiceController : Controller
 {
     private readonly AppDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly CategorySuggestionService _categorySuggestionService;
 
-    public ServiceController(AppDbContext context, UserManager<IdentityUser> userManager)
+    public ServiceController(AppDbContext context, UserManager<IdentityUser> userManager, CategorySuggestionService categorySuggestionService)
     {
         _context = context;
         _userManager = userManager;
+        _categorySuggestionService = categorySuggestionService;
     }
     
     [AllowAnonymous]
@@ -168,6 +171,11 @@ public class ServiceController : Controller
             return Unauthorized();
         }
 
+        if (dto.CategoryIds == null || !dto.CategoryIds.Any())
+        {
+            dto.CategoryIds = await _categorySuggestionService.SuggestCategoryIdsAsync(dto.Title, dto.Description);
+        }
+
         var selectedCategories = await _context.Categories
             .Where(c => dto.CategoryIds.Contains(c.Id) && c.IsActive)
             .ToListAsync();
@@ -249,6 +257,11 @@ public class ServiceController : Controller
         service.Description = dto.Description;
         service.Price = dto.Price;
         service.Status = dto.Status;
+
+        if (dto.CategoryIds == null || !dto.CategoryIds.Any())
+        {
+            dto.CategoryIds = await _categorySuggestionService.SuggestCategoryIdsAsync(dto.Title, dto.Description);
+        }
 
         // Обновление категорий
         service.Categories.Clear();
@@ -487,5 +500,19 @@ public class ServiceController : Controller
         await _context.SaveChangesAsync();
         
         return RedirectToAction("Details", new { id = serviceId });
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Freelancer")]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> SuggestCategories([FromBody] SuggestCategoriesRequest request)
+    {
+        if (request == null)
+        {
+            return Json(new List<int>());
+        }
+
+        var suggestedIds = await _categorySuggestionService.SuggestCategoryIdsAsync(request.Title, request.Description);
+        return Json(suggestedIds);
     }
 }
