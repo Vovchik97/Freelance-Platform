@@ -17,13 +17,19 @@ public class ProjectController : Controller
     private readonly UserManager<IdentityUser> _userManager;
     private readonly BalanceService _balanceService;
     private readonly CategorySuggestionService _categorySuggestionService;
+    private readonly RecommendationService _recommendationService;
 
-    public ProjectController(AppDbContext context, UserManager<IdentityUser> userManager, BalanceService balanceService, CategorySuggestionService categorySuggestionService)
+    public ProjectController(AppDbContext context, 
+        UserManager<IdentityUser> userManager, 
+        BalanceService balanceService, 
+        CategorySuggestionService categorySuggestionService,
+        RecommendationService recommendationService)
     {
         _context = context;
         _userManager = userManager;
         _balanceService = balanceService;
         _categorySuggestionService = categorySuggestionService;
+        _recommendationService = recommendationService;
     }
     
     [AllowAnonymous]
@@ -87,6 +93,13 @@ public class ProjectController : Controller
         ViewBag.MinBudget = minBudget;
         ViewBag.MaxBudget = maxBudget;
         ViewBag.Sort = sort;
+
+        if (User.Identity is { IsAuthenticated: true } && User.IsInRole("Freelancer"))
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            ViewBag.Recommendations = await _recommendationService
+                .GetRecommendedProjectsForFreelancerAsync(userId!);
+        }
         
         return View(projects);
     }

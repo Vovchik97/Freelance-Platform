@@ -23,20 +23,84 @@
         <!-- CTA в зависимости от роли -->
         @if (User.Identity.IsAuthenticated)
         {
-        <div class="text-center mt-5">
-            @if (User.IsInRole("Client"))
-            {
-            <a class="btn btn-primary btn-lg mx-2" asp-controller="Project" asp-action="Create">Разместить проект</a>
-            <a class="btn btn-outline btn-lg mx-2" asp-controller="Project" asp-action="MyProjects">Мои проекты</a>
-            }
-            else if (User.IsInRole("Freelancer"))
-            {
-            <a class="btn btn-primary btn-lg mx-2" asp-controller="Project" asp-action="Index">Найти проект</a>
-            <a class="btn btn-outline btn-lg mx-2" asp-controller="Bid" asp-action="MyBids">Мои отклики</a>
-            }
-        </div>
+            <div class="text-center mt-5">
+                @if (User.IsInRole("Client"))
+                {
+                    <a class="btn btn-primary btn-lg mx-2" asp-controller="Project" asp-action="Create">Разместить проект</a>
+                    <a class="btn btn-outline btn-lg mx-2" asp-controller="Project" asp-action="MyProjects">Мои проекты</a>
+                }
+                else if (User.IsInRole("Freelancer"))
+                {
+                    <a class="btn btn-primary btn-lg mx-2" asp-controller="Project" asp-action="Index">Найти проект</a>
+                    <a class="btn btn-outline btn-lg mx-2" asp-controller="Bid" asp-action="MyBids">Мои отклики</a>
+                }
+            </div>
         }
     </div>
+    
+    @if (User.Identity.IsAuthenticated && ViewBag.Recommendations != null)
+    {
+        var recs = ViewBag.Recommendations as List<FreelancePlatform.Dto.Recommendations.RecommendationDto>;
+
+        if (recs != null && recs.Any())
+        {
+            <div class="filters-card mb-5">
+                <h2 class="filters-title">
+                    🔥
+                    @if (User.IsInRole("Freelancer"))
+                    {
+                        @:Рекомендованные проекты для вас
+                    }
+                    else if (User.IsInRole("Client"))
+                    {
+                        @:Рекомендованные услуги для вас
+                    }
+                </h2>
+
+                <div class="row">
+                    @foreach (var item in recs)
+                    {
+                        <div class="col-md-4 mb-3">
+                            <div class="project-card">
+                                <h5>@item.Title</h5>
+
+                                <div class="project-meta">
+                                    <span class="project-budget">
+                                        💰 @item.Budget.ToString("C", new CultureInfo("ru-RU"))
+                                    </span>
+                                </div>
+
+                                <small class="text-muted">
+                                    @string.Join(", ", item.Reasons)
+                                </small>
+
+                                <div class="mt-2 d-flex gap-2">
+                                    @if (item.Type == "Project")
+                                    {
+                                        <a asp-controller="Project"
+                                           asp-action="Details"
+                                           asp-route-id="@item.Id"
+                                           class="btn btn-primary btn-sm">
+                                            Открыть проект
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a asp-controller="Service"
+                                           asp-action="Details"
+                                           asp-route-id="@item.Id"
+                                           class="btn btn-primary btn-sm">
+                                            Открыть услугу
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
 
     <!-- Как работает -->
     <div class="filters-card mb-5">

@@ -21,6 +21,7 @@ public class ServiceControllerTests
     private readonly Mock<UserManager<IdentityUser>> _mockUserManager;
     private readonly CategorySuggestionService _categorySuggestionService;
     private readonly ServiceController _controller;
+    private readonly RecommendationService _recommendationService;
 
     public ServiceControllerTests()
     {
@@ -29,9 +30,10 @@ public class ServiceControllerTests
             .Options;
         _context = new AppDbContext(options);
         _categorySuggestionService = new CategorySuggestionService(_context);
+        _recommendationService = new RecommendationService(_context);
         
         _mockUserManager = GetMockUserManager();
-        _controller = new ServiceController(_context, _mockUserManager.Object, _categorySuggestionService);
+        _controller = new ServiceController(_context, _mockUserManager.Object, _categorySuggestionService, _recommendationService);
     }
     
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()
@@ -67,6 +69,8 @@ public class ServiceControllerTests
     [Fact]
     public async Task Index_WithFilters_ReturnsFilteredServices()
     {
+        SetUser("freelancer1");
+        
         var freelancer1 = new IdentityUser { Id = "f1", UserName = "f1@test.com" };
         var freelancer2 = new IdentityUser { Id = "f2", UserName = "f2@test.com" };
         await _context.Users.AddRangeAsync(freelancer1, freelancer2);
@@ -87,6 +91,8 @@ public class ServiceControllerTests
     [Fact]
     public async Task Index_WithCategoryFilter_ReturnsFilteredServices()
     {
+        SetUser("freelancer1");
+        
         var freelancer = new IdentityUser { Id = "f1", UserName = "f1@test.com" };
         await _context.Users.AddAsync(freelancer);
 

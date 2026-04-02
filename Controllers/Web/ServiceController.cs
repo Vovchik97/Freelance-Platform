@@ -18,12 +18,18 @@ public class ServiceController : Controller
     private readonly AppDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
     private readonly CategorySuggestionService _categorySuggestionService;
+    private readonly RecommendationService _recommendationService;
 
-    public ServiceController(AppDbContext context, UserManager<IdentityUser> userManager, CategorySuggestionService categorySuggestionService)
+    public ServiceController(
+        AppDbContext context, 
+        UserManager<IdentityUser> userManager, 
+        CategorySuggestionService categorySuggestionService,
+        RecommendationService recommendationService)
     {
         _context = context;
         _userManager = userManager;
         _categorySuggestionService = categorySuggestionService;
+        _recommendationService = recommendationService;
     }
     
     [AllowAnonymous]
@@ -88,6 +94,13 @@ public class ServiceController : Controller
         ViewBag.MinPrice = minPrice;
         ViewBag.MaxPrice = maxPrice;
         ViewBag.Sort = sort;
+        
+        if (User.Identity is { IsAuthenticated: true } && User.IsInRole("Client"))
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            ViewBag.Recommendations = await _recommendationService
+                .GetRecommendedProjectsForFreelancerAsync(userId!);
+        }
         
         return View(services);
     }

@@ -21,6 +21,7 @@ public class ProjectControllerTests
     private readonly Mock<UserManager<IdentityUser>> _mockUserManager;
     private readonly Mock<BalanceService> _balanceService;
     private readonly CategorySuggestionService _categorySuggestionService;
+    private readonly RecommendationService _recommendationService;
     private readonly ProjectController _controller;
 
     public ProjectControllerTests()
@@ -31,13 +32,15 @@ public class ProjectControllerTests
         _context = new AppDbContext(options);
         _balanceService = new Mock<BalanceService>(_context);
         _categorySuggestionService = new CategorySuggestionService(_context);
+        _recommendationService = new RecommendationService(_context);
         
         _mockUserManager = GetMockUserManager();
         _controller = new ProjectController(
             _context,
             _mockUserManager.Object,
             _balanceService.Object,
-            _categorySuggestionService);
+            _categorySuggestionService,
+            _recommendationService);
     }
     
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()
@@ -73,6 +76,8 @@ public class ProjectControllerTests
     [Fact]
     public async Task Index_WithFilters_ReturnsFilteredProjects()
     {
+        SetUser("client1");
+        
         var client1 = new IdentityUser { Id = "c1", UserName = "c1@test.com" };
         var client2 = new IdentityUser { Id = "c2", UserName = "c2@test.com" };
         await _context.Users.AddRangeAsync(client1, client2);
@@ -93,6 +98,8 @@ public class ProjectControllerTests
     [Fact]
     public async Task Index_WithCategoryFilter_ReturnsFilteredProjects()
     {
+        SetUser("client1");
+        
         var client = new IdentityUser { Id = "c1", UserName = "c1@test.com" };
         await _context.Users.AddAsync(client);
 

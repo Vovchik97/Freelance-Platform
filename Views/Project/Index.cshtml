@@ -104,6 +104,39 @@
             </div>
         </form>
     </div>
+    
+    @if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Freelancer") && ViewBag.Recommendations != null)
+    {
+        var recs = ViewBag.Recommendations as List<FreelancePlatform.Dto.Recommendations.RecommendationDto>;
+        if (recs != null && recs.Any())
+        {
+            <div class="filters-card mb-4">
+                <h2 class="filters-title">🎯 Рекомендованные проекты</h2>
+                <div class="row">
+                    @foreach (var item in recs)
+                    {
+                        <div class="col-md-4 mb-3">
+                            <div class="project-card">
+                                <h5>@item.Title</h5>
+                                <div class="project-meta">
+                                    <span class="project-budget">
+                                        💰 @item.Budget.ToString("C", new CultureInfo("ru-RU"))
+                                    </span>
+                                </div>
+                                <small class="text-muted">@string.Join(", ", item.Reasons)</small>
+                                <div class="mt-2">
+                                    <a asp-controller="Project" asp-action="Details"
+                                       asp-route-id="@item.Id" class="btn btn-primary btn-sm">
+                                        Открыть
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
 
     <!-- Projects List -->
     <div class="projects-list">

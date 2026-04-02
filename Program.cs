@@ -35,6 +35,7 @@ builder.Services.AddSingleton<SupportBotService>();
 builder.Services.AddScoped<BalanceService>();
 builder.Services.AddScoped<IBalanceService>(sp => sp.GetRequiredService<BalanceService>());
 builder.Services.AddScoped<CategorySuggestionService>();
+builder.Services.AddScoped<RecommendationService>();
 
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
