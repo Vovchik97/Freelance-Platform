@@ -32,7 +32,7 @@
                 else if (User.IsInRole("Freelancer"))
                 {
                     <a class="btn btn-primary btn-lg mx-2" asp-controller="Project" asp-action="Index">Найти проект</a>
-                    <a class="btn btn-outline btn-lg mx-2" asp-controller="Bid" asp-action="MyBids">Мои отклики</a>
+                    <a class="btn btn-outline btn-lg mx-2" asp-controller="Service" asp-action="MyServices">Мои услуги</a>
                 }
             </div>
         }
@@ -57,12 +57,24 @@
                     }
                 </h2>
 
-                <div class="row">
+                <div class="row" style="display: flex; flex-wrap: wrap;">
                     @foreach (var item in recs)
                     {
-                        <div class="col-md-4 mb-3">
-                            <div class="project-card">
+                        <div class="col-md-4 mb-3" style="display: flex;">
+                            <div class="project-card" style="display: flex; flex-direction: column; width: 100%">
                                 <h5>@item.Title</h5>
+                                
+                                @if (item.Categories != null && item.Categories.Any())
+                                {
+                                    <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;">
+                                        @foreach (var cat in item.Categories)
+                                        {
+                                            <span style="display: inline-block; padding: 2px 10px; border-radius: 12px; background: #e8e6ff; color: #6c63ff; font-size: 12px; font-weight: 500;">
+                                                @cat
+                                            </span>
+                                        }
+                                    </div>
+                                }
 
                                 <div class="project-meta">
                                     <span class="project-budget">
@@ -70,11 +82,11 @@
                                     </span>
                                 </div>
 
-                                <small class="text-muted">
+                                <small class="text-muted" style="flex-grow: 1;">
                                     @string.Join(", ", item.Reasons)
                                 </small>
 
-                                <div class="mt-2 d-flex gap-2">
+                                <div class="mt-2 d-flex gap-2" style="margin-top: auto !important;">
                                     @if (item.Type == "Project")
                                     {
                                         <a asp-controller="Project"

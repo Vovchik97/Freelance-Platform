@@ -99,7 +99,7 @@ public class ServiceController : Controller
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             ViewBag.Recommendations = await _recommendationService
-                .GetRecommendedProjectsForFreelancerAsync(userId!);
+                .GetRecommendedServicesForClientAsync(userId!);
         }
         
         return View(services);

@@ -16,6 +16,11 @@ public class RecommendationService
 
     public async Task<List<RecommendationDto>> GetRecommendedProjectsForFreelancerAsync(string freelancerId)
     {
+        var freelancerServices = await _context.Services
+            .Where(s => s.FreelancerId == freelancerId)
+            .Include(s => s.Categories)
+            .ToListAsync();
+        
         var userBids = await _context.Bids
             .Where(b => b.FreelancerId == freelancerId)
             .Include(b => b.Project)
@@ -37,7 +42,33 @@ public class RecommendationService
             .Include(p => p.Categories)
             .ToListAsync();
 
-        if (!biddedProjects.Any())
+        if (!candidateProjects.Any())
+        {
+            return new List<RecommendationDto>();
+        }
+
+        var serviceCategoryIds = freelancerServices
+            .SelectMany(s => s.Categories)
+            .Select(c => c.Id)
+            .Distinct()
+            .ToHashSet();
+
+        var bidCategoryIds = biddedProjects
+            .SelectMany(p => p.Categories)
+            .Select(c => c.Id)
+            .Distinct()
+            .ToHashSet();
+
+        var allCategoryIds = new HashSet<int>(serviceCategoryIds);
+        allCategoryIds.UnionWith(bidCategoryIds);
+
+        var prices = new List<decimal>();
+        prices.AddRange(freelancerServices.Select(s => s.Price));
+        prices.AddRange(biddedProjects.Select(p => p.Budget));
+        
+        decimal? targetBudget = prices.Any() ? prices.Average() : null;
+
+        if (!allCategoryIds.Any() && targetBudget == null)
         {
             return candidateProjects
                 .OrderByDescending(p => p.CreatedAt)
@@ -48,18 +79,12 @@ public class RecommendationService
                     Title = p.Title,
                     Budget = p.Budget,
                     Score = 0,
+                    Categories = p.Categories.Select(c => c.Name).ToList(),
                     Type = "Project",
                     Reasons = new List<string> { "Новый проект" }
                 })
                 .ToList();
         }
-
-        var avgBudget = biddedProjects.Average(p => p.Budget);
-
-        var userCategoryIds = biddedProjects.SelectMany(p => p.Categories)
-            .Select(c => c.Id)
-            .Distinct()
-            .ToHashSet();
         
         var scored = new List<RecommendationDto>();
 
@@ -69,22 +94,36 @@ public class RecommendationService
             var reasons = new List<string>();
 
             var projectCategoryIds = project.Categories.Select(c => c.Id).ToHashSet();
-            var commonCategories = projectCategoryIds.Intersect(userCategoryIds).Count();
-            if (commonCategories > 0)
+
+            var serviceMatch = projectCategoryIds
+                .Intersect(serviceCategoryIds).Count();
+
+            if (serviceMatch > 0)
             {
-                score += 0.3 * Math.Min(commonCategories, 3);
-                reasons.Add("Похожая категория");
+                score += 0.4 * Math.Min(serviceMatch, 3);
+                reasons.Add("Совпадает с вашими услугами");
             }
 
-            if (avgBudget > 0)
+            var bidMatch = projectCategoryIds
+                .Intersect(bidCategoryIds)
+                .Except(serviceCategoryIds)
+                .Count();
+            
+            if (bidMatch > 0)
             {
-                var budgetDiff = Math.Abs(project.Budget - avgBudget);
-                if (budgetDiff < avgBudget * 0.3m)
+                score += 0.2 * Math.Min(bidMatch, 3);
+                reasons.Add("Похож на проекты из откликов");
+            }
+
+            if (targetBudget.HasValue && targetBudget.Value > 0)
+            {
+                var budgetDiff = Math.Abs(targetBudget.Value - project.Budget);
+                if (budgetDiff < targetBudget.Value * 0.3m)
                 {
                     score += 0.2;
-                    reasons.Add("Похожий бюджет");
+                    reasons.Add("Подходящий бюджет");
                 }
-                else if (budgetDiff < avgBudget * 0.6m)
+                else if (budgetDiff < targetBudget.Value * 0.6m)
                 {
                     score += 0.1;
                     reasons.Add("Приемлемый бюджет");
@@ -114,12 +153,13 @@ public class RecommendationService
                 Title = project.Title,
                 Budget = project.Budget,
                 Score = score,
+                Categories = project.Categories.Select(c => c.Name).ToList(),
                 Type = "Project",
                 Reasons = reasons
             });
         }
 
-        return scored.OrderByDescending(r => r.Score).Take(5).ToList();
+        return scored.OrderByDescending(r => r.Score).Take(6).ToList();
     }
 
     public async Task<List<RecommendationDto>> GetRecommendedServicesForClientAsync(string clientId)
@@ -154,41 +194,31 @@ public class RecommendationService
             return new List<RecommendationDto>();
         }
 
-        var categoryIds = new HashSet<int>();
+        var projectCategoryIds = clientProjects
+            .SelectMany(p => p.Categories)
+            .Select(c => c.Id)
+            .Distinct()
+            .ToHashSet();
 
-        foreach (var p in clientProjects)
-        {
-            foreach (var c in p.Categories)
-            {
-                categoryIds.Add(c.Id);
-            }
-        }
+        var orderCategoryIds = clientOrders
+            .Where(o => o.Service != null)
+            .SelectMany(o => o.Service!.Categories)
+            .Select(c => c.Id)
+            .Distinct()
+            .ToHashSet();
 
-        foreach (var o in clientOrders.Where(o => o.Service != null))
-        {
-            foreach (var c in o.Service!.Categories)
-            {
-                categoryIds.Add(c.Id);
-            }
-        }
+        var allCategoryIds = new HashSet<int>(projectCategoryIds);
+        allCategoryIds.UnionWith(orderCategoryIds);
 
-        decimal? avgBudget = clientProjects.Any()
-            ? clientProjects.Average(p => p.Budget)
-            : null;
+        var prices = new List<decimal>();
+        prices.AddRange(clientProjects.Select(p => p.Budget));
+        prices.AddRange(clientOrders
+            .Where(o => o.Service != null)
+            .Select(o => o.Service!.Price));
 
-        decimal? avgOrderPrice = clientOrders.Any(o => o.Service != null)
-            ? clientOrders.Where(o => o.Service != null).Average(o => o.Service!.Price)
-            : null;
+        decimal? targetPrice = prices.Any() ? prices.Average() : null;
 
-        decimal? targetPrice = (avgBudget, avgOrderPrice) switch
-        {
-            (not null, not null) => (avgBudget.Value + avgOrderPrice.Value) / 2,
-            (not null, null) => avgBudget.Value,
-            (null, not null) => avgOrderPrice.Value,
-            _ => null
-        };
-
-        if (!categoryIds.Any() && targetPrice == null)
+        if (!allCategoryIds.Any() && targetPrice == null)
         {
             return candidateServices
                 .OrderByDescending(s =>
@@ -202,6 +232,7 @@ public class RecommendationService
                     Title = s.Title,
                     Budget = s.Price,
                     Score = 0,
+                    Categories = s.Categories.Select(c => c.Name).ToList(),
                     Type = "Service",
                     Reasons = new List<string> { "Популярная услуга" }
                 })
@@ -215,12 +246,28 @@ public class RecommendationService
             double score = 0;
             var reasons = new List<string>();
 
-            var serviceCategoryIds = service.Categories.Select(c => c.Id).ToHashSet();
-            var commonCount = serviceCategoryIds.Intersect(categoryIds).Count();
-            if (commonCount > 0)
+            var serviceCatIds = service.Categories
+                .Select(c => c.Id)
+                .ToHashSet();
+
+            var projectMatch = serviceCatIds
+                .Intersect(projectCategoryIds).Count();
+
+            if (projectMatch > 0)
             {
-                score += 0.3 * Math.Min(commonCount, 3);
-                reasons.Add("Подходящая категория");
+                score += 0.4 * Math.Min(projectMatch, 3);
+                reasons.Add("Подходит под ваши проекты");
+            }
+
+            var orderMatch = serviceCatIds
+                .Intersect(orderCategoryIds)
+                .Except(projectCategoryIds)
+                .Count();
+
+            if (orderMatch > 0)
+            {
+                score += 0.2 * Math.Min(orderMatch, 3);
+                reasons.Add("Похожа на прошлые заказы");
             }
 
             if (targetPrice.HasValue && targetPrice.Value > 0)
@@ -276,11 +323,12 @@ public class RecommendationService
                 Title = service.Title,
                 Budget = service.Price,
                 Score = score,
+                Categories = service.Categories.Select(c => c.Name).ToList(),
                 Type = "Service",
                 Reasons = reasons
             });
         }
 
-        return scored.OrderByDescending(r => r.Score).Take(5).ToList();
+        return scored.OrderByDescending(r => r.Score).Take(6).ToList();
     }
 }
