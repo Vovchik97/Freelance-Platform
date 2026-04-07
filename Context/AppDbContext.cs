@@ -19,6 +19,11 @@ public class AppDbContext : IdentityDbContext
     public DbSet<UserBalance> UserBalances { get; set; }
     public DbSet<BalanceTransaction> BalanceTransactions { get; set; }
     public DbSet<Category> Categories { get; set; }
+    public DbSet<ProjectMember> ProjectMembers { get; set; }
+    public DbSet<ProjectTask> ProjectTasks { get; set; }
+    public DbSet<ProjectActivityLog> ProjectActivityLogs { get; set; }
+    public DbSet<GroupChatMessage> GroupChatMessages { get; set; }
+    public DbSet<GroupChatMention> GroupChatMentions { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) 
     {

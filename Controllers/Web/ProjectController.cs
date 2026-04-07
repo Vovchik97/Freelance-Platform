@@ -39,11 +39,13 @@ public class ProjectController : Controller
         decimal? minBudget, 
         decimal? maxBudget, 
         string sort,
-        [FromQuery] List<int>? categories)
+        [FromQuery] List<int>? categories,
+        string? projectType)
     {
         var query = _context.Projects
             .Include(p => p.Client)
             .Include(p => p.Categories)
+            .Include(p => p.Members)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -71,6 +73,15 @@ public class ProjectController : Controller
         {
             query = query.Where(p => p.Categories.Any(c => categories.Contains(c.Id)));
         }
+
+        if (projectType == "team")
+        {
+            query = query.Where(p => p.IsTeamProject);
+        }
+        else if (projectType == "solo")
+        {
+            query = query.Where(p => !p.IsTeamProject);
+        }
         
         if (sort == "budget_desc")
             query = query.OrderByDescending(p => p.Budget);
@@ -93,6 +104,7 @@ public class ProjectController : Controller
         ViewBag.MinBudget = minBudget;
         ViewBag.MaxBudget = maxBudget;
         ViewBag.Sort = sort;
+        ViewBag.ProjectType = projectType;
 
         if (User.Identity is { IsAuthenticated: true } && User.IsInRole("Freelancer"))
         {
@@ -171,7 +183,8 @@ public class ProjectController : Controller
             Status = dto.Status,
             ClientId = clientId,
             CreatedAt = DateTime.UtcNow,
-            Categories = selectedCategories
+            Categories = selectedCategories,
+            IsTeamProject = dto.IsTeamProject
         };
         
         await _context.Projects.AddAsync(project);
@@ -286,6 +299,7 @@ public class ProjectController : Controller
             .Where(p => p.ClientId == userId)
             .OrderByDescending(p => p.CreatedAt)
             .Include(p => p.Categories)
+            .Include(p => p.Members)
             .ToListAsync();
 
         return View(myProjects);

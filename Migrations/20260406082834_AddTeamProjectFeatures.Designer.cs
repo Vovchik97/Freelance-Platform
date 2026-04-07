@@ -3,6 +3,7 @@ using System;
 using FreelancePlatform.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FreelancePlatform.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260406082834_AddTeamProjectFeatures")]
+    partial class AddTeamProjectFeatures
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -219,18 +222,6 @@ namespace FreelancePlatform.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AttachmentName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("AttachmentType")
-                        .HasColumnType("text");
-
-                    b.Property<string>("AttachmentUrl")
-                        .HasColumnType("text");
-
-                    b.Property<int?>("ParentMessageId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("ProjectId")
                         .HasColumnType("integer");
 
@@ -250,8 +241,6 @@ namespace FreelancePlatform.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ParentMessageId");
 
                     b.HasIndex("ProjectId");
 
@@ -911,17 +900,11 @@ namespace FreelancePlatform.Migrations
 
             modelBuilder.Entity("FreelancePlatform.Models.GroupChatMessage", b =>
                 {
-                    b.HasOne("FreelancePlatform.Models.GroupChatMessage", "ParentMessage")
-                        .WithMany("Attachments")
-                        .HasForeignKey("ParentMessageId");
-
                     b.HasOne("FreelancePlatform.Models.Project", "Project")
                         .WithMany("GroupChatMessages")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("ParentMessage");
 
                     b.Navigation("Project");
                 });
@@ -1132,8 +1115,6 @@ namespace FreelancePlatform.Migrations
 
             modelBuilder.Entity("FreelancePlatform.Models.GroupChatMessage", b =>
                 {
-                    b.Navigation("Attachments");
-
                     b.Navigation("Mentions");
                 });
 

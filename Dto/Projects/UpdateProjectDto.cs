@@ -14,4 +14,6 @@ public class UpdateProjectDto
     public decimal Budget { get; set; }
     public ProjectStatus Status { get; set; }
     public List<int> CategoryIds { get; set; } = new();
+    
+    public bool IsTeamProject { get; set; } = false;
 }

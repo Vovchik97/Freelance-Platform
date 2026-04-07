@@ -36,6 +36,7 @@ builder.Services.AddScoped<BalanceService>();
 builder.Services.AddScoped<IBalanceService>(sp => sp.GetRequiredService<BalanceService>());
 builder.Services.AddScoped<CategorySuggestionService>();
 builder.Services.AddScoped<RecommendationService>();
+builder.Services.AddScoped<ProjectActivityLogService>();
 
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
@@ -195,5 +196,6 @@ app.MapControllerRoute(
 app.MapControllers();
 app.MapRazorPages();
 app.MapHub<ChatHub>("/chatHub");
+app.MapHub<GroupChatHub>("/groupChatHub");
 
 app.Run();

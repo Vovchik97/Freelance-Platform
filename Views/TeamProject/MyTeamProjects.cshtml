@@ -1,0 +1,71 @@
+﻿@using System.Globalization
+@model List<FreelancePlatform.Models.Project>
+@{
+    ViewData["Title"] = "Мои команды";
+}
+
+<div class="container mt-5">
+    <div class="header mb-4">
+        <h1>Мои команды</h1>
+        <p>Командные проекты, в которых вы участвуете</p>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="projects-list">
+            @foreach (var project in Model)
+            {
+                <div class="project-card">
+                    <div class="project-header">
+                        <h3 class="project-title">@project.Title</h3>
+                        <span class="status-badge status-completed">👥 Командный</span>
+                    </div>
+
+                    <div class="project-meta">
+                        <div class="meta-item">
+                            <span class="project-budget">
+                                @project.Budget.ToString("C", new CultureInfo("ru-RU"))
+                            </span>
+                        </div>
+                        <div class="meta-item">
+                            <svg class="meta-icon" fill="none"
+                                 stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            <span>Клиент: @project.Client?.UserName</span>
+                        </div>
+                        <div class="meta-item">
+                            <svg class="meta-icon" fill="none"
+                                 stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <span>
+                                @project.Members.Count(m => m.Status == ProjectMemberStatus.Accepted)
+                                участников
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="project-actions">
+                        <a asp-controller="TeamProject" asp-action="Details"
+                           asp-route-id="@project.Id" class="btn btn-primary">
+                            Открыть проект
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="no-results">
+            <p style="font-size:3rem; margin-bottom:0.5rem;">👥</p>
+            <h3>Вы не в командах</h3>
+            <p>Дождитесь приглашения от клиента в командный проект</p>
+        </div>
+    }
+</div>

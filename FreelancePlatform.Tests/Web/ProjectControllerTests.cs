@@ -88,7 +88,7 @@ public class ProjectControllerTests
         );
         await _context.SaveChangesAsync();
 
-        var result = await _controller.Index("One", ProjectStatus.Open.ToString(), 50, 300, null!, null);
+        var result = await _controller.Index("One", ProjectStatus.Open.ToString(), 50, 300, null!, null, null);
         var view = Assert.IsType<ViewResult>(result);
         var model = Assert.IsAssignableFrom<IEnumerable<Project>>(view.Model);
         Assert.Single(model);
@@ -113,7 +113,7 @@ public class ProjectControllerTests
         );
         await _context.SaveChangesAsync();
 
-        var result = await _controller.Index(null, null, null, null, null!, new List<int> { 1 });
+        var result = await _controller.Index(null, null, null, null, null!, new List<int> { 1 }, null);
         var view = Assert.IsType<ViewResult>(result);
         var model = Assert.IsAssignableFrom<IEnumerable<Project>>(view.Model);
         Assert.Single(model);

@@ -14,4 +14,6 @@ public class CreateProjectDto
     public decimal Budget { get; set; }
     public ProjectStatus Status { get; set; } = ProjectStatus.Open;
     public List<int> CategoryIds { get; set; } = new();
+
+    public bool IsTeamProject { get; set; } = false;
 }
