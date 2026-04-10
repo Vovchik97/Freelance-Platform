@@ -33,6 +33,38 @@ public class GroupChatHub : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"project_{projectId}");
     }
 
+    public async Task MarkAllAsRead(int projectId)
+    {
+        var user = await _userManager.GetUserAsync(Context.User!);
+        if (user == null)
+        {
+            return;
+        }
+
+        var unreadMessageIds = await _context.GroupChatMessages
+            .Where(m => m.ProjectId == projectId && m.SenderId != user.Id && m.ParentMessageId == null &&
+                        !m.ReadBy.Any(r => r.UserId == user.Id))
+            .Select(m => m.Id)
+            .ToListAsync();
+
+        if (!unreadMessageIds.Any())
+        {
+            return;
+        }
+
+        var reads = unreadMessageIds.Select(msgId => new GroupChatMessageRead
+        {
+            MessageId = msgId,
+            UserId = user.Id,
+            ReadAt = DateTime.UtcNow
+        });
+        
+        _context.GroupChatMessageReads.AddRange(reads);
+        await _context.SaveChangesAsync();
+        
+        await Clients.Caller.SendAsync("UnreadCountUpdated", projectId, 0);
+    }
+
     public async Task SendGroupMessage(int projectId, string message, AttachmentDto[] attachments)
     {
         var user = await _userManager.GetUserAsync(Context.User!);
@@ -73,6 +105,13 @@ public class GroupChatHub : Hub
         
         _context.GroupChatMessages.Add(newMessage);
         await _context.SaveChangesAsync();
+
+        _context.GroupChatMessageReads.Add(new GroupChatMessageRead
+        {
+            MessageId = newMessage.Id,
+            UserId = user.Id,
+            ReadAt = DateTime.UtcNow
+        });
 
         var mentionedUsers = new List<object>();
 
@@ -127,6 +166,36 @@ public class GroupChatHub : Hub
                 newMessage.SentAt,
                 mentionedUsers,
                 attachmentsDto);
+
+        var allMemberIds = project.Members
+            .Where(m => m.Status == ProjectMemberStatus.Accepted)
+            .Select(m => m.UserId)
+            .Append(project.ClientId)
+            .Where(uid => uid != user.Id)
+            .Distinct()
+            .ToList();
+
+        foreach (var memberId in allMemberIds)
+        {
+            var unreadCount = await _context.GroupChatMessages
+                .Where(m => m.ProjectId == projectId && m.SenderId != memberId && m.ParentMessageId == null &&
+                            !m.ReadBy.Any(r => r.UserId == memberId))
+                .CountAsync();
+            
+            await Clients.Group($"user_{memberId}")
+                .SendAsync("UnreadCountUpdated", projectId, unreadCount);
+        }
+    }
+
+    public async Task JoinUserGroup()
+    {
+        var user = await _userManager.GetUserAsync(Context.User!);
+        if (user == null)
+        {
+            return;
+        }
+
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"user_{user.Id}");
     }
 
     public async Task UpdateTaskStatus(int projectId, int taskId, ProjectTaskStatus newStatus)

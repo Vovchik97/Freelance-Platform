@@ -296,11 +296,26 @@ public class ProjectController : Controller
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var myProjects = await _context.Projects
-            .Where(p => p.ClientId == userId)
-            .OrderByDescending(p => p.CreatedAt)
             .Include(p => p.Categories)
             .Include(p => p.Members)
+            .Where(p => p.ClientId == userId)
+            .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
+
+        var teamProjects = myProjects.Where(p => p.IsTeamProject).ToList();
+        var unreadByProject = new Dictionary<int, int>();
+
+        foreach (var project in teamProjects)
+        {
+            var count = await _context.GroupChatMessages
+                .Where(m => m.ProjectId == project.Id && m.SenderId != userId && m.ParentMessageId == null &&
+                            !m.ReadBy.Any(r => r.UserId == userId))
+                .CountAsync();
+
+            unreadByProject[project.Id] = count;
+        }
+        
+        ViewBag.UnreadByProject = unreadByProject;
 
         return View(myProjects);
     }

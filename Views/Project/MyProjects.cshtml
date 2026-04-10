@@ -4,6 +4,10 @@
     ViewData["Title"] = "Мои проекты";
     var solo = Model.Where(p => !p.IsTeamProject).ToList();
     var team = Model.Where(p => p.IsTeamProject).ToList();
+
+    var unreadByProject = ViewBag.UnreadByProject as Dictionary<int, int>
+                          ?? new Dictionary<int, int>();
+    var totalUnreadTeam = unreadByProject.Values.Sum();
     
     // Определяем активную вкладку из query string
     var activeTab = Context.Request.Query["tab"].ToString();
@@ -56,13 +60,25 @@
                       transition:all 0.2s;">
                 👥 Командные
                 <span style="background:var(--surface-light);
-                             color:var(--text-secondary);
-                             border:1px solid var(--border);
-                             border-radius:9999px;
-                             padding:1px 8px;
-                             font-size:0.75rem;
-                             margin-left:4px;">
+                 color:var(--text-secondary);
+                 border:1px solid var(--border);
+                 border-radius:9999px;
+                 padding:1px 8px;
+                 font-size:0.75rem;
+                 margin-left:4px;">
                     @team.Count
+                </span>
+                
+                <span id="teamTabBadge"
+                      style="background:#ef4444;
+                 color:white;
+                 border-radius:9999px;
+                 padding:1px 8px;
+                 font-size:0.75rem;
+                 margin-left:2px;
+                 font-weight:600;
+                 display:@(totalUnreadTeam > 0 ? "inline" : "none");">
+                    @(totalUnreadTeam > 0 ? totalUnreadTeam.ToString() : "")
                 </span>
             </a>
         </div>
@@ -258,10 +274,64 @@
                         </div>
 
                         <div class="project-actions">
-                            <a asp-controller="TeamProject" asp-action="Details"
-                               asp-route-id="@project.Id" class="btn btn-primary">
-                                Открыть проект
-                            </a>
+                            <div style="position:relative; display:inline-block;">
+                                <a asp-controller="TeamProject" asp-action="Details"
+                                   asp-route-id="@project.Id"
+                                   class="btn btn-outline">
+                                    Подробнее
+                                </a>
+                                @{
+                                    var unread = unreadByProject.GetValueOrDefault(project.Id, 0);
+                                }
+                                <span id="unread-@project.Id"
+                                      style="position:absolute;
+                                          top:-6px; right:-6px;
+                                          background:#ef4444;
+                                          color:white;
+                                          border-radius:9999px;
+                                          padding:1px 7px;
+                                          font-size:0.7rem;
+                                          font-weight:600;
+                                          pointer-events:none;
+                                          display:@(unread > 0 ? "inline" : "none");">
+                                    @(unread > 0 ? $"{unread} 💬" : "")
+                                </span>
+                            </div>
+                            @if (project.Status == ProjectStatus.Open 
+                                 || project.Status == ProjectStatus.Cancelled)
+                            {
+                                <a asp-controller="Project" asp-action="Edit" 
+                                   asp-route-id="@project.Id" 
+                                   class="btn btn-warning">
+                                    Редактировать
+                                </a>
+                                <form asp-controller="Project" asp-action="Delete" 
+                                      asp-route-id="@project.Id"
+                                      method="post" class="d-inline"
+                                      onsubmit="return confirm('Удалить проект?');">
+                                    <button type="submit" class="btn btn-danger">Удалить</button>
+                                </form>
+                            }
+                            @if (project.Status == ProjectStatus.Open)
+                            {
+                                <form asp-controller="Project" asp-action="CancelProject" 
+                                      asp-route-id="@project.Id"
+                                      method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-outline">
+                                        Отменить
+                                    </button>
+                                </form>
+                            }
+                            @if (project.Status == ProjectStatus.Cancelled)
+                            {
+                                <form method="post" asp-controller="Project" 
+                                      asp-action="ResumeProject"
+                                      asp-route-id="@project.Id" class="d-inline">
+                                    <button type="submit" class="btn btn-outline">
+                                        Возобновить
+                                    </button>
+                                </form>
+                            }
                         </div>
                     </div>
                 }

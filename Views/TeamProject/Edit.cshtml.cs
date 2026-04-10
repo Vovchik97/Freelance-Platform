@@ -2,7 +2,7 @@
 
 namespace FreelancePlatform.Views.TeamProject;
 
-public class MyInvites : PageModel
+public class Edit : PageModel
 {
     public void OnGet()
     {

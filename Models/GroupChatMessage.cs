@@ -18,4 +18,6 @@ public class GroupChatMessage
     public int? ParentMessageId { get; set; }  
     public GroupChatMessage? ParentMessage { get; set; }
     public List<GroupChatMessage> Attachments { get; set; } = new List<GroupChatMessage>();
+
+    public List<GroupChatMessageRead> ReadBy { get; set; } = new();
 }

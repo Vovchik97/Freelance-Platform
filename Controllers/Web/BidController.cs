@@ -187,6 +187,40 @@
                 .OrderByDescending(b => b.CreatedAt)
                 .ToListAsync();
 
+            var memberProjectIds = await _context.ProjectMembers
+                .Where(m => m.UserId == userId && m.Status == ProjectMemberStatus.Accepted)
+                .Select(m => m.ProjectId)
+                .ToListAsync();
+
+            var teamProjects = await _context.Projects
+                .Include(p => p.Client)
+                .Include(p => p.Members)
+                .Include(p => p.Categories)
+                .Where(p => memberProjectIds.Contains(p.Id) && p.IsTeamProject)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+
+            var invites = await _context.ProjectMembers
+                .Include(m => m.Project)
+                .Where(m => m.UserId == userId)
+                .OrderByDescending(m => m.JoinedAt)
+                .ToListAsync();
+
+            var unreadByProject = new Dictionary<int, int>();
+            foreach (var project in teamProjects)
+            {
+                var count = await _context.GroupChatMessages
+                    .Where(m => m.ProjectId == project.Id && m.SenderId != userId && m.ParentMessageId == null &&
+                                !m.ReadBy.Any(r => r.UserId == userId))
+                    .CountAsync();
+
+                unreadByProject[project.Id] = count;
+            }
+            
+            ViewBag.TeamProjects = teamProjects;
+            ViewBag.Invites = invites;
+            ViewBag.UnreadByProject = unreadByProject;
+
             return View(myBids);
         }
     }

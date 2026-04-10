@@ -18,6 +18,46 @@
         .withUrl("/groupChatHub")
         .build();
 
+    connection.on("UnreadCountUpdated", function (updatedProjectId, unreadCount) {
+        if (!window._unreadByProject) window._unreadByProject = {};
+        
+        const count = parseInt(unreadCount) || 0;
+
+        if (count === 0) {
+            delete window._unreadByProject[updatedProjectId];
+        } else {
+            window._unreadByProject[updatedProjectId] = unreadCount;
+        }
+
+        if (window.updateNavbarBadge) window.updateNavbarBadge();
+        if (window.updateClientNavbarBadge) window.updateClientNavbarBadge();
+
+        const teamTabBadge = document.getElementById('teamTabBadge');
+        if (teamTabBadge) {
+            const total = Object.values(window._unreadByProject || {})
+                .reduce((sum, n) => sum + n, 0);
+
+            teamTabBadge.innerHTML = '';
+            if (total > 0) {
+                teamTabBadge.textContent = total;
+                teamTabBadge.style.display = 'inline';
+            } else {
+                teamTabBadge.style.display = 'none';
+            }
+        }
+
+        const projectBadge = document.getElementById(`unread-${updatedProjectId}`);
+        if (projectBadge) {
+            projectBadge.innerHTML = '';
+            if (unreadCount > 0) {
+                projectBadge.textContent = `${count} 💬`;
+                projectBadge.style.display = 'inline';
+            } else {
+                projectBadge.style.display = 'none';
+            }
+        }
+    });
+
     connection.on("ReceiveGroupMessage", function (
         id, senderId, senderName, text, sentAt, mentions, attachments
     ) {
@@ -31,7 +71,13 @@
     });
 
     connection.start()
-        .then(() => connection.invoke("JoinProjectGroup", projectId.toString()))
+        .then(async () => {
+            await connection.invoke("JoinProjectGroup", projectId.toString());
+            await connection.invoke("JoinUserGroup");
+            if (messagesContainer) {
+                await connection.invoke("MarkAllAsRead", projectId);
+            }
+        })
         .catch(err => console.error(err));
 
     // ===== Файлы =====

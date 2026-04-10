@@ -50,8 +50,13 @@
                     <!-- Пункты для клиентов -->
                     @if (User.IsInRole("Client"))
                     {
-                        <li class="nav-item">
+                        <li class="nav-item position-relative">
                             <a class="nav-link" asp-controller="Project" asp-action="MyProjects">Мои проекты</a>
+                            <span id="clientUnreadCount"
+                                  class="position-absolute top-0 start-100 translate-middle 
+                                        badge rounded-pill bg-danger"
+                                  style="font-size:0.6rem; padding:0.35em 0.5em; display:none;">
+                            </span>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Order" asp-action="MyOrders">Мои заказы</a>
@@ -61,16 +66,12 @@
                     <!-- Пункты для фрилансеров -->
                     @if (User.IsInRole("Freelancer"))
                     {
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="TeamProject" asp-action="MyTeamProjects">Команды</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="TeamProject" asp-action="MyInvites">Приглашения
-                                <span id="inviteCount" class="badge bg-danger" style="display:none;"></span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
+                        <li class="nav-item position-relative">
                             <a class="nav-link" asp-controller="Bid" asp-action="MyBids">Мои отклики</a>
+                            <span id="inviteCount"
+                                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                  style="font-size:0.6rem; padding:0.35em 0.5em; display:none;">
+                            </span>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Service" asp-action="MyServices">Мои услуги</a>
@@ -172,25 +173,14 @@
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.2/signalr.min.js"></script>
-<script>
-    async function loadInviteCount() {
-        try {
-            const resp = await fetch('/TeamProject/GetInviteCount');
-            if (!resp.ok) return;
-            const data = await resp.json();
-            const badge = document.getElementById('inviteCount');
-            if (badge) {
-                if (data.count > 0) {
-                    badge.textContent = data.count;
-                    badge.style.display = 'inline';
-                } else {
-                    badge.style.display = 'none';
-                }
-            }
-        } catch {}
-    }
-    loadInviteCount();
-</script>
+@if (User.IsInRole("Freelancer"))
+{
+    <script src="~/js/invites.js" asp-append-version="true"></script>
+}
+@if (User.IsInRole("Client"))
+{
+    <script src="~/js/clientNotifications.js" asp-append-version="true"></script>
+}
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

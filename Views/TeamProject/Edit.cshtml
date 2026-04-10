@@ -1,0 +1,105 @@
+﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model FreelancePlatform.Dto.Projects.UpdateProjectDto
+@{
+    ViewData["Title"] = "Редактировать командный проект";
+    var allCategories = ViewBag.AllCategories as List<FreelancePlatform.Models.Category>
+                        ?? new List<FreelancePlatform.Models.Category>();
+    var selectedIds = ViewBag.SelectedCategoryIds as List<int> ?? new List<int>();
+    var projectId = (int)ViewBag.ProjectId;
+}
+
+<div class="container mt-5">
+    <div class="header">
+        <h1>Редактировать проект</h1>
+        <p>Командный проект</p>
+    </div>
+
+    <div class="filters-card mx-auto" style="max-width:700px;">
+        <form asp-action="Edit" asp-controller="TeamProject"
+              asp-route-id="@projectId" method="post" novalidate>
+            @Html.AntiForgeryToken()
+
+            <div class="input-group">
+                <label asp-for="Title" class="form-label">Название</label>
+                <input asp-for="Title" class="form-input" />
+                <span asp-validation-for="Title" class="text-danger small"></span>
+            </div>
+
+            <div class="input-group mt-3">
+                <label asp-for="Description" class="form-label">Описание</label>
+                <textarea asp-for="Description" class="form-input w-100"
+                          rows="5" style="resize:vertical;"></textarea>
+                <span asp-validation-for="Description" class="text-danger small"></span>
+            </div>
+
+            <div class="filters-row mt-3">
+                <div class="input-group">
+                    <label asp-for="Budget" class="form-label">Бюджет</label>
+                    <input asp-for="Budget" class="form-input" type="number" min="0" step="any" />
+                    <span asp-validation-for="Budget" class="text-danger small"></span>
+                </div>
+                <div class="input-group">
+                    <label asp-for="Status" class="form-label">Статус</label>
+                    <select asp-for="Status" class="form-input"
+                            asp-items="Html.GetEnumSelectList<FreelancePlatform.Models.ProjectStatus>()">
+                    </select>
+                </div>
+            </div>
+
+            @if (allCategories.Any())
+            {
+                <div class="input-group mt-3">
+                    <label class="form-label">Категории</label>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                        @foreach (var cat in allCategories)
+                        {
+                            var isChecked = selectedIds.Contains(cat.Id);
+                            <label style="cursor:pointer;
+                                          display:inline-flex;
+                                          align-items:center;
+                                          padding:6px 14px;
+                                          border-radius:20px;
+                                          border:2px solid #6c63ff;
+                                          background:@(isChecked ? "#6c63ff" : "transparent");
+                                          color:@(isChecked ? "#fff" : "#6c63ff");
+                                          font-size:14px; font-weight:500;
+                                          transition:all 0.2s; user-select:none;">
+                                <input type="checkbox" name="CategoryIds" value="@cat.Id"
+                                       @(isChecked ? "checked" : "")
+                                       style="display:none;"
+                                       onchange="toggleChip(this)" />
+                                @cat.Name
+                            </label>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="text-end mt-4">
+                <a asp-action="Details" asp-controller="TeamProject"
+                   asp-route-id="@projectId" class="btn btn-outline me-2">
+                    Отмена
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    💾 Сохранить
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}
+<script>
+    function toggleChip(checkbox) {
+        var label = checkbox.parentElement;
+        if (checkbox.checked) {
+            label.style.background = '#6c63ff';
+            label.style.color = '#fff';
+        } else {
+            label.style.background = 'transparent';
+            label.style.color = '#6c63ff';
+        }
+    }
+</script>

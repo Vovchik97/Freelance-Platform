@@ -9,6 +9,8 @@
     var currentUserName = ViewBag.CurrentUserName as string;
     var acceptedMembers = ViewBag.AcceptedMembers as List<ProjectMember> ?? new();
     bool canManage = isClient || isLead;
+    var isFreelancerOnly = (bool)(ViewBag.IsFreelancerOnly ?? false);
+    var unreadChatCount = (int)(ViewBag.UnreadChatCount ?? 0);
 }
 
 @if (TempData["Success"] != null)
@@ -41,6 +43,8 @@
             ("log",      "📜 Журнал")
         })
         {
+            @if (isFreelancerOnly && tabId != "overview") { continue; }
+
             var isActive = tab == tabId;
             <a href="@Url.Action("Details", new { id = Model.Id, tab = tabId })"
                style="padding: 0.6rem 1.2rem;
@@ -78,6 +82,31 @@
                         @Model.Tasks.Count
                     </span>
                 }
+                @if (tabId == "chat")
+                {
+                    <span style="background:var(--surface-light);
+                         color:var(--text-secondary);
+                         border:1px solid var(--border);
+                         border-radius:9999px;
+                         padding:1px 8px;
+                         font-size:0.75rem;
+                         margin-left:4px;">
+                        @Model.GroupChatMessages.Count
+                    </span>
+                    @if (unreadChatCount > 0 && tab != "chat")
+                    {
+                        <span id="chatTabBadge"
+                              style="background:#ef4444;
+                             color:white;
+                             border-radius:9999px;
+                             padding:1px 8px;
+                             font-size:0.75rem;
+                             margin-left:2px;
+                             font-weight:600;">
+                            @unreadChatCount
+                        </span>
+                    }
+                }
             </a>
         }
     </div>
@@ -85,6 +114,11 @@
     <!-- ==================== OVERVIEW ==================== -->
     @if (tab == "overview")
     {
+        var userBid = ViewBag.UserBid as Bid;
+        var canManageBids = (bool)(ViewBag.CanManageBids ?? false);
+        var isClientView = (bool)ViewBag.IsClient;
+        var isMemberView = (bool)ViewBag.IsMember;
+
         <div class="filters-card">
             <h3 class="filters-title">Описание проекта</h3>
             <p style="color:var(--text-secondary); line-height:1.6;">@Model.Description</p>
@@ -112,6 +146,9 @@
                             case ProjectStatus.Completed:
                                 <span class="status-badge status-completed">Завершён</span>
                                 break;
+                            case ProjectStatus.Cancelled:
+                                <span class="status-badge status-cancelled">Отменён</span>
+                                break;
                             default:
                                 <span class="status-badge status-pending">@Model.Status</span>
                                 break;
@@ -126,7 +163,7 @@
 
             <div style="border-top:1px solid var(--border); margin:1.5rem 0;"></div>
 
-            <!-- Статистика через stat-card -->
+            <!-- Статистика -->
             <div class="stats-grid" style="grid-template-columns:repeat(3,1fr); margin-top:0;">
                 <div class="stat-card">
                     <div class="stat-value">
@@ -141,13 +178,202 @@
                     <div class="stat-label">Задач выполнено</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">
-                        @Model.Tasks.Count(t => t.Status != ProjectTaskStatus.Done)
-                    </div>
-                    <div class="stat-label">Задач в работе</div>
+                    <div class="stat-value">@Model.Bids.Count</div>
+                    <div class="stat-label">Заявок</div>
                 </div>
             </div>
+
+            <div style="border-top:1px solid var(--border); margin:1.5rem 0;"></div>
+
+            <!-- Действия клиента -->
+            @if (isClientView)
+            {
+                <div class="project-actions">
+                    <a asp-action="Edit" asp-controller="TeamProject"
+                       asp-route-id="@Model.Id" class="btn btn-warning">
+                        ✏️ Редактировать
+                    </a>
+                    @if (Model.Status == ProjectStatus.Open)
+                    {
+                        <form asp-action="CancelProject" asp-controller="TeamProject"
+                              asp-route-id="@Model.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline">
+                                ✕ Отменить проект
+                            </button>
+                        </form>
+                    }
+                    @if (Model.Status == ProjectStatus.Cancelled)
+                    {
+                        <form asp-action="ResumeProject" asp-controller="TeamProject"
+                              asp-route-id="@Model.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline">
+                                ↺ Возобновить проект
+                            </button>
+                        </form>
+                        <form asp-action="DeleteProject" asp-controller="TeamProject"
+                              asp-route-id="@Model.Id" method="post"
+                              onsubmit="return confirm('Удалить проект?')">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-danger">
+                                🗑 Удалить проект
+                            </button>
+                        </form>
+                    }
+                </div>
+            }
+
+            <!-- Форма отклика для фрилансера -->
+            @if (User.IsInRole("Freelancer") && !isMemberView && !isClientView)
+            {
+                @if (userBid == null && Model.Status == ProjectStatus.Open)
+                {
+                    <div class="filters-card"
+                         style="margin-top:1.5rem; box-shadow:none;
+                                border-color:var(--primary-light);">
+                        <h5 class="filters-title" style="font-size:1rem;">
+                            📝 Откликнуться на проект
+                        </h5>
+                        <form asp-action="SubmitBid" asp-controller="TeamProject" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="projectId" value="@Model.Id" />
+                            <div class="filters-row">
+                                <div class="input-group">
+                                    <label class="form-label">Ваша цена (₽)</label>
+                                    <input type="number" name="amount" class="form-input"
+                                           min="1" required placeholder="5000" />
+                                </div>
+                                <div class="input-group">
+                                    <label class="form-label">Срок (дней)</label>
+                                    <input type="number" name="durationInDays" class="form-input"
+                                           min="1" required placeholder="14" />
+                                </div>
+                                <div class="input-group">
+                                    <label class="form-label">Комментарий</label>
+                                    <input type="text" name="comment" class="form-input"
+                                           placeholder="Расскажите о себе..." />
+                                </div>
+                            </div>
+                            <div style="margin-top:1rem;">
+                                <button type="submit" class="btn btn-primary">
+                                    Отправить заявку
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                }
+                else if (userBid != null)
+                {
+                    <div class="project-card" style="margin-top:1.5rem; border-color:var(--primary-light);">
+                        <p style="color:var(--text-primary); margin:0;">
+                            ✅ Вы уже откликнулись на этот проект.
+                            Ваша заявка:
+                            <span class="project-budget">
+                                @userBid.Amount.ToString("C", new System.Globalization.CultureInfo("ru-RU"))
+                            </span>
+                            · @userBid.DurationInDays дн.
+                            ·
+                            @switch (userBid.Status)
+                            {
+                                case BidStatus.Pending:
+                                    <span class="status-badge status-pending">Рассматривается</span>
+                                    break;
+                                case BidStatus.Accepted:
+                                    <span class="status-badge status-open">Принята</span>
+                                    break;
+                                case BidStatus.Rejected:
+                                    <span class="status-badge status-cancelled">Отклонена</span>
+                                    break;
+                            }
+                        </p>
+                    </div>
+                }
+            }
         </div>
+
+        <!-- Таблица заявок для клиента и лида -->
+        @if (canManageBids && Model.Bids.Any())
+        {
+            <div class="filters-card" style="margin-top:1.5rem;">
+                <h3 class="filters-title">📋 Заявки на проект</h3>
+                <div class="custom-table-container"
+                     style="padding:0; box-shadow:none; border:none; margin-bottom:0;">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Фрилансер</th>
+                                <th>Цена</th>
+                                <th>Срок (дней)</th>
+                                <th>Комментарий</th>
+                                <th>Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var bid in Model.Bids.OrderByDescending(b => b.CreatedAt))
+                            {
+                                <tr>
+                                    <td style="color:var(--text-primary);">
+                                        @bid.Freelancer?.UserName
+                                    </td>
+                                    <td>
+                                        <span class="project-budget">
+                                            @bid.Amount.ToString("C", new System.Globalization.CultureInfo("ru-RU"))
+                                        </span>
+                                    </td>
+                                    <td>@bid.DurationInDays</td>
+                                    <td style="color:var(--text-secondary);">@bid.Comment</td>
+                                    <td>
+                                        @switch (bid.Status)
+                                        {
+                                            case BidStatus.Pending:
+                                                <span class="status-badge status-pending">Рассматривается</span>
+                                                break;
+                                            case BidStatus.Accepted:
+                                                <span class="status-badge status-open">Принята</span>
+                                                break;
+                                            case BidStatus.Rejected:
+                                                <span class="status-badge status-cancelled">Отклонена</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (bid.Status == BidStatus.Pending)
+                                        {
+                                            <div class="project-actions" style="justify-content:center;">
+                                                <form asp-action="AcceptBid" asp-controller="TeamProject"
+                                                      method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@Model.Id" />
+                                                    <input type="hidden" name="bidId" value="@bid.Id" />
+                                                    <button class="btn btn-primary" style="font-size:0.8rem; padding:4px 10px;">
+                                                        ✓ Принять
+                                                    </button>
+                                                </form>
+                                                <form asp-action="RejectBid" asp-controller="TeamProject"
+                                                      method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@Model.Id" />
+                                                    <input type="hidden" name="bidId" value="@bid.Id" />
+                                                    <button class="btn btn-outline" style="font-size:0.8rem; padding:4px 10px;">
+                                                        ✕ Отклонить
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span style="color:var(--text-secondary); font-size:0.8rem;">—</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
     }
 
     <!-- ==================== TEAM ==================== -->

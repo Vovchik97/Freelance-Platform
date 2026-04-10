@@ -24,6 +24,7 @@ public class AppDbContext : IdentityDbContext
     public DbSet<ProjectActivityLog> ProjectActivityLogs { get; set; }
     public DbSet<GroupChatMessage> GroupChatMessages { get; set; }
     public DbSet<GroupChatMention> GroupChatMentions { get; set; }
+    public DbSet<GroupChatMessageRead> GroupChatMessageReads { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) 
     {

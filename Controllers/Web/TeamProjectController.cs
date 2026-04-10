@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using FreelancePlatform.Context;
+using FreelancePlatform.Dto.Projects;
 using FreelancePlatform.Dto.TeamProject;
 using FreelancePlatform.Models;
 using FreelancePlatform.Services;
@@ -33,6 +34,8 @@ public class TeamProjectController : Controller
             .Include(p => p.Client)
             .Include(p => p.Members)
             .Include(p => p.Tasks)
+            .Include(p => p.Bids)
+                .ThenInclude(b => b.Freelancer)
             .Include(p => p.ActivityLogs.OrderByDescending(l => l.CreatedAt))
             .Include(p => p.GroupChatMessages)
                 .ThenInclude(m => m.Attachments)
@@ -56,29 +59,49 @@ public class TeamProjectController : Controller
         var isLead = project.Members
             .Any(m => m.UserId == userId && m.Role == ProjectMemberRole.Lead &&
                       m.Status == ProjectMemberStatus.Accepted);
+        var isFreelancer = User.IsInRole("Freelancer");
 
         if (!isMember && !isClient)
         {
-            return Forbid();
+            if (!isFreelancer)
+            {
+                return Forbid();
+            }
+
+            if (tab != "overview")
+            {
+                return RedirectToAction(nameof(Details), new { id, tab = "overview" });
+            }
         }
+        
+        var userBid = project.Bids.FirstOrDefault(b => b.FreelancerId == userId);
 
         var memberUserIds = project.Members.Select(m => m.UserId).ToList();
         var memberUsers = await _userManager.Users
             .Where(u => memberUserIds.Contains(u.Id))
             .ToListAsync();
+        
+        var acceptedMembers = project.Members
+            .Where(m => m.Status == ProjectMemberStatus.Accepted)
+            .ToList();
+
+        var unreadCount = await _context.GroupChatMessages
+            .Where(m => m.ProjectId == id && m.SenderId != userId && m.ParentMessageId == null &&
+                        !m.ReadBy.Any(r => r.UserId == userId))
+            .CountAsync();
 
         ViewBag.Tab = tab;
         ViewBag.IsClient = isClient;
         ViewBag.IsLead = isLead;
         ViewBag.IsMember = isMember;
+        ViewBag.IsFreelancerOnly = isFreelancer && !isClient && !isLead && !isMember;
         ViewBag.CurrentUserId = userId;
         ViewBag.CurrentUserName = User.Identity!.Name;
         ViewBag.MemberUsers = memberUsers;
-
-        var acceptedMembers = project.Members
-            .Where(m => m.Status == ProjectMemberStatus.Accepted)
-            .ToList();
+        ViewBag.UserBid = userBid;
+        ViewBag.CanManageBids = isClient || isLead;
         ViewBag.AcceptedMembers = acceptedMembers;
+        ViewBag.UnreadChatCount = unreadCount;
 
         return View(project);
     }
@@ -174,7 +197,7 @@ public class TeamProjectController : Controller
         );
 
         TempData["Success"] = "Вы вступили в проект!";
-        return RedirectToAction(nameof(Details), new { id = member.ProjectId, tab = "team" });
+        return RedirectToAction("MyBids", "Bid", new { tab = "invites" });
     }
 
     [HttpPost]
@@ -195,7 +218,7 @@ public class TeamProjectController : Controller
         await _context.SaveChangesAsync();
 
         TempData["Info"] = "Приглашение отклонено";
-        return RedirectToAction("Index", "Project");
+        return RedirectToAction("MyBids", "Bid", new { tab = "invites" });
     }
 
     [HttpPost]
@@ -365,50 +388,377 @@ public class TeamProjectController : Controller
         return RedirectToAction(nameof(Details), new { id = projectId, tab = "tasks" });
     }
 
-    public async Task<IActionResult> MyInvites()
+    [HttpGet]
+    public async Task<IActionResult> GetInviteCount()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var invites = await _context.ProjectMembers
-            .Include(m => m.Project)
-            .Where(m => m.UserId == userId && m.Status == ProjectMemberStatus.Pending)
-            .ToListAsync();
+        if (userId == null) return Unauthorized();
 
-        return View(invites);
+        var count = await _context.ProjectMembers
+            .CountAsync(m => m.UserId == userId && m.Status == ProjectMemberStatus.Pending);
+        
+        var json = System.Text.Json.JsonSerializer.Serialize(new { count });
+
+        return Content(json, "application/json");
     }
 
-    public async Task<IActionResult> MyTeamProjects()
+    [HttpGet]
+    public async Task<IActionResult> Edit(int id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+        var project = await _context.Projects
+            .Include(p => p.Categories)
+            .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        var dto = new UpdateProjectDto
+        {
+            Title = project.Title,
+            Description = project.Description,
+            Budget = project.Budget,
+            Status = project.Status,
+            CategoryIds = project.Categories.Select(c => c.Id).ToList()
+        };
+
+        ViewBag.ProjectId = id;
+        ViewBag.AllCategories = await _context.Categories
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+        ViewBag.SelectedCategoryIds = dto.CategoryIds; 
+        
+        return View(dto);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, UpdateProjectDto dto)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var project = await _context.Projects
+            .Include(p => p.Categories)
+            .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
+
+        if (project == null)
+        {
+            return NotFound(); 
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.ProjectId = id;
+            ViewBag.AllCategories = await _context.Categories
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+            ViewBag.SelectedCategoryIds = dto.CategoryIds;
+            return View(dto);
+        }
+
+        project.Title = dto.Title;
+        project.Description = dto.Description;
+        project.Budget = dto.Budget;
+        project.Status = dto.Status;
+        
+        project.Categories.Clear();
+        if (dto.CategoryIds != null && dto.CategoryIds.Any())
+        {
+            var selectedCategories = await _context.Categories
+                .Where(c => dto.CategoryIds.Contains(c.Id) && c.IsActive)
+                .ToListAsync();
+            foreach (var cat in selectedCategories)
+            {
+                project.Categories.Add(cat);
+            }
+        }
+
+        await _context.SaveChangesAsync();
+
+        await _logService.LogAsync(id, "Проект отредактирован", userId, User.Identity!.Name);
+        
+        TempData["Success"] = "Проект отредактирован.";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CancelProject(int id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var project = await _context.Projects
+            .Include(p => p.Bids)
+            .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        if (project.Status != ProjectStatus.Open)
+        {
+            return BadRequest("Проект нельзя отменить на текущей стадии."); 
+        }
+
+        project.Status = ProjectStatus.Cancelled;
+        foreach (var bid in project.Bids.Where(b => b.Status == BidStatus.Pending))
+        {
+            bid.Status = BidStatus.Rejected;
+        }
+
+        await _context.SaveChangesAsync();
+        
+        await _logService.LogAsync(id, "Проект отменён", userId, User.Identity!.Name);
+
+        TempData["Success"] = "Проект отменён.";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResumeProject(int id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var project = await _context.Projects
+            .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        if (project.Status != ProjectStatus.Cancelled)
+        {
+            return BadRequest("Проект не в статусе 'Отменён'."); 
+        }
+        
+        project.Status = ProjectStatus.Open;
+        await _context.SaveChangesAsync();
+        
+        await _logService.LogAsync(id, "Проект возобновлен", userId, User.Identity!.Name);
+
+        TempData["Success"] = "Проект возобновлен.";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteProject(int id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var project = await _context.Projects
+            .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        _context.Projects.Remove(project);
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "Проект удалён.";
+        return RedirectToAction("MyProjects", "Project", new { tab = "team" });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Freelancer")]
+    public async Task<IActionResult> SubmitBid(int projectId, decimal amount, int durationInDays, string? comment)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var project = await _context.Projects
+            .Include(p => p.Bids)
+            .FirstOrDefaultAsync(p => p.Id == projectId);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        if (project.Status != ProjectStatus.Open)
+        {
+            TempData["Success"] = "Проект недоступен для откликов.";
+            return RedirectToAction(nameof(Details), new { id = projectId, tab = "overview" });
+        }
+
+        var alreadyBid = project.Bids.Any(b => b.FreelancerId == userId);
+        if (alreadyBid)
+        {
+            TempData["Error"] = "Вы уже откликнулись на этот проект.";
+            return RedirectToAction(nameof(Details), new { id = projectId, tab = "overview" });
+        }
+
+        var bid = new Bid
+        {
+            ProjectId = projectId,
+            FreelancerId = userId!,
+            Amount = amount,
+            DurationInDays = durationInDays,
+            Comment = comment,
+            Status = BidStatus.Pending,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Bids.Add(bid);
+        await _context.SaveChangesAsync();
+
+        await _logService.LogAsync(projectId, $"Фрилансер @{User.Identity!.Name} откликнулся на проект", userId,
+            User.Identity!.Name);
+
+        TempData["Success"] = "Заявка отправлена";
+        return RedirectToAction(nameof(Details), new { id = projectId, tab = "overview" });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AcceptBid(int projectId, int bidId)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var project = await _context.Projects
+            .Include(p => p.Bids)
+            .Include(p => p.Members)
+            .FirstOrDefaultAsync(p => p.Id == projectId);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+        
+        var isClient = project.ClientId == userId;
+        var isLead = project.Members.Any(m =>
+            m.UserId == userId && m.Role == ProjectMemberRole.Lead && m.Status == ProjectMemberStatus.Accepted);
+
+        if (!isClient && !isLead)
+        {
+            return Forbid();
+        }
+        
+        var bid = project.Bids.FirstOrDefault(b => b.Id == bidId);
+        if (bid == null)
+        {
+            return NotFound();
+        }
+        
+        bid.Status = BidStatus.Accepted;
+
+        var alreadyMember = project.Members.Any(m => m.UserId == bid.FreelancerId);
+        if (!alreadyMember)
+        {
+            var freelancer = await _userManager.FindByIdAsync(bid.FreelancerId);
+            _context.ProjectMembers.Add(new ProjectMember
+            {
+                ProjectId = project.Id,
+                UserId = bid.FreelancerId,
+                UserName = freelancer?.UserName ?? "",
+                Role = ProjectMemberRole.Member,
+                Status = ProjectMemberStatus.Accepted,
+                JoinedAt = DateTime.UtcNow
+            });
+        }
+
+        await _context.SaveChangesAsync();
+
+        await _logService.LogAsync(projectId,
+            $"Заявка от @{(await _userManager.FindByIdAsync(bid.FreelancerId))?.UserName} принята", userId,
+            User.Identity!.Name);
+        
+        TempData["Success"] = "Заявка принята, участник добавлен в команду.";
+        return RedirectToAction(nameof(Details), new { id = projectId, tab = "overview" });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RejectBid(int projectId, int bidId)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var project = await _context.Projects
+            .Include(p => p.Bids)
+            .Include(p => p.Members)
+            .FirstOrDefaultAsync(p => p.Id == projectId);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+        
+        var isClient = project.ClientId == userId;
+        var isLead = project.Members.Any(m =>
+            m.UserId == userId && m.Role == ProjectMemberRole.Lead && m.Status == ProjectMemberStatus.Accepted);
+
+        if (!isClient && !isLead)
+        {
+            return Forbid();
+        }
+        
+        var bid = project.Bids.FirstOrDefault(b => b.Id == bidId);
+        if (bid == null)
+        {
+            return NotFound();
+        }
+        
+        bid.Status = BidStatus.Rejected;
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "Заявка отклонена.";
+        return RedirectToAction(nameof(Details), new { id = projectId, tab = "overview" });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetGroupUnreadCount()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
 
         var memberProjectIds = await _context.ProjectMembers
             .Where(m => m.UserId == userId && m.Status == ProjectMemberStatus.Accepted)
             .Select(m => m.ProjectId)
             .ToListAsync();
 
-        var projects = await _context.Projects
-            .Include(p => p.Client)
-            .Include(p => p.Members)
-            .Where(p => memberProjectIds.Contains(p.Id) || p.ClientId == userId)
-            .Where(p => p.IsTeamProject)
+        var clientProjectIds = await _context.Projects
+            .Where(p => p.ClientId == userId && p.IsTeamProject)
+            .Select(p => p.Id)
             .ToListAsync();
 
-        return View(projects);
-    }
+        var allProjectIds = memberProjectIds
+            .Concat(clientProjectIds)
+            .Distinct()
+            .ToList();
 
-    [HttpGet]
-    public async Task<IActionResult> GetInviteCount()
-    {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var unreadByProject = new Dictionary<int, int>();
 
-        if (userId == null)
+        foreach (var projectId in allProjectIds)
         {
-            return Unauthorized();
+            var count = await _context.GroupChatMessages
+                .Where(m => m.ProjectId == projectId && m.SenderId != userId && m.ParentMessageId == null &&
+                            !m.ReadBy.Any(r => r.UserId == userId))
+                .CountAsync();
+
+            if (count > 0)
+            {
+                unreadByProject[projectId] = count;
+            }
         }
 
-        var count = await _context.ProjectMembers
-            .CountAsync(m => m.UserId == userId && m.Status == ProjectMemberStatus.Pending);
+        var total = unreadByProject.Values.Sum();
 
-        return Json(new { count });
+        var json = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            total,
+            byProject = unreadByProject
+        });
+
+        return Content(json, "application/json");
     }
 }
