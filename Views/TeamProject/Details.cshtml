@@ -11,6 +11,7 @@
     bool canManage = isClient || isLead;
     var isFreelancerOnly = (bool)(ViewBag.IsFreelancerOnly ?? false);
     var unreadChatCount = (int)(ViewBag.UnreadChatCount ?? 0);
+    var currentUserIdTask = ViewBag.CurrentUserId as string;
 }
 
 @if (TempData["Success"] != null)
@@ -149,8 +150,8 @@
                             case ProjectStatus.Cancelled:
                                 <span class="status-badge status-cancelled">Отменён</span>
                                 break;
-                            default:
-                                <span class="status-badge status-pending">@Model.Status</span>
+                            case ProjectStatus.Paid:
+                                <span class="status-badge status-paid">Оплачен</span>
                                 break;
                         }
                     </span>
@@ -189,17 +190,28 @@
             @if (isClientView)
             {
                 <div class="project-actions">
-                    <a asp-action="Edit" asp-controller="TeamProject"
-                       asp-route-id="@Model.Id" class="btn btn-warning">
-                        ✏️ Редактировать
-                    </a>
                     @if (Model.Status == ProjectStatus.Open)
                     {
+                        <a asp-action="Edit" asp-controller="TeamProject"
+                           asp-route-id="@Model.Id" class="btn btn-warning">
+                            ✏️ Редактировать
+                        </a>
                         <form asp-action="CancelProject" asp-controller="TeamProject"
                               asp-route-id="@Model.Id" method="post">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn btn-outline">
                                 ✕ Отменить проект
+                            </button>
+                        </form>
+                    }
+                    @if (Model.Status == ProjectStatus.InProgress)
+                    {
+                        <form asp-action="CompleteProject" asp-controller="TeamProject"
+                              asp-route-id="@Model.Id" method="post"
+                              onsubmit="return confirm('Завершить проект? Это действие необратимо.')">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-primary">
+                                ✅ Завершить проект
                             </button>
                         </form>
                     }
@@ -600,15 +612,31 @@
                         <!-- Карточки задач -->
                         @foreach (var task in tasks)
                         {
-                            <!-- project-card уже имеет var(--surface) фон -->
-                            <div class="project-card"
-                                 style="margin-bottom:0.75rem; padding:1rem;">
+                            var canDelete = isClient || isLead;
+                            
+                            bool canChangeStatus;
+                            if (isClient && !isLead)
+                            {
+                                canChangeStatus = false;
+                            }
+                            else if (!string.IsNullOrEmpty(task.AssignedToUserId))
+                            {
+                                canChangeStatus = task.AssignedToUserId == currentUserIdTask || isLead;
+                            }
+                            else
+                            {
+                                var isMemberOfProject = acceptedMembers.Any(m => m.UserId == currentUserIdTask);
+                                canChangeStatus = isLead || isMemberOfProject;
+                            }
+
+                            <div class="project-card" style="margin-bottom:0.75rem; padding:1rem;">
 
                                 <div class="project-header" style="margin-bottom:0.5rem;">
                                     <span class="project-title" style="font-size:0.95rem;">
                                         @task.Title
                                     </span>
-                                    @if (canManage)
+                                    
+                                    @if (canDelete)
                                     {
                                         <form asp-action="DeleteTask"
                                               asp-controller="TeamProject"
@@ -646,34 +674,52 @@
                                     </div>
                                 }
 
-                                <!-- Кнопки смены статуса -->
-                                <div class="project-actions" style="gap:0.25rem; flex-wrap:wrap;">
-                                    @if (status != ProjectTaskStatus.Todo)
-                                    {
-                                        <button class="btn btn-outline task-status-btn"
-                                                style="font-size:0.75rem; padding:4px 8px;"
-                                                data-task-id="@task.Id" data-status="0">
-                                            ← К выполнению
-                                        </button>
-                                    }
-                                    @if (status != ProjectTaskStatus.InProgress)
-                                    {
-                                        <button class="btn btn-warning task-status-btn"
-                                                style="font-size:0.75rem; padding:4px 8px;"
-                                                data-task-id="@task.Id" data-status="1">
-                                            🔄 В процессе
-                                        </button>
-                                    }
-                                    @if (status != ProjectTaskStatus.Done)
-                                    {
-                                        <button class="btn btn-primary task-status-btn"
-                                                style="font-size:0.75rem; padding:4px 8px;
-                                                       background:var(--success);"
-                                                data-task-id="@task.Id" data-status="2">
-                                            ✅ Выполнено
-                                        </button>
-                                    }
-                                </div>
+                                @* Кнопки смены статуса — только если есть право *@
+                                @if (canChangeStatus)
+                                {
+                                    <div class="project-actions" style="gap:0.25rem; flex-wrap:wrap;">
+                                        @if (isLead && status != ProjectTaskStatus.Todo)
+                                        {
+                                            <form asp-action="UpdateTaskStatus"
+                                                  asp-controller="TeamProject" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="taskId" value="@task.Id" />
+                                                <input type="hidden" name="status" value="0" />
+                                                <button class="btn btn-outline"
+                                                        style="font-size:0.75rem; padding:4px 8px;">
+                                                    ← К выполнению
+                                                </button>
+                                            </form>
+                                        }
+                                        @if (status != ProjectTaskStatus.InProgress && (isLead || status == ProjectTaskStatus.Todo))
+                                        {
+                                            <form asp-action="UpdateTaskStatus"
+                                                  asp-controller="TeamProject" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="taskId" value="@task.Id" />
+                                                <input type="hidden" name="status" value="1" />
+                                                <button class="btn btn-warning"
+                                                        style="font-size:0.75rem; padding:4px 8px;">
+                                                    🔄 В процессе
+                                                </button>
+                                            </form>
+                                        }
+                                        @if (status != ProjectTaskStatus.Done && (isLead || status == ProjectTaskStatus.InProgress))
+                                        {
+                                            <form asp-action="UpdateTaskStatus"
+                                                  asp-controller="TeamProject" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="taskId" value="@task.Id" />
+                                                <input type="hidden" name="status" value="2" />
+                                                <button class="btn btn-primary"
+                                                        style="font-size:0.75rem; padding:4px 8px;
+                                                               background:var(--success);">
+                                                    ✅ Выполнено
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                }
                             </div>
                         }
 

@@ -11,4 +11,6 @@ public class ProjectTask
     public string? AssignedToUserName { get; set; }
     public ProjectTaskStatus Status { get; set; } = ProjectTaskStatus.Todo;
     public DateTime? CreatedAt { get; set; }
+    
+    public string? CreatedByUserId { get; set; }
 }

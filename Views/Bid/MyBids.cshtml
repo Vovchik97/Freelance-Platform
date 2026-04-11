@@ -189,7 +189,8 @@
                                             </a>
                                             <form asp-action="Delete" asp-route-id="@bid.Id"
                                                   method="post"
-                                                  onsubmit="return confirm('Удалить отклик?')">
+                                                  style="display:contents" 
+                                                  onsubmit="return confirm('Удалить заявку?')">
                                                 @Html.AntiForgeryToken()
                                                 <button type="submit" class="btn btn-sm btn-danger">
                                                     Удалить

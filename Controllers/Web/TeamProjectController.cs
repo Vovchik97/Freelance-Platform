@@ -187,6 +187,14 @@ public class TeamProjectController : Controller
 
         member.Status = ProjectMemberStatus.Accepted;
         member.JoinedAt = DateTime.UtcNow;
+
+        if (member.Project.Status == ProjectStatus.Open)
+        {
+            member.Project.Status = ProjectStatus.InProgress;
+            await _logService.LogAsync(member.ProjectId,
+                "Проект переведён в статус «В работе»", userId, member.UserName);
+        }
+        
         await _context.SaveChangesAsync();
 
         await _logService.LogAsync(
@@ -265,7 +273,7 @@ public class TeamProjectController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SetLEad(int memberId)
+    public async Task<IActionResult> SetLead(int memberId)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -337,8 +345,12 @@ public class TeamProjectController : Controller
             AssignedToUserId = dto.AssignedToUserId,
             AssignedToUserName = assignedName,
             Status = ProjectTaskStatus.Todo,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            CreatedByUserId = userId
         };
+        
+        _context.ProjectTasks.Add(task);
+        await _context.SaveChangesAsync();
 
         await _logService.LogAsync(
             dto.ProjectId,
@@ -354,13 +366,93 @@ public class TeamProjectController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateTaskStatus(int taskId, int status)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+        var task = await _context.ProjectTasks
+            .Include(t => t.Project)
+                .ThenInclude(p => p.Members)
+            .FirstOrDefaultAsync(t => t.Id == taskId);
+
+        if (task == null)
+        {
+            return NotFound();
+        }
+        
+        var isCLient = task.Project.ClientId == userId;
+        var isLead = task.Project.Members.Any(m =>
+            m.UserId == userId && m.Role == ProjectMemberRole.Lead && m.Status == ProjectMemberStatus.Accepted);
+        
+        if (isCLient && !isLead)
+        {
+            return Forbid();
+        }
+        
+        var newStatus = (ProjectTaskStatus) status;
+        var isAssigned = task.AssignedToUserId == userId;
+        var isMember = task.Project.Members
+            .Any(m => m.UserId == userId && m.Status == ProjectMemberStatus.Accepted);
+
+        bool canChangeStatus;
+        if (!string.IsNullOrEmpty(task.AssignedToUserId))
+        {
+            canChangeStatus = isAssigned || isLead;
+        }
+        else
+        {
+            canChangeStatus = isLead || isMember;
+        }
+
+        if (!canChangeStatus)
+        {
+            return Forbid();
+        }
+
+        if (!isLead)
+        {
+            var validTransition = (task.Status, newStatus) switch
+            {
+                (ProjectTaskStatus.Todo, ProjectTaskStatus.InProgress) => true,
+                (ProjectTaskStatus.InProgress, ProjectTaskStatus.Done) => true,
+                _ => false
+            };
+
+            if (!validTransition)
+            {
+                TempData["Error"] = "Нельзя переместить задачу в этот статус.";
+                return RedirectToAction(nameof(Details), new { id = task.ProjectId, tab = "tasks" });
+            }
+        }
+        
+        task.Status = newStatus;
+        await _context.SaveChangesAsync();
+        
+        await _logService.LogAsync(
+            task.ProjectId,
+            $"Задача «{task.Title}» переведена в статус «{newStatus switch {
+                ProjectTaskStatus.Todo => "К выполнению",
+                ProjectTaskStatus.InProgress => "В процессе",
+                ProjectTaskStatus.Done => "Выполнено",
+                _ => newStatus.ToString()
+            }}»",
+            userId,
+            User.Identity!.Name
+        );
+
+        TempData["Success"] = "Статус задачи обновлён.";
+        return RedirectToAction(nameof(Details), new { id = task.ProjectId, tab = "tasks" });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteTask(int taskId)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         var task = await _context.ProjectTasks
             .Include(t => t.Project)
-            .ThenInclude(p => p.Members)
+                .ThenInclude(p => p.Members)
             .FirstOrDefaultAsync(t => t.Id == taskId);
 
         if (task == null)
@@ -376,6 +468,9 @@ public class TeamProjectController : Controller
 
         var projectId = task.ProjectId;
         var title = task.Title;
+        
+        _context.ProjectTasks.Remove(task);
+        await _context.SaveChangesAsync();
         
         await _logService.LogAsync(
             projectId,
@@ -416,6 +511,11 @@ public class TeamProjectController : Controller
         {
             return NotFound();
         }
+        
+        if (project.Status != ProjectStatus.Open)
+        {
+            return BadRequest("Проект нельзя отменить на текущей стадии."); 
+        }
 
         var dto = new UpdateProjectDto
         {
@@ -448,6 +548,11 @@ public class TeamProjectController : Controller
         if (project == null)
         {
             return NotFound(); 
+        }
+        
+        if (project.Status != ProjectStatus.Open)
+        {
+            return BadRequest("Проект нельзя отменить на текущей стадии."); 
         }
 
         if (!ModelState.IsValid)
@@ -568,6 +673,35 @@ public class TeamProjectController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CompleteProject(int id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var project = await _context.Projects
+            .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
+
+        if (project == null)
+        {
+            return NotFound(); 
+        }
+
+        if (project.Status != ProjectStatus.InProgress)
+        {
+            TempData["Error"] = "Завершить можно только проект в статусе «В работе».";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        project.Status = ProjectStatus.Completed;
+        await _context.SaveChangesAsync();
+        
+        await _logService.LogAsync(id, "Проект завершён", userId, User.Identity!.Name);
+
+        TempData["Success"] = "Проект завершён.";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     [Authorize(Roles = "Freelancer")]
     public async Task<IActionResult> SubmitBid(int projectId, decimal amount, int durationInDays, string? comment)
     {
@@ -662,6 +796,13 @@ public class TeamProjectController : Controller
                 Status = ProjectMemberStatus.Accepted,
                 JoinedAt = DateTime.UtcNow
             });
+        }
+
+        if (project.Status == ProjectStatus.Open)
+        {
+            project.Status = ProjectStatus.InProgress;
+            await _logService.LogAsync(projectId,
+                "Проект переведён в статус «В работе»", userId, User.Identity!.Name);
         }
 
         await _context.SaveChangesAsync();
