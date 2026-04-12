@@ -27,4 +27,5 @@ public class Project
     public List<ProjectTask> Tasks { get; set; } = new();
     public List<ProjectActivityLog> ActivityLogs { get; set; } = new();
     public List<GroupChatMessage> GroupChatMessages { get; set; } = new();
+    public ICollection<PaymentShare> PaymentShares { get; set; } = new List<PaymentShare>();
 }

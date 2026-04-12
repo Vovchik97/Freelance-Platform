@@ -15,6 +15,9 @@ public interface IBalanceService
     
     Task ReleaseForOrderAsync(string clientId, string freelancerId, decimal amount, int orderId);
     Task ReleaseForProjectAsync(string clientId, string freelancerId, decimal amount, int projectId);
+
+    Task ReleaseForTeamProjectAsync(string clientId, List<(string UserId, string UserName, decimal Amount)> payouts,
+        int projectId);
     
     Task WithdrawAsync(string userId, decimal amount, int paymentId);
     

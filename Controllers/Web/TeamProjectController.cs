@@ -17,13 +17,15 @@ public class TeamProjectController : Controller
     private readonly AppDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
     private readonly ProjectActivityLogService _logService;
+    private readonly BalanceService _balanceService;
 
     public TeamProjectController(AppDbContext context, UserManager<IdentityUser> userManager,
-        ProjectActivityLogService logService)
+        ProjectActivityLogService logService, BalanceService balanceService)
     {
         _context = context;
         _userManager = userManager;
         _logService = logService;
+        _balanceService = balanceService;
     }
 
     public async Task<IActionResult> Details(int id, string tab = "overview")
@@ -279,6 +281,7 @@ public class TeamProjectController : Controller
 
         var member = await _context.ProjectMembers
             .Include(m => m.Project)
+                .ThenInclude(p => p.Members)
             .FirstOrDefaultAsync(m => m.Id == memberId);
 
         if (member == null)
@@ -291,12 +294,23 @@ public class TeamProjectController : Controller
             return Forbid();
         }
 
+        var currentLead = member.Project.Members
+            .FirstOrDefault(m =>
+                m.Role == ProjectMemberRole.Lead && m.Id != memberId && m.Status == ProjectMemberStatus.Accepted);
+
+        if (currentLead != null)
+        {
+            currentLead.Role = ProjectMemberRole.Member;
+        }
+
         member.Role = ProjectMemberRole.Lead;
         await _context.SaveChangesAsync();
 
         await _logService.LogAsync(
             member.ProjectId,
-            $"@{member.UserName} назначен лидом проекта",
+            currentLead != null 
+                ? $"@{member.UserName} назначен новым лидом, @{currentLead.UserName} стал участником"
+                : $"@{member.UserName} назначен лидом проекта",
             userId,
             User.Identity!.Name
         );
@@ -593,6 +607,77 @@ public class TeamProjectController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PayProject(int id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+        var project = await _context.Projects
+            .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        if (project.Status != ProjectStatus.Open)
+        {
+            TempData["Error"] = "Оплатить можно только открытый проект.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        try
+        {
+            await _balanceService.FreezeForProjectAsync(userId, project.Budget, project.Id);
+
+            project.Status = ProjectStatus.Paid;
+            await _context.SaveChangesAsync();
+            
+            await _logService.LogAsync(id,
+                $"Проект оплачен, заморожено " +
+                $"{project.Budget.ToString("C", new System.Globalization.CultureInfo("ru-RU"))}",
+                userId, User.Identity!.Name);
+
+            TempData["Success"] = "Проект оплачен, средства заморожены. Можно начинать работу.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> StartProject(int id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+        var project = await _context.Projects
+            .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        if (project.Status != ProjectStatus.Paid)
+        {
+            TempData["Error"] = "Начать работу можно только после оплаты.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        project.Status = ProjectStatus.InProgress;
+        await _context.SaveChangesAsync();
+
+        await _logService.LogAsync(id, "Работа над проектом начата", userId, User.Identity!.Name);
+        
+        TempData["Success"] = "Работа над проектом начата.";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> CancelProject(int id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -605,9 +690,23 @@ public class TeamProjectController : Controller
             return NotFound();
         }
 
-        if (project.Status != ProjectStatus.Open)
+        if (project.Status != ProjectStatus.Open && project.Status != ProjectStatus.Paid)
         {
-            return BadRequest("Проект нельзя отменить на текущей стадии."); 
+            TempData["Error"] = "нельзя отменить проект, который уже в работе.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        if (project.Status == ProjectStatus.Paid)
+        {
+            try
+            {
+                await _balanceService.RefundForProjectAsync(userId, project.Budget, project.Id);
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Error"] = ex.Message;
+                return RedirectToAction(nameof(Details), new { id });
+            }
         }
 
         project.Status = ProjectStatus.Cancelled;
@@ -618,9 +717,15 @@ public class TeamProjectController : Controller
 
         await _context.SaveChangesAsync();
         
-        await _logService.LogAsync(id, "Проект отменён", userId, User.Identity!.Name);
+        await _logService.LogAsync(id,
+            project.Status == ProjectStatus.Paid
+                ? "Проект отменён, бюджет возвращён клиенту"
+                : "Проект отменён",
+            userId, User.Identity!.Name);
 
-        TempData["Success"] = "Проект отменён.";
+        TempData["Success"] = project.Status == ProjectStatus.Paid
+            ? "Проект отменён, средства возвращены на ваш баланс."
+            : "Проект отменён.";
         return RedirectToAction(nameof(Details), new { id });
     }
 
@@ -671,13 +776,14 @@ public class TeamProjectController : Controller
         return RedirectToAction("MyProjects", "Project", new { tab = "team" });
     }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
+    [HttpGet]
     public async Task<IActionResult> CompleteProject(int id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         var project = await _context.Projects
+            .Include(p => p.Members)
+            .Include(p => p.Tasks)
             .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
 
         if (project == null)
@@ -691,13 +797,169 @@ public class TeamProjectController : Controller
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        var shares = CalculateShares(project);
+
+        ViewBag.ProjectId = id;
+        ViewBag.Budget = project.Budget;
+        return View(shares);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ConfirmCompletion(int projectId, List<string> userIds, List<decimal> finalShares)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var project = await _context.Projects
+            .Include(p => p.Members)
+            .Include(p => p.Tasks)
+            .FirstOrDefaultAsync(p => p.Id == projectId && p.ClientId == userId);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        if (project.Status != ProjectStatus.InProgress)
+        {
+            TempData["Error"] = "Завершить можно только проект в статусе «В работе».";
+            return RedirectToAction(nameof(Details), new { id = projectId });
+        }
+
+        var totalFinal = finalShares.Sum();
+        if (Math.Abs(totalFinal - project.Budget) > 1)
+        {
+            TempData["Error"] = "Сумма долей должна равняться бюджету проекта.";
+            return RedirectToAction(nameof(CompleteProject), new { id = projectId });
+        }
+
+        var autoShares = CalculateShares(project);
+        for (int i = 0; i < userIds.Count; i++)
+        {
+            var auto = autoShares.FirstOrDefault(s => s.UserId == userIds[i]);
+            if (auto == null)
+            {
+                continue;
+            }
+
+            var min = auto.AutoShare * 0.8m;
+            var max = auto.AutoShare * 1.2m;
+
+            if (finalShares[i] < min || finalShares[i] > max)
+            {
+                TempData["Error"] =
+                    $"Доля участника {auto.UserName} выходит за пределы ±20% " +
+                    $"от автоматической ({auto.AutoShare.ToString("C", new System.Globalization.CultureInfo("ru-RU"))}).";
+                return RedirectToAction(nameof(CompleteProject), new { id = projectId });
+            }
+        }
+
+        var payouts = userIds
+            .Select((uid, i) =>
+            (
+                UserId: uid,
+                UserName: autoShares.FirstOrDefault(s => s.UserId == uid)?.UserName ?? "",
+                Amount: finalShares[i]
+            ))
+            .ToList();
+
+        try
+        {
+            await _balanceService.ReleaseForTeamProjectAsync(userId, payouts, projectId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["Error"] = ex.Message;
+            return RedirectToAction(nameof(CompleteProject), new { id = projectId });
+        }
+        
+        for (int i = 0; i < userIds.Count; i++)
+        {
+            var autoShare = autoShares.FirstOrDefault(s => s.UserId == userIds[i]);
+                
+            _context.PaymentShares.Add(new PaymentShare
+            {
+                ProjectId = projectId,
+                UserId = userIds[i],
+                UserName = autoShare?.UserName ?? "",
+                IsLead = autoShare?.IsLead ?? false,
+                TasksDone = autoShare?.TasksDone ?? 0,
+                AutoShare = autoShare?.AutoShare ?? 0,
+                FinalShare = finalShares[i]
+            });
+
+            await _logService.LogAsync(projectId,
+                $"@{autoShare?.UserName} получил выплату " +
+                $"{finalShares[i].ToString("C", new System.Globalization.CultureInfo("ru-RU"))}",
+                userId, User.Identity!.Name);
+        }
+        
         project.Status = ProjectStatus.Completed;
         await _context.SaveChangesAsync();
         
-        await _logService.LogAsync(id, "Проект завершён", userId, User.Identity!.Name);
+        await _logService.LogAsync(projectId, "Проект завершён, выплаты распределены",
+            userId, User.Identity!.Name);
 
-        TempData["Success"] = "Проект завершён.";
-        return RedirectToAction(nameof(Details), new { id });
+        TempData["Success"] = "Проект завершён, выплаты произведены!";
+        return RedirectToAction(nameof(Details), new { id = projectId });
+    }
+    
+    private List<PaymentShare> CalculateShares(Project project)
+    {
+        var acceptedMembers = project.Members
+            .Where(m => m.Status == ProjectMemberStatus.Accepted)
+            .ToList();
+
+        if (!acceptedMembers.Any())
+        {
+            return new List<PaymentShare>();
+        }
+
+        var lead = acceptedMembers.FirstOrDefault(m => m.Role == ProjectMemberRole.Lead);
+        var budget = project.Budget;
+
+        var tasksByUser = project.Tasks
+            .Where(t => t.Status == ProjectTaskStatus.Done && t.AssignedToUserId != null)
+            .GroupBy(t => t.AssignedToUserId!)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var totalDoneTasks = tasksByUser.Values.Sum();
+        
+        decimal leadBonus = lead != null ? budget * 0.20m : 0;
+        var remainingBudget = budget - leadBonus;
+
+        var shares = new List<PaymentShare>();
+
+        foreach (var member in acceptedMembers)
+        {
+            var tasksDone = tasksByUser.GetValueOrDefault(member.UserId, 0);
+
+            decimal baseShare;
+            if (totalDoneTasks == 0)
+            {
+                baseShare = remainingBudget / acceptedMembers.Count;
+            }
+            else
+            {
+                baseShare = (decimal)tasksDone / totalDoneTasks * remainingBudget;
+            }
+            
+            var isLead = lead?.UserId == member.UserId;
+            var autoShare = isLead ? baseShare + leadBonus : baseShare;
+            
+            shares.Add(new PaymentShare
+            {
+                ProjectId = project.Id,
+                UserId = member.UserId,
+                UserName = member.UserName,
+                IsLead = isLead,
+                TasksDone = tasksDone,
+                AutoShare = Math.Round(autoShare, 2),
+                FinalShare = Math.Round(autoShare, 2)
+            });
+        }
+
+        return shares;
     }
 
     [HttpPost]

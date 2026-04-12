@@ -196,6 +196,14 @@
                            asp-route-id="@Model.Id" class="btn btn-warning">
                             ✏️ Редактировать
                         </a>
+                        <form asp-action="PayProject" asp-controller="TeamProject"
+                              asp-route-id="@Model.Id" method="post"
+                              onsubmit="return confirm('Оплатить проект? Средства будут заморожены.')">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-primary">
+                                💳 Оплатить проект
+                            </button>
+                        </form>
                         <form asp-action="CancelProject" asp-controller="TeamProject"
                               asp-route-id="@Model.Id" method="post">
                             @Html.AntiForgeryToken()
@@ -204,16 +212,31 @@
                             </button>
                         </form>
                     }
-                    @if (Model.Status == ProjectStatus.InProgress)
+                    @if (Model.Status == ProjectStatus.Paid)
                     {
-                        <form asp-action="CompleteProject" asp-controller="TeamProject"
-                              asp-route-id="@Model.Id" method="post"
-                              onsubmit="return confirm('Завершить проект? Это действие необратимо.')">
+                        <form asp-action="StartProject" asp-controller="TeamProject"
+                              asp-route-id="@Model.Id" method="post">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn btn-primary">
-                                ✅ Завершить проект
+                                🚀 Начать работу
                             </button>
                         </form>
+                        <form asp-action="CancelProject" asp-controller="TeamProject"
+                              asp-route-id="@Model.Id" method="post"
+                              onsubmit="return confirm('Отменить проект? Средства будут возвращены на баланс.')">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline">
+                                ✕ Отменить и вернуть деньги
+                            </button>
+                        </form>
+                    }
+                    @if (Model.Status == ProjectStatus.InProgress)
+                    {
+                        <a asp-action="CompleteProject" asp-controller="TeamProject"
+                           asp-route-id="@Model.Id" class="btn btn-primary">
+                            ✅ Завершить проект
+                        </a>
+
                     }
                     @if (Model.Status == ProjectStatus.Cancelled)
                     {

@@ -1,0 +1,193 @@
+﻿@model List<FreelancePlatform.Models.PaymentShare>
+@{
+    ViewData["Title"] = "Завершение проекта";
+    var projectId = (int)ViewBag.ProjectId;
+    var budget = (decimal)ViewBag.Budget;
+}
+
+<div class="container mt-4">
+    <div class="header">
+        <h1>✅ Завершение проекта</h1>
+        <p>Проверьте и скорректируйте распределение выплат</p>
+    </div>
+
+    <div class="filters-card">
+        <h3 class="filters-title">💰 Распределение бюджета</h3>
+        <p style="color:var(--text-secondary); margin-bottom:1.5rem;">
+            Общий бюджет:
+            <strong style="color:var(--primary-light);">
+                @budget.ToString("C", new System.Globalization.CultureInfo("ru-RU"))
+            </strong>
+            · Вы можете скорректировать доли в пределах ±20% от автоматического расчёта
+        </p>
+
+        <form asp-action="ConfirmCompletion" asp-controller="TeamProject" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="projectId" value="@projectId" />
+
+            <div class="custom-table-container"
+                 style="padding:0; box-shadow:none; border:none;">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Участник</th>
+                            <th>Роль</th>
+                            <th>Задач выполнено</th>
+                            <th>Авто-доля</th>
+                            <th>Мин.</th>
+                            <th>Макс.</th>
+                            <th>Ваша корректировка</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.Count; i++)
+                        {
+                            var share = Model[i];
+                            var min = Math.Round(share.AutoShare * 0.8m, 2);
+                            var max = Math.Round(share.AutoShare * 1.2m, 2);
+
+                            <tr>
+                                <td>
+                                    <input type="hidden"
+                                           name="userIds[@i]"
+                                           value="@share.UserId" />
+                                    <strong style="color:var(--text-primary);">
+                                        @share.UserName
+                                    </strong>
+                                </td>
+                                <td>
+                                    @if (share.IsLead)
+                                    {
+                                        <span class="status-badge status-completed">⭐ Lead</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge status-pending">Участник</span>
+                                    }
+                                </td>
+                                <td style="color:var(--text-secondary);">
+                                    @share.TasksDone
+                                </td>
+                                <td>
+                                    <span class="project-budget">
+                                        @share.AutoShare.ToString("C", new System.Globalization.CultureInfo("ru-RU"))
+                                    </span>
+                                </td>
+                                <td style="color:var(--text-secondary); font-size:0.85rem;">
+                                    @min.ToString("C", new System.Globalization.CultureInfo("ru-RU"))
+                                </td>
+                                <td style="color:var(--text-secondary); font-size:0.85rem;">
+                                    @max.ToString("C", new System.Globalization.CultureInfo("ru-RU"))
+                                </td>
+                                <td>
+                                    <input type="number"
+                                           name="finalShares[@i]"
+                                           class="form-input share-input"
+                                           style="width:140px;"
+                                           value="@share.AutoShare"
+                                           min="@min.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                           max="@max.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                           step="0.01"
+                                           data-auto="@share.AutoShare.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                           data-min="@min.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                           data-max="@max.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                           required />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Итог -->
+            <div class="filters-card"
+                 style="margin-top:1.5rem; box-shadow:none;
+                        border-color:var(--primary-light);">
+                <div style="display:flex; justify-content:space-between;
+                            align-items:center; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <span style="color:var(--text-secondary);">Итого распределено:</span>
+                        <strong id="totalSum"
+                                style="color:var(--primary-light);
+                                       font-size:1.2rem; margin-left:8px;">
+                            0 ₽
+                        </strong>
+                        <span style="color:var(--text-secondary); margin-left:8px;">
+                            из
+                        </span>
+                        <strong style="color:var(--text-primary); margin-left:4px;">
+                            @budget.ToString("C", new System.Globalization.CultureInfo("ru-RU"))
+                        </strong>
+                    </div>
+                    <div id="sumStatus" style="font-size:0.9rem;"></div>
+                </div>
+            </div>
+
+            <div class="project-actions" style="margin-top:1.5rem;">
+                <button type="submit" id="confirmBtn" class="btn btn-primary" disabled>
+                    ✅ Подтвердить и выплатить
+                </button>
+                <a asp-action="Details" asp-controller="TeamProject"
+                   asp-route-id="@projectId"
+                   class="btn btn-outline">
+                    ← Назад
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const budget = @budget.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    const inputs = document.querySelectorAll('.share-input');
+    const totalEl = document.getElementById('totalSum');
+    const statusEl = document.getElementById('sumStatus');
+    const confirmBtn = document.getElementById('confirmBtn');
+
+    function updateTotal() {
+        let total = 0;
+        let hasError = false;
+
+        inputs.forEach(input => {
+            const val = parseFloat(input.value) || 0;
+            const min = parseFloat(input.dataset.min);
+            const max = parseFloat(input.dataset.max);
+            total += val;
+
+            // Подсвечиваем поле если выходит за пределы
+            if (val < min || val > max) {
+                input.style.borderColor = '#ef4444';
+                hasError = true;
+            } else {
+                input.style.borderColor = '';
+            }
+        });
+
+        total = Math.round(total * 100) / 100;
+        totalEl.textContent = total.toLocaleString('ru-RU', {
+            style: 'currency', currency: 'RUB'
+        });
+
+        const diff = Math.abs(total - budget);
+        const isValid = diff <= 1 && !hasError;
+
+        if (hasError) {
+            statusEl.innerHTML =
+                '<span style="color:#ef4444;">⚠️ Некоторые доли выходят за пределы ±20%</span>';
+        } else if (diff > 1) {
+            const sign = total > budget ? '+' : '-';
+            statusEl.innerHTML =
+                `<span style="color:#ef4444;">⚠️ Разница с бюджетом: ${sign}${diff.toFixed(2)} ₽</span>`;
+        } else {
+            statusEl.innerHTML =
+                '<span style="color:#22c55e;">✅ Сумма совпадает с бюджетом</span>';
+        }
+
+        confirmBtn.disabled = !isValid;
+    }
+
+    inputs.forEach(input => input.addEventListener('input', updateTotal));
+    updateTotal(); // инициализация
+</script>
+}

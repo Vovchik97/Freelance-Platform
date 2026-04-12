@@ -239,6 +239,50 @@ public class BalanceService : IBalanceService
           await _context.SaveChangesAsync();
      }
 
+     public async Task ReleaseForTeamProjectAsync(string clientId,
+          List<(string UserId, string UserName, decimal Amount)> payouts, int projectId)
+     {
+          var client = await GetAsync(clientId);
+          var totalAmount = payouts.Sum(p => p.Amount);
+
+          if (client.Frozen < totalAmount)
+          {
+               throw new InvalidOperationException("Недостаточно замороженных средств.");
+          }
+
+          client.Frozen -= totalAmount;
+          
+          const decimal commissonPercent = 0.1m;
+
+          foreach (var (freelancerId, userName, amount) in payouts)
+          {
+               var commission = Math.Round(amount * commissonPercent, 2);
+               var payout = amount - commission;
+
+               var freelancer = await GetAsync(freelancerId);
+               freelancer.Balance += payout;
+               
+               _context.BalanceTransactions.AddRange(
+                    new BalanceTransaction
+                    {
+                         UserId = freelancerId,
+                         Amount = amount,
+                         ProjectId = projectId,
+                         Type = BalanceTransactionType.Payout
+                    },
+                    new BalanceTransaction
+                    {
+                         UserId = "PLATFORM",
+                         Amount = commission,
+                         ProjectId = projectId,
+                         Type = BalanceTransactionType.Commission
+                    }
+               );
+          }
+
+          await _context.SaveChangesAsync();
+     }
+
      public async Task WithdrawAsync(string userId, decimal amount, int paymentId)
      {
           var balance = await GetAsync(userId);
