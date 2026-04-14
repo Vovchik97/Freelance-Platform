@@ -555,7 +555,7 @@
         <div class="filters-card">
             <h3 class="filters-title">✅ Задачи проекта</h3>
 
-            @if (canManage)
+            @if (canManage && Model.Status == ProjectStatus.InProgress)
             {
                 <div class="filters-card"
                      style="margin-bottom:1.5rem;
@@ -591,6 +591,16 @@
                             </div>
                         </div>
                     </form>
+                </div>
+            }
+            else if (canManage && Model.Status != ProjectStatus.InProgress)
+            {
+                <div class="filters-card"
+                     style="margin-bottom:1.5rem; box-shadow:none;
+                border-color:var(--border); opacity:0.6;">
+                    <p style="color:var(--text-secondary); margin:0; font-size:0.9rem;">
+                        ℹ️ Создание задач доступно только когда проект в статусе «В работе»
+                    </p>
                 </div>
             }
 
@@ -635,6 +645,9 @@
                         <!-- Карточки задач -->
                         @foreach (var task in tasks)
                         {
+                            var effectiveAssignee = task.AssignedToUserId ?? task.TakenByUserName;
+                            var effectiveAssigneeId = task.AssignedToUserId ?? task.TakenByUserId;
+                            
                             var canDelete = isClient || isLead;
                             
                             bool canChangeStatus;
@@ -642,9 +655,9 @@
                             {
                                 canChangeStatus = false;
                             }
-                            else if (!string.IsNullOrEmpty(task.AssignedToUserId))
+                            else if (!string.IsNullOrEmpty(effectiveAssigneeId))
                             {
-                                canChangeStatus = task.AssignedToUserId == currentUserIdTask || isLead;
+                                canChangeStatus = effectiveAssigneeId == currentUserIdTask || isLead;
                             }
                             else
                             {
@@ -681,9 +694,10 @@
                                         @task.Description
                                     </p>
                                 }
-
+                                
                                 @if (!string.IsNullOrEmpty(task.AssignedToUserName))
                                 {
+                                    @* Назначен при создании *@
                                     <div class="meta-item" style="margin-bottom:0.75rem;">
                                         <svg class="meta-icon" fill="none"
                                              stroke="currentColor" viewBox="0 0 24 24">
@@ -693,6 +707,35 @@
                                         </svg>
                                         <span style="color:var(--primary-light); font-weight:500;">
                                             @task.AssignedToUserName
+                                        </span>
+                                    </div>
+                                }
+                                else if (!string.IsNullOrEmpty(task.TakenByUserName))
+                                {
+                                    <div class="meta-item" style="margin-bottom:0.75rem;">
+                                        <svg class="meta-icon" fill="none"
+                                             stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                  stroke-width="2"
+                                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                        </svg>
+                                        <span style="color:var(--primary-light); font-weight:500;">
+                                            @task.TakenByUserName
+                                        </span>
+                                        <span style="color:var(--text-secondary);
+                                                     font-size:0.72rem;
+                                                     margin-left:4px;">
+                                            (взял задачу)
+                                        </span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="meta-item" style="margin-bottom:0.75rem;">
+                                        <span style="color:var(--text-secondary);
+                                                     font-size:0.8rem;
+                                                     font-style:italic;">
+                                            Свободная задача
                                         </span>
                                     </div>
                                 }

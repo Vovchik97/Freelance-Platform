@@ -334,6 +334,12 @@ public class TeamProjectController : Controller
             return NotFound();
         }
 
+        if (project.Status != ProjectStatus.InProgress)
+        {
+            TempData["Error"] = "Создавать задачи можно только когда проект в статусе «В работе».";
+            return RedirectToAction(nameof(Details), new { id = dto.ProjectId, tab = "tasks" });
+        }
+
         var isClient = project.ClientId == userId;
         var isLead = project.Members
             .Any(m => m.UserId == userId && m.Role == ProjectMemberRole.Lead &&
@@ -437,6 +443,16 @@ public class TeamProjectController : Controller
                 TempData["Error"] = "Нельзя переместить задачу в этот статус.";
                 return RedirectToAction(nameof(Details), new { id = task.ProjectId, tab = "tasks" });
             }
+        }
+
+        if (string.IsNullOrEmpty(task.AssignedToUserId) 
+            && string.IsNullOrEmpty(task.TakenByUserId) 
+            && newStatus == ProjectTaskStatus.InProgress)
+        {
+            var member = task.Project.Members
+                .FirstOrDefault(m => m.UserId == userId);
+            task.TakenByUserId = userId;
+            task.TakenByUserName = member?.UserName;
         }
         
         task.Status = newStatus;
@@ -630,6 +646,18 @@ public class TeamProjectController : Controller
             await _balanceService.FreezeForProjectAsync(userId, project.Budget, project.Id);
 
             project.Status = ProjectStatus.Paid;
+
+            _context.Payments.Add(new Payment
+            {
+                ProjectId = project.Id,
+                PayerId = userId,
+                AmountMinor = (long)(project.Budget * 100),
+                Currency = "RUB",
+                Provider = "Internal",
+                Status = PaymentStatus.Succeeded,
+                Type = PaymentType.Project
+            });
+            
             await _context.SaveChangesAsync();
             
             await _logService.LogAsync(id,
@@ -806,7 +834,7 @@ public class TeamProjectController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ConfirmCompletion(int projectId, List<string> userIds, List<decimal> finalShares)
+    public async Task<IActionResult> ConfirmCompletion(int projectId, List<string> userIds, List<string> finalSharesRaw)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -824,6 +852,27 @@ public class TeamProjectController : Controller
         {
             TempData["Error"] = "Завершить можно только проект в статусе «В работе».";
             return RedirectToAction(nameof(Details), new { id = projectId });
+        }
+
+        var finalShares = new List<decimal>();
+        foreach (var raw in finalSharesRaw)
+        {
+            var cleaned = raw
+                .Trim()
+                .Replace(" ", "")
+                .Replace(",", ".");
+
+            if (!decimal.TryParse(
+                    cleaned,
+                    System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out var parsed))
+            {
+                TempData["Error"] = $"Некорректное значение суммы: {raw}";
+                return RedirectToAction(nameof(CompleteProject), new { id = projectId });
+            }
+            
+            finalShares.Add(Math.Round(parsed, 2));
         }
 
         var totalFinal = finalShares.Sum();
@@ -885,7 +934,8 @@ public class TeamProjectController : Controller
                 IsLead = autoShare?.IsLead ?? false,
                 TasksDone = autoShare?.TasksDone ?? 0,
                 AutoShare = autoShare?.AutoShare ?? 0,
-                FinalShare = finalShares[i]
+                FinalShare = finalShares[i],
+                CreatedAt = DateTime.UtcNow
             });
 
             await _logService.LogAsync(projectId,
@@ -919,9 +969,10 @@ public class TeamProjectController : Controller
         var budget = project.Budget;
 
         var tasksByUser = project.Tasks
-            .Where(t => t.Status == ProjectTaskStatus.Done && t.AssignedToUserId != null)
-            .GroupBy(t => t.AssignedToUserId!)
-            .ToDictionary(g => g.Key, g => g.Count());
+            .Where(t => t.Status == ProjectTaskStatus.Done)
+            .GroupBy(t => t.AssignedToUserId ?? t.TakenByUserId)
+            .Where(g => g.Key != null)
+            .ToDictionary(g => g.Key!, g => g.Count());
 
         var totalDoneTasks = tasksByUser.Values.Sum();
         

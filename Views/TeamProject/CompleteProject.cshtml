@@ -81,10 +81,10 @@
                                 </td>
                                 <td>
                                     <input type="number"
-                                           name="finalShares[@i]"
+                                           name="finalSharesRaw[@i]"
                                            class="form-input share-input"
                                            style="width:140px;"
-                                           value="@share.AutoShare"
+                                           value="@share.AutoShare.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                            min="@min.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                            max="@max.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                            step="0.01"
@@ -145,17 +145,23 @@
     const statusEl = document.getElementById('sumStatus');
     const confirmBtn = document.getElementById('confirmBtn');
 
+    function parseDecimal(str) {
+        if (!str) return 0;
+        const cleaned = str.toString().trim().replace(/\s/g, '').replace(',', '.');
+        const val = parseFloat(cleaned);
+        return isNaN(val) ? 0 : val;
+    }
+
     function updateTotal() {
         let total = 0;
         let hasError = false;
 
         inputs.forEach(input => {
-            const val = parseFloat(input.value) || 0;
+            const val = parseDecimal(input.value);
             const min = parseFloat(input.dataset.min);
             const max = parseFloat(input.dataset.max);
             total += val;
 
-            // Подсвечиваем поле если выходит за пределы
             if (val < min || val > max) {
                 input.style.borderColor = '#ef4444';
                 hasError = true;
@@ -187,7 +193,14 @@
         confirmBtn.disabled = !isValid;
     }
 
+    document.querySelector('form').addEventListener('submit', function (e) {
+        inputs.forEach(input => {
+            const val = parseDecimal(input.value);
+            input.value = val.toFixed(2);
+        });
+    });
+
     inputs.forEach(input => input.addEventListener('input', updateTotal));
-    updateTotal(); // инициализация
+    updateTotal();
 </script>
 }

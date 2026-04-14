@@ -357,21 +357,30 @@ public class PaymentController : Controller
         var userRoles = await _userManager.GetRolesAsync(await _userManager.GetUserAsync(User));
         var isFreelancer = userRoles.Contains("Freelancer");
 
-        IQueryable<Payment> query = _context.Payments
+        var query = _context.Payments
             .Include(p => p.Order)
-            .ThenInclude(o => o!.Service);
-            
-        query = query.Include(p => p.Project);
+                .ThenInclude(o => o!.Service)
+            .Include(p => p.Project);
 
         if (isFreelancer)
         {
             var payments = await query.ToListAsync();
-            var items = payments.Where(p =>
+
+            var myPayments = payments.Where(p =>
                 p.PayerId == userId ||
                 (p.Type == PaymentType.Order && p.Order?.Service?.FreelancerId == userId) ||
                 (p.Type == PaymentType.Project && p.Project?.SelectedFreelancerId == userId)
-            ).OrderByDescending(p => p.CreatedAt).ToList();
+            ).ToList();
 
+            var items = myPayments.OrderByDescending(p => p.CreatedAt).ToList();
+
+            var teamShares = await _context.PaymentShares
+                .Include(s => s.Project)
+                .Where(s => s.UserId == userId)
+                .OrderByDescending(s => s.CreatedAt)
+                .ToListAsync();
+            
+            ViewBag.TeamShares = teamShares;
             return View(items);
         }
         else
@@ -381,6 +390,7 @@ public class PaymentController : Controller
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
 
+            ViewBag.TeamShares = new List<PaymentShare>();
             return View(items);
         }
     }

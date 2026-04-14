@@ -13,4 +13,7 @@ public class ProjectTask
     public DateTime? CreatedAt { get; set; }
     
     public string? CreatedByUserId { get; set; }
+    
+    public string? TakenByUserId { get; set; }
+    public string? TakenByUserName { get; set; }
 }
