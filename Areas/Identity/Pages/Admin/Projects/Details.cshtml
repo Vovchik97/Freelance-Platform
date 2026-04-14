@@ -1,5 +1,6 @@
 ﻿@page "{id}"
 @using System.Globalization
+@using FreelancePlatform.Models
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @model FreelancePlatform.Areas.Identity.Pages.Admin.Projects.DetailsModel
 @{
@@ -11,22 +12,74 @@
 <div class="project-card">
     <div class="card-body">
         <dl class="row">
+            <dt class="col-sm-3">Тип</dt>
+            <dd class="col-sm-9">
+                @if (Model.Project?.IsTeamProject == true)
+                {
+                    <span class="badge"
+                          style="background:var(--primary); color:white;">
+                        👥 Командный проект
+                    </span>
+                }
+                else
+                {
+                    <span class="badge bg-primary">Обычный проект</span>
+                }
+            </dd>
+
             <dt class="col-sm-3">Название</dt>
             <dd class="col-sm-9">@Model.Project?.Title</dd>
 
             <dt class="col-sm-3">Описание</dt>
             <dd class="col-sm-9">@Model.Project?.Description</dd>
 
+            <dt class="col-sm-3">Клиент</dt>
+            <dd class="col-sm-9">@Model.Project?.Client?.UserName</dd>
+
             <dt class="col-sm-3">Бюджет</dt>
-            <dd class="col-sm-9">@Model.Project?.Budget.ToString("C", new CultureInfo("ru-RU"))</dd>
+            <dd class="col-sm-9">
+                @Model.Project?.Budget.ToString("C", new CultureInfo("ru-RU"))
+            </dd>
 
             <dt class="col-sm-3">Дата создания</dt>
-            <dd class="col-sm-9">@Model.Project?.CreatedAt</dd>
+            <dd class="col-sm-9">
+                @Model.Project?.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+            </dd>
 
             <dt class="col-sm-3">Статус</dt>
-            <dd class="col-sm-9">@Model.Project?.Status</dd>
+            <dd class="col-sm-9">
+                @(Model.Project?.Status switch
+                {
+                    ProjectStatus.Open       => "Открыт",
+                    ProjectStatus.Paid       => "Оплачен",
+                    ProjectStatus.InProgress => "В работе",
+                    ProjectStatus.Cancelled  => "Отменён",
+                    ProjectStatus.Completed  => "Выполнен",
+                    _                        => "Неизвестно"
+                })
+            </dd>
+
+            @if (Model.Project?.IsTeamProject == true && Model.Project.Members.Any())
+            {
+                <dt class="col-sm-3">Участники</dt>
+                <dd class="col-sm-9">
+                    <ul class="list-unstyled mb-0">
+                        @foreach (var member in Model.Project.Members
+                            .Where(m => m.Status == ProjectMemberStatus.Accepted))
+                        {
+                            <li>
+                                @member.UserName
+                                @if (member.Role == ProjectMemberRole.Lead)
+                                {
+                                    <span class="badge bg-warning ms-1">⭐ Lead</span>
+                                }
+                            </li>
+                        }
+                    </ul>
+                </dd>
+            }
         </dl>
     </div>
 </div>
 
-<a asp-page="/Admin/Projects/Index" class="btn btn-secondary mt-3">Назад</a>
+<a asp-page="/Admin/Projects/Index" class="btn btn-secondary mt-3">← Назад</a>

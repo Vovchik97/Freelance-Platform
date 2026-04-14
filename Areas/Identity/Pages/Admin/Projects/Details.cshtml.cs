@@ -19,6 +19,8 @@ public class DetailsModel : PageModel
     public async Task<IActionResult> OnGetAsync(int id)
     {
         Project = await _context.Projects
+            .Include(p => p.Client)
+            .Include(p => p.Members)
             .FirstOrDefaultAsync(p => p.Id == id);
 
         if (Project == null)

@@ -23,6 +23,7 @@ public class IndexModel : PageModel
     {
         Projects = await _context.Projects
             .Include(p => p.Client)
+            .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
     }
 

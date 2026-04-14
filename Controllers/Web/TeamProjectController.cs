@@ -38,7 +38,8 @@ public class TeamProjectController : Controller
             .Include(p => p.Tasks)
             .Include(p => p.Bids)
                 .ThenInclude(b => b.Freelancer)
-            .Include(p => p.ActivityLogs.OrderByDescending(l => l.CreatedAt))
+            .Include(p => p.ActivityLogs
+                .OrderByDescending(l => l.CreatedAt))
             .Include(p => p.GroupChatMessages)
                 .ThenInclude(m => m.Attachments)
             .Include(p => p.GroupChatMessages)
