@@ -53,8 +53,6 @@ public class PublicProfileController : Controller
         }).ToList();
         
         var allReviews = services.SelectMany(s => s.Reviews).ToList();
-        double? avgRating = allReviews.Any() ? allReviews.Average(r => r.Rating) : null;
-        int reviewsCount = allReviews.Count;
 
         var dto = new PublicProfileDto
         {
@@ -62,8 +60,12 @@ public class PublicProfileController : Controller
             UserName = user.UserName ?? "(Без имени)",
             AboutMe = profile?.AboutMe ?? string.Empty,
             Services = serviceDtos,
-            AverageRating = avgRating,
-            ReviewsCount = reviewsCount
+            AverageRating    = allReviews.Any() ? allReviews.Average(r => r.Rating) : null,
+            ReviewsCount     = allReviews.Count,
+            AvgQuality       = allReviews.Any() ? allReviews.Average(r => r.QualityRating)       : null,
+            AvgCommunication = allReviews.Any() ? allReviews.Average(r => r.CommunicationRating) : null,
+            AvgDeadline      = allReviews.Any() ? allReviews.Average(r => r.DeadlineRating)      : null,
+            AvgPrice         = allReviews.Any() ? allReviews.Average(r => r.PriceRating)         : null,
         };
 
         return View(dto);
@@ -81,7 +83,7 @@ public class PublicProfileController : Controller
 
         if (profile == null)
         {
-            profile = new Models.UserProfile
+            profile = new UserProfile
             {
                 UserId = user!.Id,
                 User = user,

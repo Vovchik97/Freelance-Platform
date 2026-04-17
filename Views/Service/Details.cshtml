@@ -1,11 +1,20 @@
 ﻿@using System.Globalization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.Mvc.TagHelpers
+@using FreelancePlatform.Dto.Reviews
 @model FreelancePlatform.Models.Service
-@inject Microsoft.AspNetCore.Identity.UserManager<IdentityUser> UserManager
+@inject UserManager<IdentityUser> UserManager
 
 @{
     ViewData["Title"] = "Детали услуги";
+    double avgRating       = ViewBag.AverageRating ?? 0.0;
+    int    reviewsCount    = ViewBag.ReviewsCount ?? 0;
+    double avgQuality      = ViewBag.AvgQuality ?? 0.0;
+    double avgCommunication= ViewBag.AvgCommunication ?? 0.0;
+    double avgDeadline     = ViewBag.AvgDeadline ?? 0.0;
+    double avgPrice        = ViewBag.AvgPrice ?? 0.0;
+    bool   canReview       = ViewBag.CanReview ?? false;
+    var    selectedRatings = (ViewBag.SelectedRatings as List<int>) ?? new List<int>();
 }
 
 @if (TempData["SuccessMessage"] != null)
@@ -18,26 +27,26 @@
 }
 
 <div class="container mt-5">
-    <!-- Карточка услуги -->
-    <div class="filters-card mx-auto mb-5" style="max-width: 900px;">
-        <h2 class="filters-title mb-3">@Model.Title</h2>
 
-        <!-- Средний рейтинг и количество отзывов -->
-        <div class="star-rating mb-2" title="@($"{(Model.Reviews.Any() ? Model.Reviews.Average(r => r.Rating) : 0):F1} из 5")">
-            <div class="back-stars">
-                ★★★★★
-                <div class="front-stars" style="width:@(Model.Reviews.Any() ? Model.Reviews.Average(r => r.Rating) / 5.0 * 100 : 0)%">
-                    ★★★★★
-                </div>
-            </div>
-            <span class="ms-2 text-muted">(@(Model.Reviews?.Count ?? 0) отзывов)</span>
+    <!-- =================== КАРТОЧКА УСЛУГИ =================== -->
+    <div class="filters-card mx-auto mb-5" style="max-width:900px;">
+        <h2 class="filters-title mb-2">@Model.Title</h2>
+
+        <!-- Дробный рейтинг услуги -->
+        <div class="d-flex align-items-center gap-2 mb-3">
+            @await Html.PartialAsync("_StarRating", avgRating)
+            <span class="fw-semibold">@avgRating.ToString("F1")</span>
+            <span class="text-muted">(@reviewsCount @(reviewsCount == 1 ? "отзыв" : reviewsCount is >= 2 and <= 4 ? "отзыва" : "отзывов"))</span>
         </div>
-        
-        <div class="text-muted mb-3">Создана: @Model.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
+
+        <div class="text-muted mb-3">
+            Создана: @Model.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+        </div>
 
         <p><strong>Описание:</strong> @Model.Description</p>
         <p><strong>Цена:</strong> <span class="badge bg-success">@Model.Price.ToString("C", new CultureInfo("ru-RU"))</span></p>
-        <p><strong>Статус услуги:</strong>
+        <p>
+            <strong>Статус:</strong>
             @switch (Model.Status)
             {
                 case ServiceStatus.Available:
@@ -46,94 +55,69 @@
                 case ServiceStatus.Unavailable:
                     <span class="status-badge status-inprogress">Закрыта</span>
                     break;
-                default:
-                    <span class="status-badge">Неизвестно</span>
-                    break;
             }
         </p>
-        <p><strong>Фрилансер:</strong><a asp-controller="PublicProfile" asp-action="Public" asp-route-userId="@Model.FreelancerId">@Model.Freelancer?.Email</a></p>
+        <p>
+            <strong>Фрилансер:</strong>
+            <a asp-controller="PublicProfile" asp-action="Public" asp-route-userId="@Model.FreelancerId">
+                @Model.Freelancer?.UserName
+            </a>
+        </p>
 
+        <!-- Кнопки управления (фрилансер) -->
         @if (User.Identity?.Name == Model.Freelancer?.UserName && Model.Status == ServiceStatus.Available)
         {
-            <div class="mt-4">
-                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning me-2">
-                    <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Редактировать
-                </a>
-                <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline me-2">
-                    <button type="submit" class="btn btn-danger">
-                        <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 4V3a1 1 0 011-1h4a1 1 0 011 1v1M4 7h16" />
-                        </svg>
-                        Удалить
-                    </button>
+            <div class="mt-4 d-flex flex-wrap gap-2">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Редактировать</a>
+                <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline"
+                      onsubmit="return confirm('Удалить услугу?')">
+                    <button type="submit" class="btn btn-danger">Удалить</button>
                 </form>
                 <form asp-action="CancelService" asp-route-id="@Model.Id" method="post" class="d-inline">
-                    <button type="submit" class="btn btn-outline-danger">
-                        <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                        Отменить
-                    </button>
+                    <button type="submit" class="btn btn-outline-danger">Отменить</button>
                 </form>
             </div>
         }
 
         @if (User.Identity?.Name == Model.Freelancer?.UserName && Model.Status == ServiceStatus.Unavailable)
         {
-            <form method="post" asp-controller="Service" asp-action="ResumeService" asp-route-id="@Model.Id" class="mt-3">
-                <button type="submit" class="btn btn-outline-success">
-                    <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M9 17v-2a4 4 0 014-4h4" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M15 7l4 4-4 4" />
-                    </svg>
-                    Возобновить услугу
-                </button>
+            <form asp-action="ResumeService" asp-route-id="@Model.Id" method="post" class="mt-3">
+                <button type="submit" class="btn btn-outline-success">Возобновить услугу</button>
             </form>
         }
 
+        <!-- Кнопка заказа (клиент) -->
         @{
-            var userName = User.Identity?.Name;
+            var currentUserName = User.Identity?.Name;
             bool hasActiveOrder = Model.Orders?.Any(o =>
-                o.Client?.UserName == userName &&
+                o.Client?.UserName == currentUserName &&
                 (o.Status == OrderStatus.Pending || o.Status == OrderStatus.Accepted)
             ) ?? false;
         }
 
         @if (User.IsInRole("Client") && !hasActiveOrder && Model.Status == ServiceStatus.Available)
         {
-            <a class="btn btn-primary mt-4" asp-controller="Order" asp-action="Create" asp-route-serviceId="@Model.Id">
+            <a class="btn btn-primary mt-4"
+               asp-controller="Order" asp-action="Create" asp-route-serviceId="@Model.Id">
                 Заказать услугу
             </a>
         }
-        else
+        else if (User.IsInRole("Client") && hasActiveOrder)
         {
-            @if (User.IsInRole("Client"))
-            {
-                <p class="text-muted">Вы уже заказали эту услугу.</p>
-            }
+            <p class="text-muted mt-3">Вы уже заказали эту услугу.</p>
         }
     </div>
 
+    <!-- =================== ЗАКАЗЫ (только фрилансер-владелец) =================== -->
     @if (User.Identity?.IsAuthenticated == true && User.Identity.Name == Model.Freelancer?.UserName)
     {
-        <!-- Заголовок -->
-        <div class="header">
-            <h1>Заказы на услугу</h1>
+        <div class="header mb-3">
+            <h2>Заказы на услугу</h2>
         </div>
 
         @if (Model.Orders != null && Model.Orders.Any())
         {
-            <div class="custom-table-container">
-                <h2 class="filters-title text-center mb-4">Заказы на услугу</h2>
-
+            <div class="custom-table-container mb-5">
                 <div class="table-responsive">
                     <table class="table custom-table table-hover align-middle">
                         <thead>
@@ -141,8 +125,8 @@
                                 <th>Клиент</th>
                                 <th>Срок (дней)</th>
                                 <th>Комментарий</th>
-                                <th>Действия</th>
                                 <th>Статус</th>
+                                <th>Действия</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -153,44 +137,13 @@
                                     <td>@order.DurationInDays</td>
                                     <td>@order.Comment</td>
                                     <td>
-                                        <a asp-controller="Order" asp-action="Details" asp-route-id="@order.Id" class="btn btn-sm btn-outline-primary me-1">
-                                            <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                            Посмотреть
-                                        </a>
-                                        @if (order.Status == OrderStatus.Pending)
-                                        {
-                                            <form method="post" asp-controller="Service" asp-action="AcceptOrder" asp-route-serviceId="@Model.Id" asp-route-orderId="@order.Id" class="d-inline">
-                                                <button type="submit" class="btn btn-sm btn-success">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
-                                                        <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7.5 7.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6 10.293l7.146-7.147a.5.5 0 0 1 .708 0z"/>
-                                                    </svg>
-                                                    Взять в работу
-                                                </button>
-                                            </form>
-                                            <form method="post" asp-controller="Service" asp-action="RejectOrder" asp-route-orderId="@order.Id" class="d-inline ms-1">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                    <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                              d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                    Отклонить
-                                                </button>
-                                            </form>
-                                        }
-                                    </td>
-                                    <td>
                                         @switch (order.Status)
                                         {
                                             case OrderStatus.Accepted:
                                                 <span class="badge bg-success">Одобрен</span>
                                                 break;
                                             case OrderStatus.Rejected:
-                                                <span class="badge bg-secondary">Отклонен</span>
+                                                <span class="badge bg-secondary">Отклонён</span>
                                                 break;
                                             case OrderStatus.Completed:
                                                 <span class="badge bg-primary">Выполнен</span>
@@ -203,6 +156,31 @@
                                                 break;
                                         }
                                     </td>
+                                    <td>
+                                        <a asp-controller="Order" asp-action="Details"
+                                           asp-route-id="@order.Id"
+                                           class="btn btn-sm btn-outline-primary me-1">
+                                            Посмотреть
+                                        </a>
+                                        @if (order.Status == OrderStatus.Pending)
+                                        {
+                                            <form method="post" asp-action="AcceptOrder"
+                                                  asp-route-serviceId="@Model.Id"
+                                                  asp-route-orderId="@order.Id"
+                                                  class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-success me-1">
+                                                    Взять в работу
+                                                </button>
+                                            </form>
+                                            <form method="post" asp-action="RejectOrder"
+                                                  asp-route-orderId="@order.Id"
+                                                  class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    Отклонить
+                                                </button>
+                                            </form>
+                                        }
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -210,80 +188,215 @@
                 </div>
             </div>
         }
-
         else
         {
-            <p class="text-muted">Заказов пока нет.</p>
+            <p class="text-muted mb-5">Заказов пока нет.</p>
         }
     }
-    @if (User.IsInRole("Client") && Model.Status == ServiceStatus.Available)
-    {
-        var userId = UserManager.GetUserId(User);
-        var existingReview = Model.Reviews?.FirstOrDefault(r => r.UserId == userId);
-    <h3 class="mt-4">@((existingReview != null) ? "Редактировать отзыв" : "Оставить отзыв")</h3>
 
-    <form asp-action="AddReview" asp-controller="Service" method="post">
-        <input type="hidden" name="serviceId" value="@Model.Id" />
+    <!-- =================== БЛОК ОТЗЫВОВ =================== -->
+    <div class="filters-card mx-auto" style="max-width:900px;">
+        <h3 class="filters-title mb-4">
+            Отзывы
+            <span class="text-muted fs-6 fw-normal">(@reviewsCount)</span>
+        </h3>
 
-        <div class="mb-3">
-            <label for="rating" class="form-label">Оценка</label>
-            <select name="rating" class="form-select" required>
-                <option value="5">★★★★★</option>
-                <option value="4">★★★★☆</option>
-                <option value="3">★★★☆☆</option>
-                <option value="2">★★☆☆☆</option>
-                <option value="1">★☆☆☆☆</option>
-            </select>
-        </div>
-
-        <div class="input-group mb-3">
-            <label for="content" class="form-label">Комментарий</label>
-            <textarea name="content" class="form-input w-100" rows="3" style="resize: vertical;">@existingReview?.Comment</textarea>
-        </div>
-
-        <button type="submit" class="btn btn-primary">@((existingReview != null) ? "Обновить отзыв" : "Отправить")</button>
-    </form>
-    }
-
-    <h3 class="mt-4">Отзывы</h3>
-
-    <form method="get" asp-action="Details" asp-route-id="@Model.Id" class="mb-3">
-        <div class="d-flex gap-2">
-            @for (int i = 5; i >= 1; i--)
-            {
-            <div class="form-check">
-                <input class="form-check-input"
-                       type="checkbox"
-                       name="ratings"
-                       value="@i"
-                       id="rating-@i"
-                       @(ViewBag.SelectedRatings != null && ((List<int>)ViewBag.SelectedRatings).Contains(i) ? "checked" : "") />
-                <label class="form-check-label" for="rating-@i">
-                    @i ★
-                </label>
-            </div>
-            }
-            <button type="submit" class="btn btn-primary">Фильтровать</button>
-        </div>
-    </form>
-
-
-    @if (Model.Reviews != null && Model.Reviews.Any())
-    {
-    <div class="list-group">
-        @foreach (var review in Model.Reviews)
+        <!-- Сводка по критериям (бар-чарт) -->
+        @if (reviewsCount > 0)
         {
-        <div class="project-card">
-            <strong>@review.UserId</strong> —
-            @for (int i = 0; i < review.Rating; i++) { <span>⭐</span> }
-            <p>@review.Comment</p>
-            <small class="text-muted">@review.CreatedAt.ToLocalTime()</small>
-        </div>
+            <div class="row mb-4 g-4 align-items-start">
+                <!-- Левый блок: общий рейтинг -->
+                <div class="col-md-3 text-center">
+                    <div style="font-size:56px; font-weight:700; color:#6c63ff; line-height:1;">
+                        @avgRating.ToString("F1")
+                    </div>
+                    @await Html.PartialAsync("_StarRating", avgRating)
+                    <div class="text-muted mt-1" style="font-size:13px;">
+                        @reviewsCount отзывов
+                    </div>
+                </div>
+
+                <!-- Правый блок: критерии -->
+                <div class="col-md-9">
+                    <div class="criteria-chart">
+                        @{
+                            // Локальный хелпер для строки бар-чарта
+                            void ChartRow(string label, double val)
+                            {
+                                double pct = val / 5.0 * 100;
+                                <div class="chart-row">
+                                    <div class="chart-label">@label</div>
+                                    <div class="chart-bar-wrap">
+                                        <div class="chart-bar"
+                                             style="width:@pct.ToString("F1", CultureInfo.InvariantCulture)%">
+                                        </div>
+                                    </div>
+                                    <div class="chart-val">@val.ToString("F1")</div>
+                                </div>
+                            }
+                        }
+                        @{ ChartRow("Качество работы",       avgQuality); }
+                        @{ ChartRow("Коммуникация",          avgCommunication); }
+                        @{ ChartRow("Соблюдение сроков",     avgDeadline); }
+                        @{ ChartRow("Цена / качество",       avgPrice); }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Фильтр по общей оценке -->
+            <form method="get" asp-action="Details" asp-route-id="@Model.Id" class="mb-4">
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <span class="text-muted" style="font-size:14px;">Фильтр по оценке:</span>
+                    @for (int i = 5; i >= 1; i--)
+                    {
+                        bool isChecked = selectedRatings.Contains(i);
+                        <div class="form-check mb-0">
+                            <input class="form-check-input" type="checkbox"
+                                   name="ratings" value="@i" id="rf-@i"
+                                   @(isChecked ? "checked" : "") />
+                            <label class="form-check-label" for="rf-@i">@i ★</label>
+                        </div>
+                    }
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Применить</button>
+                    @if (selectedRatings.Any())
+                    {
+                        <a asp-action="Details" asp-route-id="@Model.Id"
+                           class="btn btn-sm btn-outline-secondary">Сбросить</a>
+                    }
+                </div>
+            </form>
+        }
+
+        <!-- Форма добавления/редактирования отзыва -->
+        @if (canReview)
+        {
+            var currentUserId2 = UserManager.GetUserId(User);
+            var existingReview = Model.Reviews?
+                .FirstOrDefault(r => r.UserId == currentUserId2);
+
+            // Ищем в allReviews до фильтрации — берём из БД напрямую через ViewBag нельзя,
+            // поэтому покажем форму в любом случае если canReview=true
+
+            <div class="review-form-card mb-4">
+                <h5 class="mb-3">
+                    @(existingReview != null ? "Редактировать отзыв" : "Оставить отзыв")
+                </h5>
+
+                <form asp-action="AddReview" asp-controller="Service" method="post">
+                    <input type="hidden" name="ServiceId" value="@Model.Id" />
+
+                    <!-- Общая оценка -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Общая оценка
+                            <span class="text-muted fw-normal">(влияет на рейтинг)</span>
+                        </label>
+                        <div class="star-input-group">
+                            @for (int s = 5; s >= 1; s--)
+                            {
+                                bool sel = existingReview?.Rating == s || (existingReview == null && s == 5);
+                                <input type="radio" name="Rating" id="r_main_@s" value="@s"
+                                       @(sel ? "checked" : "") required />
+                                <label for="r_main_@s">@s ★</label>
+                            }
+                        </div>
+                    </div>
+
+                    <hr style="border-color:#e8e6ff;" />
+                    <p class="text-muted mb-2" style="font-size:13px;">
+                        Детальная оценка (не влияет на общий рейтинг, помогает другим клиентам)
+                    </p>
+
+                    <!-- Критерии -->
+                    @{
+                        void CriteriaRow(string fieldName, string label, int current)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" style="font-size:14px;">@label</label>
+                                <div class="star-input-group">
+                                    @for (int s = 5; s >= 1; s--)
+                                    {
+                                        bool sel = current == s || (current == 0 && s == 5);
+                                        <input type="radio" name="@fieldName" id="@(fieldName)_@s"
+                                               value="@s" @(sel ? "checked" : "") required />
+                                        <label for="@(fieldName)_@s">@s ★</label>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                    @{ CriteriaRow("QualityRating",       "Качество работы",          existingReview?.QualityRating       ?? 0); }
+                    @{ CriteriaRow("CommunicationRating", "Коммуникация",              existingReview?.CommunicationRating ?? 0); }
+                    @{ CriteriaRow("DeadlineRating",      "Соблюдение сроков",         existingReview?.DeadlineRating      ?? 0); }
+                    @{ CriteriaRow("PriceRating",         "Цена / качество",           existingReview?.PriceRating         ?? 0); }
+
+                    <!-- Комментарий -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Комментарий
+                            <span class="text-muted fw-normal">(необязательно)</span>
+                        </label>
+                        <textarea name="Comment" class="form-control" rows="3"
+                                  maxlength="1000"
+                                  placeholder="Расскажите подробнее о своём опыте...">@existingReview?.Comment</textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        @(existingReview != null ? "Обновить отзыв" : "Отправить отзыв")
+                    </button>
+                </form>
+            </div>
+        }
+
+        <!-- Список отзывов -->
+        @if (Model.Reviews != null && Model.Reviews.Any())
+        {
+            foreach (var review in Model.Reviews)
+            {
+                <div class="review-card">
+                    <div class="review-header">
+                        <div class="d-flex align-items-center gap-2">
+                            <strong>@review.User?.UserName</strong>
+                            @await Html.PartialAsync("_StarRating", (double)review.Rating)
+                            <span class="fw-semibold">@review.Rating / 5</span>
+                        </div>
+                        <small class="text-muted">
+                            @review.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                        </small>
+                    </div>
+
+                    <!-- Мини-критерии -->
+                    <div class="review-mini-criteria">
+                        @{
+                            void MiniBar(string lbl, int val)
+                            {
+                                <div class="mini-row">
+                                    <span class="mini-label">@lbl</span>
+                                    <div class="mini-bar-wrap">
+                                        <div class="mini-bar" style="width:@(val * 20)%"></div>
+                                    </div>
+                                    <span class="mini-val">@val</span>
+                                </div>
+                            }
+                        }
+                        @{ MiniBar("Качество",    review.QualityRating); }
+                        @{ MiniBar("Коммуникация",review.CommunicationRating); }
+                        @{ MiniBar("Сроки",       review.DeadlineRating); }
+                        @{ MiniBar("Цена/кач.",   review.PriceRating); }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(review.Comment))
+                    {
+                        <p class="mb-0 mt-2">@review.Comment</p>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <p class="text-muted">
+                @(reviewsCount == 0 ? "Пока нет отзывов." : "Нет отзывов по выбранному фильтру.")
+            </p>
         }
     </div>
-    }
-    else
-    {
-    <p>Пока нет отзывов.</p>
-    }
 </div>

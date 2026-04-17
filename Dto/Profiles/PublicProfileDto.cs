@@ -9,5 +9,10 @@ public class PublicProfileDto
     public double? AverageRating { get; set; }
     public int ReviewsCount { get; set; }
     
+    public double? AvgQuality { get; set; }
+    public double? AvgCommunication { get; set; }
+    public double? AvgDeadline { get; set; }
+    public double? AvgPrice { get; set; }
+    
     public List<ServiceInfoDto> Services { get; set; } = new();
 }

@@ -225,3 +225,193 @@
     overflow: hidden;
     white-space: nowrap;
 }
+
+/* =============================================
+   ДРОБНЫЕ ЗВЁЗДЫ (частичная закраска)
+   ============================================= */
+.star-rating-display {
+    display: inline-flex;
+    gap: 2px;
+    align-items: center;
+}
+
+.star-wrap {
+    position: relative;
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    line-height: 1;
+}
+
+/* Пустая звезда — фон */
+.star-wrap .star-empty {
+    color: #ddd;
+}
+
+/* Заполненная часть — через clip-path */
+.star-wrap .star-filled {
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: #f5a623;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+/* =============================================
+   БАР-ЧАРТ КРИТЕРИЕВ
+   ============================================= */
+.criteria-chart {
+    width: 100%;
+}
+
+.chart-row {
+    display: grid;
+    grid-template-columns: 150px 1fr 40px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.chart-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.chart-bar-wrap {
+    height: 10px;
+    background: var(--border);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.chart-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #6c63ff, #a89cff);
+    border-radius: 5px;
+    transition: width 0.4s ease;
+}
+
+.chart-val {
+    font-size: 13px;
+    font-weight: 600;
+    text-align: right;
+    color: var(--text-primary);
+}
+
+/* =============================================
+   МИНИ-БАРЫ ВНУТРИ КАРТОЧКИ ОТЗЫВА
+   ============================================= */
+.review-mini-criteria {
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin: 8px 0;
+}
+
+.mini-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 24px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+
+.mini-label {
+    color: var(--text-secondary);
+}
+
+.mini-bar-wrap {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.mini-bar {
+    height: 100%;
+    background: var(--primary-light, #6c63ff);
+    border-radius: 3px;
+}
+
+.mini-val {
+    text-align: right;
+    color: var(--text-secondary);
+}
+
+/* =============================================
+   КАРТОЧКА ОТЗЫВА
+   ============================================= */
+.review-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: box-shadow 0.2s ease;
+}
+
+.review-card:hover {
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.12);
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+/* =============================================
+   ФОРМА ВЫБОРА ЗВЁЗД
+   ============================================= */
+.star-input-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.star-input-group input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.star-input-group label {
+    display: inline-block;
+    padding: 5px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-secondary);
+    background: transparent;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    user-select: none;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.star-input-group input[type="radio"]:checked + label {
+    background: #6c63ff;
+    color: #fff;
+    border-color: #6c63ff;
+}
+
+.star-input-group label:hover {
+    border-color: #6c63ff;
+    color: #6c63ff;
+}
+
+.review-form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+}

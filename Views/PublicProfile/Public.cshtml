@@ -6,110 +6,138 @@
 @inject Microsoft.AspNetCore.Identity.UserManager<IdentityUser> UserManager
 
 @{
-var userId = UserManager.GetUserId(User);
-var isOwnProfile = userId == Model.UserId; // Model.UserId — id пользователя, чей профиль отображаем
-    
-ViewData["Title"] = isOwnProfile ? "Моя страница" : $"{Model.UserName} - Профиль";
+    var currentUserId = UserManager.GetUserId(User);
+    var isOwnProfile  = currentUserId == Model.UserId;
+    ViewData["Title"] = isOwnProfile ? "Моя страница" : $"{Model.UserName} — Профиль";
 }
 
 <div class="container mt-4">
-    <div class="header">
-        <h1>@Model.UserName</h1>
-        @if (Model.AverageRating.HasValue)
-        {
-        <div class="star-rating mb-2" title="@($"{Model.AverageRating.Value:F1} из 5")">
-            <div class="back-stars">★★★★★
-                <div class="front-stars" style="width:@(Model.AverageRating.Value / 5.0 * 100)%">★★★★★</div>
-            </div>
-            <span class="ms-2 text-muted">(@Model.ReviewsCount отзывов)</span>
-        </div>
-        }
-        else
-        {
-        <p class="text-muted">Ещё нет отзывов</p>
-        }
-    </div>
-    
-    <h2>О себе</h2>
-    @if (string.IsNullOrWhiteSpace(Model.AboutMe))
-    {
-    <p class="text-muted">Пользователь пока не заполнил этот раздел.</p>
-    }
-    else
-    {
-    <p>@Model.AboutMe</p>
-    }
-    @if (isOwnProfile)
-    {
-        <a asp-action="Edit" class="btn btn-primary mb-3">Редактировать страницу</a>
-    }
 
-    <h4>Услуги</h4>
+    <!-- ШАПКа профиля -->
+    <div class="filters-card mb-4">
+        <div class="row g-4 align-items-start">
+
+            <!-- Имя + кнопка редактирования -->
+            <div class="col-md-4">
+                <h1 class="mb-1">@Model.UserName</h1>
+                @if (string.IsNullOrWhiteSpace(Model.AboutMe))
+                {
+                    <p class="text-muted">Пользователь пока не заполнил раздел «О себе».</p>
+                }
+                else
+                {
+                    <p>@Model.AboutMe</p>
+                }
+                @if (isOwnProfile)
+                {
+                    <a asp-action="Edit" class="btn btn-outline-primary btn-sm">Редактировать профиль</a>
+                }
+            </div>
+
+            <!-- Рейтинг + бар-чарт критериев -->
+            <div class="col-md-8">
+                @if (Model.AverageRating.HasValue && Model.ReviewsCount > 0)
+                {
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div style="font-size:52px; font-weight:700; color:#6c63ff; line-height:1;">
+                            @Model.AverageRating.Value.ToString("F1")
+                        </div>
+                        <div>
+                            @await Html.PartialAsync("_StarRating", Model.AverageRating.Value)
+                            <div class="text-muted mt-1" style="font-size:13px;">
+                                @Model.ReviewsCount отзывов по всем услугам
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Бар-чарт -->
+                    <div class="criteria-chart">
+                        @{
+                            void ProfileBar(string label, double? val)
+                            {
+                                if (!val.HasValue) return;
+                                double pct = val.Value / 5.0 * 100;
+                                <div class="chart-row">
+                                    <div class="chart-label">@label</div>
+                                    <div class="chart-bar-wrap">
+                                        <div class="chart-bar"
+                                             style="width:@pct.ToString("F1", CultureInfo.InvariantCulture)%">
+                                        </div>
+                                    </div>
+                                    <div class="chart-val">@val.Value.ToString("F1")</div>
+                                </div>
+                            }
+                        }
+                        @{ ProfileBar("Качество работы",   Model.AvgQuality); }
+                        @{ ProfileBar("Коммуникация",      Model.AvgCommunication); }
+                        @{ ProfileBar("Соблюдение сроков", Model.AvgDeadline); }
+                        @{ ProfileBar("Цена / качество",   Model.AvgPrice); }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">Отзывов пока нет.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- УСЛУГИ -->
+    <h4 class="mb-3">Услуги</h4>
     @if (Model.Services == null || !Model.Services.Any())
     {
-    <p class="text-muted">У этого фрилансера пока нет услуг.</p>
+        <p class="text-muted">У этого фрилансера пока нет услуг.</p>
     }
     else
     {
-        @foreach (var service in Model.Services)
+        foreach (var service in Model.Services)
         {
+            double svcAvg = service.Reviews?.Any() == true
+                ? service.Reviews.Average(r => r.Rating) : 0.0;
+            int svcCount  = service.Reviews?.Count ?? 0;
+
             <div class="project-card">
                 <div class="project-header">
                     <h3 class="project-title">@service.Title</h3>
-                    <span class="status-badge @GetStatusClass(service.Status!)">
-                        @GetStatusText(service.Status!)
+                    <span class="status-badge @(service.Status == "Available" ? "status-open" : "status-cancelled")">
+                        @(service.Status == "Available" ? "Открыта" : "Закрыта")
                     </span>
                 </div>
 
                 <div class="project-meta">
+                    <!-- Цена -->
                     <div class="meta-item">
                         <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                         </svg>
                         <span class="project-budget">@service.Price.ToString("C", new CultureInfo("ru-RU"))</span>
                     </div>
+
+                    <!-- Дробный рейтинг услуги -->
                     <div class="meta-item">
-                        <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                        <span>@service.CreatedAt.ToString("dd.MM.yyyy")</span>
-                    </div>
-                    <!-- Средний рейтинг и количество отзывов -->
-                    <div class="star-rating mb-2" title="@($"{(service.Reviews?.Any() == true ? service.Reviews.Average(r => r.Rating) : 0):F1} из 5")">
-                        <div class="back-stars">
-                            ★★★★★
-                            <div class="front-stars" style="width:@(service.Reviews?.Any() == true ? service.Reviews.Average(r => r.Rating) / 5.0 * 100 : 0)%">
-                                ★★★★★
-                            </div>
-                        </div>
-                        <span class="ms-2 text-muted">(@(service.Reviews?.Count ?? 0) отзывов)</span>
+                        @await Html.PartialAsync("_StarRating", svcAvg)
+                        <span class="ms-1 text-muted" style="font-size:13px;">
+                            @svcAvg.ToString("F1") (@svcCount)
+                        </span>
                     </div>
                 </div>
 
                 <div class="project-actions">
-                    <a asp-action="Details" asp-controller="Service" asp-route-id="@service.Id" class="btn btn-outline">
-                        <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                        </svg>
+                    <a asp-action="Details" asp-controller="Service"
+                       asp-route-id="@service.Id" class="btn btn-outline">
                         Подробнее
                     </a>
-
-                    @if (User.Identity?.IsAuthenticated == true && User.Identity.Name == UserManager.FindByIdAsync(service.FreelancerId).Result!.UserName && service.Status != ServiceStatus.Unavailable.ToString())
+                    @if (isOwnProfile && service.Status != "Unavailable")
                     {
-                        <a asp-action="Edit" asp-controller="Service" asp-route-id="@service.Id" class="btn btn-warning">
-                            <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                            </svg>
+                        <a asp-action="Edit" asp-controller="Service"
+                           asp-route-id="@service.Id" class="btn btn-warning">
                             Редактировать
                         </a>
-                        <form asp-action="Delete" asp-controller="Service" asp-route-id="@service.Id" method="post" style="display: inline;" onsubmit="return confirm('Удалить услугу?');">
-                            <button type="submit" class="btn btn-danger">
-                                <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                </svg>
-                                Удалить
-                            </button>
+                        <form asp-action="Delete" asp-controller="Service"
+                              asp-route-id="@service.Id" method="post"
+                              class="d-inline" onsubmit="return confirm('Удалить услугу?')">
+                            <button type="submit" class="btn btn-danger">Удалить</button>
                         </form>
                     }
                 </div>

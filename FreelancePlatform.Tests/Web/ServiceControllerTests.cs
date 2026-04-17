@@ -3,6 +3,7 @@ using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Web;
 using FreelancePlatform.Dto.Categories;
 using FreelancePlatform.Dto.Projects;
+using FreelancePlatform.Dto.Reviews;
 using FreelancePlatform.Dto.Services;
 using FreelancePlatform.Models;
 using FreelancePlatform.Services;
@@ -116,6 +117,7 @@ public class ServiceControllerTests
     [Fact]
     public async Task Details_ReturnsView_WhenServiceExists()
     {
+        SetUser("client1");
         
         var service = new Service { Id = 1, Title = "s1", Description = "s", FreelancerId = "f1" };
         var freelancer = new IdentityUser { Id = "f1" };
@@ -477,7 +479,7 @@ public class ServiceControllerTests
     }
 
     [Fact]
-    public async Task AddReview_RatingOutOfRange_RedirectWithError()
+    public async Task AddReview_InvalidDto_ReturnsBadRequest()
     {
         SetUser("client1");
 
@@ -486,11 +488,46 @@ public class ServiceControllerTests
             Mock.Of<ITempDataProvider>()
         );
         
-        var result = await _controller.AddReview(1, "Bad rating", 6);
+        var service = new Service 
+        { 
+            Id = 1, 
+            Title = "s1", 
+            Description = "s1", 
+            Status = ServiceStatus.Available, 
+            FreelancerId = "freelancer1" 
+        };
+        var order = new Order 
+        { 
+            Id = 1, 
+            ServiceId = 1, 
+            ClientId = "client1", 
+            Status = OrderStatus.Completed 
+        };
+    
+        _context.Services.Add(service);
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+
+        var dto = new AddReviewDto
+        {
+            ServiceId = 1,
+            Rating = 6, 
+            QualityRating = 5,
+            CommunicationRating = 5,
+            DeadlineRating = 5,
+            PriceRating = 5,
+            Comment = "Bad rating"
+        };
         
+        _controller.ModelState.Clear();
+        _controller.ModelState.AddModelError(nameof(dto.Rating), "Оценка должна быть от 1 до 5.");
+    
+        var result = await _controller.AddReview(dto);
+    
         var redirect = Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal("Details", redirect.ActionName);
-        Assert.Equal("Оценка должна быть от 1 до 5.", _controller.TempData["ErrorMessage"]);
+        Assert.Equal("Проверьте правильность заполнения формы.", 
+            _controller.TempData["ErrorMessage"]);
     }
 
     [Fact]
@@ -506,8 +543,19 @@ public class ServiceControllerTests
         var service = new Service { Id = 1, Title = "s1", Description = "s1", Status = ServiceStatus.Available, FreelancerId = "freelancer1" };
         _context.Services.Add(service);
         await _context.SaveChangesAsync();
+
+        var dto = new AddReviewDto
+        {
+            ServiceId = 1,
+            Rating = 4,
+            QualityRating = 4,
+            CommunicationRating = 4,
+            DeadlineRating = 4,
+            PriceRating = 4,
+            Comment = "Test rating"
+        };
         
-        var result = await _controller.AddReview(1, "Test rating", 4);
+        var result = await _controller.AddReview(dto);
         
         var redirect = Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal("Details", redirect.ActionName);
@@ -526,17 +574,34 @@ public class ServiceControllerTests
         
         var service = new Service { Id = 1, Title = "s1", Description = "s1", Status = ServiceStatus.Available, FreelancerId = "freelancer1" };
         var order = new Order { Id = 1, ServiceId = 1, ClientId = "client1", Status = OrderStatus.Completed };
-        var review = new Review { Id = 1, ServiceId = 1, UserId = "client1", Rating = 4, Comment = "Test rating" };
+        var review = new Review { Id = 1, ServiceId = 1, UserId = "client1", Rating = 4, QualityRating = 3, CommunicationRating = 3, DeadlineRating = 3, PriceRating = 3, Comment = "Test rating", CreatedAt = DateTime.UtcNow.AddDays(-1) };
         _context.Services.Add(service);
         _context.Orders.Add(order);
         _context.Reviews.Add(review);
         await _context.SaveChangesAsync();
+
+        var dto = new AddReviewDto
+        {
+            ServiceId = 1,
+            Rating = 5,
+            QualityRating = 5,
+            CommunicationRating = 4,
+            DeadlineRating = 5,
+            PriceRating = 4,
+            Comment = "New rating"
+        };
         
-        var result = await _controller.AddReview(1, "New rating", 5);
+        var result = await _controller.AddReview(dto);
         
         var redirect = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal("Details", redirect.ActionName);
+        
         var updatedReview = await _context.Reviews.FirstAsync();
         Assert.Equal(5, updatedReview.Rating);
+        Assert.Equal(5, updatedReview.QualityRating);
+        Assert.Equal(4, updatedReview.CommunicationRating);
+        Assert.Equal(5, updatedReview.DeadlineRating);
+        Assert.Equal(4, updatedReview.PriceRating);
         Assert.Equal("New rating", updatedReview.Comment);
     }
 
@@ -556,13 +621,31 @@ public class ServiceControllerTests
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
         
-        var result = await _controller.AddReview(1, "Test rating", 5);
+        var dto = new AddReviewDto
+        {
+            ServiceId = 1,
+            Rating = 5,
+            QualityRating = 5,
+            CommunicationRating = 5,
+            DeadlineRating = 4,
+            PriceRating = 5,
+            Comment = "Test rating"
+        };
+        
+        var result = await _controller.AddReview(dto);
         
         var redirect = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal("Details", redirect.ActionName);
+        
         var review = await _context.Reviews.FirstOrDefaultAsync();
         Assert.NotNull(review);
         Assert.Equal("client1", review!.UserId);
+        Assert.Equal(1, review.ServiceId);
         Assert.Equal(5, review.Rating);
+        Assert.Equal(5, review.QualityRating);
+        Assert.Equal(5, review.CommunicationRating);
+        Assert.Equal(4, review.DeadlineRating);
+        Assert.Equal(5, review.PriceRating);
         Assert.Equal("Test rating", review.Comment);
     }
     

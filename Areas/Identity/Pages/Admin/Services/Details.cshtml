@@ -25,6 +25,17 @@
 
             <dt class="col-sm-3">Дата добавления</dt>
             <dd class="col-sm-9">@Model.Service?.CreatedAt</dd>
+
+            @* Средний рейтинг услуги *@
+            @if (Model.Service?.Reviews != null && Model.Service.Reviews.Any())
+            {
+                double avg = Model.Service.Reviews.Average(r => r.Rating);
+                <dt class="col-sm-3">Средний рейтинг</dt>
+                <dd class="col-sm-9">
+                    <strong>@avg.ToString("F1")</strong> / 5
+                    <span class="text-muted ms-2">(@Model.Service.Reviews.Count отзывов)</span>
+                </dd>
+            }
         </dl>
     </div>
 </div>
@@ -33,35 +44,70 @@
 
 @if (Model.Service?.Reviews != null && Model.Service.Reviews.Any())
 {
-<table class="custom-table table-bordered table-striped">
-    <thead>
-    <tr>
-        <th>Автор</th>
-        <th>Текст</th>
-        <th>Дата</th>
-        <th>Действия</th>
-    </tr>
-    </thead>
-    <tbody>
-    @foreach (var review in Model.Service.Reviews)
-    {
-    <tr>
-        <td>@review.User?.UserName</td>
-        <td>@review.Comment</td>
-        <td>@review.CreatedAt.ToString("g", new CultureInfo("ru-RU"))</td>
-        <td>
-            <form method="post" asp-page-handler="DeleteReview" asp-route-reviewId="@review.Id" asp-route-serviceId="@Model.Service.Id" onsubmit="return confirm('Удалить отзыв?');">
-                <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
-            </form>
-        </td>
-    </tr>
-    }
-    </tbody>
-</table>
+    <div class="table-responsive">
+        <table class="custom-table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Автор</th>
+                    <th>Общая оценка</th>
+                    <th>Качество</th>
+                    <th>Коммуникация</th>
+                    <th>Сроки</th>
+                    <th>Цена/кач.</th>
+                    <th>Комментарий</th>
+                    <th>Дата</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var review in Model.Service.Reviews.OrderByDescending(r => r.CreatedAt))
+                {
+                    <tr>
+                        <td>@review.User?.UserName</td>
+                        
+                        <td>
+                            @await Html.PartialAsync("_StarRating", (double)review.Rating)
+                            <span class="ms-1">@review.Rating/5</span>
+                        </td>
+                        
+                        <td class="text-center">@review.QualityRating</td>
+                        <td class="text-center">@review.CommunicationRating</td>
+                        <td class="text-center">@review.DeadlineRating</td>
+                        <td class="text-center">@review.PriceRating</td>
+
+                        <td>
+                            @if (string.IsNullOrWhiteSpace(review.Comment))
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                            else
+                            {
+                                @review.Comment
+                            }
+                        </td>
+
+                        <td style="white-space:nowrap;">
+                            @review.CreatedAt.ToString("g", new CultureInfo("ru-RU"))
+                        </td>
+
+                        <td>
+                            <form method="post"
+                                  asp-page-handler="DeleteReview"
+                                  asp-route-reviewId="@review.Id"
+                                  asp-route-serviceId="@Model.Service.Id"
+                                  onsubmit="return confirm('Удалить отзыв?');">
+                                <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 else
 {
-<p>Отзывов пока нет.</p>
+    <p>Отзывов пока нет.</p>
 }
 
 <a asp-page="/Admin/Services/Index" class="btn btn-secondary mt-3">Назад</a>

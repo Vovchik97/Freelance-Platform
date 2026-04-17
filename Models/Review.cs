@@ -18,6 +18,18 @@ public class Review
     [Range(1, 5)]
     public int Rating { get; set; }
     
+    [Range(1, 5)]
+    public int QualityRating { get; set; }
+    
+    [Range(1, 5)]
+    public int CommunicationRating { get; set; }
+    
+    [Range(1, 5)]
+    public int DeadlineRating { get; set; } 
+    
+    [Range(1, 5)]
+    public int PriceRating { get; set; }
+    
     public string? Comment { get; set; }
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -1,0 +1,17 @@
+﻿@model double
+
+@{
+double rating = Model;
+double pct = rating / 5.0 * 100;
+string pctStr = pct.ToString("F4", System.Globalization.CultureInfo.InvariantCulture);
+string titleStr = rating.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + " из 5";
+}
+
+<div class="star-rating" title="@titleStr">
+    <div class="back-stars">
+        ★★★★★
+        <div class="front-stars" style="width:@(pctStr)%">
+            ★★★★★
+        </div>
+    </div>
+</div>

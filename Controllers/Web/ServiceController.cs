@@ -3,6 +3,7 @@ using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Api;
 using FreelancePlatform.Dto.Categories;
 using FreelancePlatform.Dto.Projects;
+using FreelancePlatform.Dto.Reviews;
 using FreelancePlatform.Dto.Services;
 using FreelancePlatform.Models;
 using FreelancePlatform.Services;
@@ -124,29 +125,37 @@ public class ServiceController : Controller
 
         var allReviews = service.Reviews?.ToList() ?? new List<Review>();
 
-        var averageRating = allReviews.Count > 0 ? allReviews.Average(r => r.Rating) : 0.0;
-        var reviewsCount = allReviews.Count;
-
-        var counts = Enumerable.Range(1, 5)
-            .ToDictionary(star => star, star => allReviews.Count(r => r.Rating == star));
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        bool canReview = false;
+        if (currentUserId != null && User.IsInRole("Client"))
+        {
+            canReview = await _context.Orders
+                .AnyAsync(o => o.ServiceId == id
+                               && o.ClientId == currentUserId
+                               && o.Status == OrderStatus.Completed);
+        }
 
         var selected = (ratings ?? new List<int>())
-            .Where(star => star >= 1 && star <= 5)
-            .Distinct()
-            .OrderByDescending(x => x)
-            .ToList();
+            .Where(s => s >= 1 && s <= 5).Distinct()
+            .OrderByDescending(x => x).ToList();
 
-        var filtered = selected.Any()
-            ? allReviews.Where(r => selected.Contains(r.Rating))
-            : allReviews;
-        
-        service.Reviews = filtered
+        service.Reviews = (selected.Any()
+                ? allReviews.Where(r => selected.Contains(r.Rating))
+                : allReviews)
             .OrderByDescending(r => r.CreatedAt)
             .ToList();
+
+        ViewBag.AvgQuality = allReviews.Any() ? allReviews.Average(r => r.QualityRating) : 0.0;
+        ViewBag.AvgCommunication = allReviews.Any() ? allReviews.Average(r => r.CommunicationRating) : 0.0;
+        ViewBag.AvgDeadline = allReviews.Any() ? allReviews.Average(r => r.DeadlineRating) : 0.0;
+        ViewBag.AvgPrice = allReviews.Any() ? allReviews.Average(r => r.PriceRating) : 0.0;
         
-        ViewBag.AverageRating = averageRating;
-        ViewBag.ReviewsCount = reviewsCount;
-        ViewBag.ReviewCounts = counts;
+        ViewBag.CanReview = canReview;
+        ViewBag.AverageRating = allReviews.Any() ? allReviews.Average(r => r.Rating) : 0.0;
+        ViewBag.ReviewsCount = allReviews.Count;
+        ViewBag.ReviewCounts = Enumerable.Range(1, 5)
+            .ToDictionary(s => s, s => allReviews.Count(r => r.Rating == s));
+        
         ViewBag.SelectedRatings = selected;
         
         return View(service);
@@ -464,46 +473,54 @@ public class ServiceController : Controller
     [HttpPost]
     [Authorize(Roles = "Client")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AddReview(int serviceId, string content, int rating)
+    public async Task<IActionResult> AddReview(AddReviewDto dto)
     {
         var userId = _userManager.GetUserId(User);
 
-        if (rating < 1 || rating > 5)
-        {
-            TempData["ErrorMessage"] = "Оценка должна быть от 1 до 5.";
-            return RedirectToAction("Details", new { id = serviceId });
-        }
-
         var hasOrdered = await _context.Orders
-            .AnyAsync(o => o.ServiceId == serviceId &&
+            .AnyAsync(o => o.ServiceId == dto.ServiceId &&
                            o.ClientId == userId &&
                            o.Status == OrderStatus.Completed);
 
         if (!hasOrdered)
         {
             TempData["ErrorMessage"] = "Оставить отзыв можно только после выполнения заказа.";
-            return RedirectToAction("Details", new { id = serviceId });
+            return RedirectToAction("Details", new { id = dto.ServiceId });
         }
 
-        var existingReview = await _context.Reviews
-            .FirstOrDefaultAsync(r => r.ServiceId == serviceId && r.UserId == userId);
-
-        if (existingReview != null)
+        if (!ModelState.IsValid)
         {
-            existingReview.Rating = rating;
-            existingReview.Comment = content;
-            existingReview.CreatedAt = DateTime.UtcNow;
+            TempData["ErrorMessage"] = "Проверьте правильность заполнения формы.";
+            return RedirectToAction("Details", new { id = dto.ServiceId });
+        }
 
-            _context.Reviews.Update(existingReview);
+        var existing = await _context.Reviews
+            .FirstOrDefaultAsync(r => r.ServiceId == dto.ServiceId && r.UserId == userId);
+
+        if (existing != null)
+        {
+            existing.Rating = dto.Rating;
+            existing.QualityRating = dto.QualityRating;
+            existing.CommunicationRating = dto.CommunicationRating;
+            existing.DeadlineRating = dto.DeadlineRating;
+            existing.PriceRating = dto.PriceRating;
+            existing.Comment = dto.Comment;
+            existing.CreatedAt = DateTime.UtcNow;
+
+            _context.Reviews.Update(existing);
         }
         else
         {
             var review = new Review
             {
-                ServiceId = serviceId,
+                ServiceId = dto.ServiceId,
                 UserId = userId!,
-                Rating = rating,
-                Comment = content,
+                Rating = dto.Rating,
+                QualityRating = dto.QualityRating,
+                CommunicationRating = dto.CommunicationRating,
+                DeadlineRating = dto.DeadlineRating,
+                PriceRating = dto.PriceRating,
+                Comment = dto.Comment,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -511,8 +528,8 @@ public class ServiceController : Controller
         }
         
         await _context.SaveChangesAsync();
-        
-        return RedirectToAction("Details", new { id = serviceId });
+        TempData["SuccessMessage"] = "Отзыв успешно сохранён!";
+        return RedirectToAction("Details", new { id = dto.ServiceId });
     }
 
     [HttpPost]
