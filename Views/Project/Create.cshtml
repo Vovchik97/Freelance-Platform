@@ -2,10 +2,12 @@
 @model FreelancePlatform.Dto.Projects.CreateProjectDto
 @{
 ViewData["Title"] = "Создать проект";
-var allCategories = ViewBag.AllCategories as List<FreelancePlatform.Models.Category>
-?? new List<FreelancePlatform.Models.Category>();
+var allCategories = ViewBag.AllCategories as List<Category>
+?? new List<Category>();
 var selectedIds = ViewBag.SelectedCategoryIds as List<int>
 ?? new List<int>();
+var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
+?? new List<TaskTemplate>();
 }
 
 <div class="container mt-5">
@@ -95,7 +97,8 @@ var selectedIds = ViewBag.SelectedCategoryIds as List<int>
                 </div>
             </div>
             }
-            
+
+            <!-- Командный проект -->
             <div class="input-group mt-3">
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox"
@@ -105,6 +108,64 @@ var selectedIds = ViewBag.SelectedCategoryIds as List<int>
                     </label>
                 </div>
             </div>
+
+            <!-- Шаблон задач -->
+            @if (taskTemplates.Any())
+            {
+                <div class="input-group mt-4" id="templateSection" style="display:none;">
+                    <label class="form-label fw-semibold">
+                        📋 Шаблон задач
+                        <span class="text-muted fw-normal">(опционально)</span>
+                    </label>
+
+                    <div id="noTemplatesHint" style="display:none;">
+                        Для выбранных категорий нет готовых шаблонов — добавьте задачи вручную после создания проекта.
+                    </div>
+
+                    <div id="templateCards" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;">
+                        <!-- Карточка "Без шаблона" -->
+                        <label class="template-card selected"
+                               id="template-label-none"
+                               data-category-ids="">
+                            <input type="radio" name="templateId" value="" checked style="display:none;" />
+                            <div class="template-card-content">
+                                <span class="template-card-title">Без шаблона</span>
+                                <span class="template-card-meta">Добавлю задачи вручную</span>
+                            </div>
+                        </label>
+
+                        @foreach (var template in taskTemplates)
+                        {
+                            var categoryIds = string.Join(",", template.Categories.Select(c => c.Id));
+                            var tasksJson = System.Text.Json.JsonSerializer.Serialize(
+                                template.Items.OrderBy(i => i.OrderIndex).Select(i => i.Title)
+                            );
+
+                            <label class="template-card"
+                                   id="template-label-@template.Id"
+                                   data-category-ids="@categoryIds"
+                                   data-tasks='@Html.Raw(tasksJson)'>
+                                <input type="radio" name="templateId" value="@template.Id" style="display:none;" />
+                                <div class="template-card-content">
+                                    <span class="template-card-title">@template.Name</span>
+                                    <span class="template-card-meta">@template.Items.Count задач</span>
+                                </div>
+                            </label>
+                        }
+                    </div>
+
+                    <div id="templatePreview" style="display:none;" class="template-preview-box">
+                        <div class="template-preview-header">
+                            Задачи шаблона:
+                        </div>
+                        <div id="templateTasksList"></div>
+                    </div>
+
+                    <small class="text-muted d-block mt-2">
+                        💡 Шаблон создаст готовый чек-лист. Вы сможете изменить задачи после создания проекта.
+                    </small>
+                </div>
+            }
 
             <!-- Кнопка -->
             <div class="text-end mt-4">
@@ -133,6 +194,7 @@ var selectedIds = ViewBag.SelectedCategoryIds as List<int>
             label.style.background = 'transparent';
             label.style.color = '#6c63ff';
         }
+        updateTemplates(); // Обновляем шаблоны при изменении категорий
     }
 
     function selectAllCategories() {
@@ -220,4 +282,134 @@ var selectedIds = ViewBag.SelectedCategoryIds as List<int>
             btn.innerHTML = '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>Подобрать автоматически';
         }
     }
+
+    // ============= ШАБЛОНЫ =============
+    
+    // Получаем выбранные категории
+    function getCheckedCategoryIds() {
+        var ids = [];
+        document.querySelectorAll('input[name="CategoryIds"]:checked').forEach(function(cb) {
+            ids.push(cb.value);
+        });
+        return ids;
+    }
+
+    // Обновление видимости шаблонов
+    function updateTemplates() {
+        var checkedIds = getCheckedCategoryIds();
+        var templateSection = document.getElementById('templateSection');
+        var noTemplatesHint = document.getElementById('noTemplatesHint');
+
+        if (checkedIds.length === 0) {
+            templateSection.style.display = 'none';
+            return;
+        }
+
+        templateSection.style.display = 'block';
+        var anyVisible = false;
+
+        document.querySelectorAll('[id^="template-label-"]').forEach(function(card) {
+            if (card.id === 'template-label-none') return;
+
+            var rawIds = card.getAttribute('data-category-ids') || '';
+
+            if (rawIds === '') {
+                card.style.display = 'flex';
+                anyVisible = true;
+                return;
+            }
+
+            var templateCatIds = rawIds.split(',').map(function(s) { return s.trim(); });
+            var matches = templateCatIds.some(function(tid) {
+                return checkedIds.includes(tid);
+            });
+
+            card.style.display = matches ? 'flex' : 'none';
+            if (matches) anyVisible = true;
+        });
+
+        if (noTemplatesHint) {
+            noTemplatesHint.style.display = anyVisible ? 'none' : 'block';
+        }
+
+        // Если текущий выбранный шаблон скрылся — сбросить на "без шаблона"
+        var selectedCard = document.querySelector('[id^="template-label-"]:not(#template-label-none) input[type="radio"]:checked');
+        if (selectedCard) {
+            var parentCard = selectedCard.closest('[id^="template-label-"]');
+            if (parentCard && parentCard.style.display === 'none') {
+                selectTemplate('', document.getElementById('template-label-none'));
+            }
+        }
+    }
+
+    // Выбор шаблона
+    function selectTemplate(templateId, clickedLabel) {
+        // Убираем класс selected у всех карточек
+        document.querySelectorAll('.template-card').forEach(function(card) {
+            card.classList.remove('selected');
+        });
+
+        // Добавляем класс selected к кликнутой карточке
+        clickedLabel.classList.add('selected');
+
+        // Отмечаем соответствующий radio
+        var radio = clickedLabel.querySelector('input[type="radio"]');
+        if (radio) radio.checked = true;
+
+        var preview = document.getElementById('templatePreview');
+        var tasksList = document.getElementById('templateTasksList');
+
+        if (!templateId) {
+            preview.style.display = 'none';
+            return;
+        }
+
+        // Получаем задачи из data-атрибута
+        var tasksJson = clickedLabel.getAttribute('data-tasks');
+        if (tasksJson) {
+            try {
+                var tasks = JSON.parse(tasksJson);
+                if (tasks && tasks.length > 0) {
+                    tasksList.innerHTML = tasks.map(function(task, index) {
+                        return '<div class="task-item">' +
+                            '<span style="width:22px; height:22px; border-radius:50%; background:#e8e6ff;' +
+                            'display:flex; align-items:center; justify-content:center; font-size:11px;' +
+                            'color:#6c63ff; font-weight:700; flex-shrink:0;">' + (index + 1) + '</span>' +
+                            '<span class="task-item-title">' + task + '</span>' +
+                            '</div>';
+                    }).join('');
+                    preview.style.display = 'block';
+                } else {
+                    preview.style.display = 'none';
+                }
+            } catch (e) {
+                console.error('Ошибка парсинга задач:', e);
+                preview.style.display = 'none';
+            }
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+
+    // ============= ИНИЦИАЛИЗАЦИЯ =============
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Обработчики для чекбоксов категорий
+        document.querySelectorAll('input[name="CategoryIds"]').forEach(function(cb) {
+            cb.addEventListener('change', function() {
+                updateTemplates();
+            });
+        });
+
+        // Обработчики кликов на карточки шаблонов
+        document.querySelectorAll('.template-card').forEach(function(card) {
+            card.addEventListener('click', function() {
+                var templateId = this.querySelector('input[type="radio"]')?.value || '';
+                selectTemplate(templateId, this);
+            });
+        });
+
+        // Первичное обновление шаблонов
+        updateTemplates();
+    });
 </script>

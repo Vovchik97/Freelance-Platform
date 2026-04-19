@@ -18,18 +18,21 @@ public class ProjectController : Controller
     private readonly BalanceService _balanceService;
     private readonly CategorySuggestionService _categorySuggestionService;
     private readonly RecommendationService _recommendationService;
+    private readonly WorkItemService _workItemService;
 
     public ProjectController(AppDbContext context, 
         UserManager<IdentityUser> userManager, 
         BalanceService balanceService, 
         CategorySuggestionService categorySuggestionService,
-        RecommendationService recommendationService)
+        RecommendationService recommendationService,
+        WorkItemService workItemService)
     {
         _context = context;
         _userManager = userManager;
         _balanceService = balanceService;
         _categorySuggestionService = categorySuggestionService;
         _recommendationService = recommendationService;
+        _workItemService = workItemService;
     }
     
     [AllowAnonymous]
@@ -124,12 +127,23 @@ public class ProjectController : Controller
             .Include(p => p.Categories)
             .Include(p => p.Bids)
                 .ThenInclude(b => b.Freelancer)
+            .Include(p => p.WorkItems)
+                .ThenInclude(w => w.CreatedBy)
             .FirstOrDefaultAsync(p => p.Id == id);
 
         if (project == null)
         {
             return NotFound();
         }
+        
+        var progress = await _workItemService.GetProgressAsync(id, null); 
+        
+        ViewBag.Progress = progress;
+        ViewBag.WorkItems = project.WorkItems.OrderBy(w => w.OrderIndex).ToList();
+        ViewBag.TaskTemplates = await _context.TaskTemplates
+            .Include(t => t.Items)
+            .Include(t => t.Categories)
+            .ToListAsync();
         
         return View(project);
     }
@@ -142,13 +156,17 @@ public class ProjectController : Controller
             .OrderBy(c => c.Name)
             .ToListAsync();
         ViewBag.SelectedCategoryIds = new List<int>();
+        ViewBag.TaskTemplates = await _context.TaskTemplates
+            .Include(t => t.Items)
+            .Include(t => t.Categories)
+            .ToListAsync();
         return View();
     }
     
     [HttpPost]
     [Authorize(Roles = "Client")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(CreateProjectDto dto)
+    public async Task<IActionResult> Create(CreateProjectDto dto, int? templateId = null)
     {
         if (!ModelState.IsValid)
         {
@@ -157,6 +175,7 @@ public class ProjectController : Controller
                 .OrderBy(c => c.Name)
                 .ToListAsync();
             ViewBag.SelectedCategoryIds = dto.CategoryIds;
+            ViewBag.TaskTemplates = await _context.TaskTemplates.ToListAsync();
             return View(dto);
         }
         
@@ -190,6 +209,12 @@ public class ProjectController : Controller
         await _context.Projects.AddAsync(project);
         await _context.SaveChangesAsync();
         ViewBag.SelectedCategoryIds = dto.CategoryIds;
+
+        if (templateId.HasValue && templateId > 0)
+        {
+            await _workItemService.CreateFromTemplateAsync(templateId.Value, project.Id, null, clientId);
+        }
+        
         return RedirectToAction(nameof(MyProjects));
     }
     
@@ -278,11 +303,18 @@ public class ProjectController : Controller
     public async Task<IActionResult> Delete(int id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
+        var project = await _context.Projects
+            .Include(p => p.WorkItems)
+            .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == userId);
 
         if (project == null)
         {
             return NotFound();
+        }
+
+        if (project.WorkItems != null && project.WorkItems.Any())
+        {
+            _context.WorkItems.RemoveRange(project.WorkItems);
         }
 
         _context.Projects.Remove(project);

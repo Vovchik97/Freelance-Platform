@@ -58,6 +58,7 @@
                     Редактировать
                 </a>
                 <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline me-2">
+                    @Html.AntiForgeryToken()
                     <button type="submit" class="btn btn-danger">
                         <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -67,6 +68,7 @@
                     </button>
                 </form>
                 <form asp-action="CancelProject" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
                     <button type="submit" class="btn btn-outline-danger">
                         <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -81,6 +83,7 @@
         @if (User.Identity?.Name == Model.Client?.UserName && Model.Status == ProjectStatus.Cancelled)
         {
             <form method="post" asp-controller="Project" asp-action="ResumeProject" asp-route-id="@Model.Id" class="mt-3">
+                @Html.AntiForgeryToken()
                 <button type="submit" class="btn btn-outline-success">
                     <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -101,24 +104,23 @@
         @if (User.Identity?.Name == Model.Client?.UserName && Model.Status == ProjectStatus.Paid)
         {
             <p class="text-muted">Вы оплатили этот проект, дождитесь пока фрилансер завершит работу над ним.</p>
-            
         }
 
         @{
-        var userName = User.Identity?.Name;
-        bool hasBid = Model.Bids?.Any(b => b.Freelancer?.UserName == userName) ?? false;
+            var userName = User.Identity?.Name;
+            bool hasBid = Model.Bids?.Any(b => b.Freelancer?.UserName == userName) ?? false;
         }
 
         @if (User.IsInRole("Freelancer") && !hasBid && Model.Status == ProjectStatus.Open)
         {
-        <a class="btn btn-primary mt-4" asp-controller="Bid" asp-action="Create" asp-route-projectId="@Model.Id">
-            Откликнуться на проект
-        </a>
+            <a class="btn btn-primary mt-4" asp-controller="Bid" asp-action="Create" asp-route-projectId="@Model.Id">
+                Откликнуться на проект
+            </a>
         }
         
         else if (User.IsInRole("Freelancer") && hasBid && Model.Status == ProjectStatus.Open)
         {
-        <p class="text-muted">Вы уже откликнулись на этот проект.</p>
+            <p class="text-muted">Вы уже откликнулись на этот проект.</p>
         }
 
         else if (User.IsInRole("Freelancer") && User.Identity?.Name == Model.SelectedFreelancer?.UserName)
@@ -126,6 +128,7 @@
             @if (Model.Status == ProjectStatus.Paid)
             {
                 <form method="post" asp-action="CompleteProject" asp-route-id="@Model.Id" class="mt-3">
+                    @Html.AntiForgeryToken()
                     <button class="btn btn-outline-success">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
                             <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7.5 7.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6 10.293l7.146-7.147a.5.5 0 0 1 .708 0z"/>
@@ -144,95 +147,111 @@
             <p class="text-muted">Вы не можете откликнуться на этот проект, так как он не является открытым.</p>
         }
     </div>
+    
+    <!-- ========== БЛОК ЗАДАЧ ========== -->
+    @{
+        var workItems = ViewBag.WorkItems as List<WorkItem> ?? new();
+        var progress = (double?)(ViewBag.Progress) ?? 0;
+        var allTemplates = ViewBag.TaskTemplates as List<TaskTemplate> ?? new();
+        
+        // Передаём returnUrl в partial
+        ViewBag.ReturnUrl = Url.Action("Details", "Project", new { id = Model.Id });
+    }
 
+    @await Html.PartialAsync("_WorkItems", Model)
+
+    <!-- ========== БЛОК ЗАЯВОК (с отступом) ========== -->
     @if (User.Identity?.IsAuthenticated == true && User.Identity.Name == Model.Client?.UserName)
     {
-        <!-- Заголовок -->
-        <div class="header">
-            <h1>Заявки на проект</h1>
-        </div>
-
-        @if (Model.Bids != null && Model.Bids.Any())
-        {
-            <div class="custom-table-container">
-                <h2 class="filters-title text-center mb-4">Заявки на проект</h2>
-
-                <div class="table-responsive">
-                    <table class="table custom-table table-hover align-middle">
-                        <thead>
-                            <tr>
-                                <th>Фрилансер</th>
-                                <th>Цена</th>
-                                <th>Срок (дней)</th>
-                                <th>Комментарий</th>
-                                <th>Действия</th>
-                                <th>Статус</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var bid in Model.Bids.OrderByDescending(b => b.CreatedAt))
-                            {
-                                <tr>
-                                    <td><a asp-controller="PublicProfile" asp-action="Public" asp-route-userId="@bid.FreelancerId">@bid.Freelancer?.UserName</a></td>
-                                    <td class="text-success">@bid.Amount.ToString("C", new CultureInfo("ru-RU"))</td>
-                                    <td>@bid.DurationInDays</td>
-                                    <td>@bid.Comment</td>
-                                    <td>
-                                        <a asp-controller="Bid" asp-action="Details" asp-route-id="@bid.Id" class="btn btn-sm btn-outline-primary me-1">
-                                            <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                            Посмотреть
-                                        </a>
-                                        @if (bid.Status == BidStatus.Pending)
-                                        {
-                                            <form method="post" asp-controller="Project" asp-action="AcceptBid" asp-route-projectId="@Model.Id" asp-route-bidId="@bid.Id" class="d-inline">
-                                                <button type="submit" class="btn btn-sm btn-success">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
-                                                        <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7.5 7.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6 10.293l7.146-7.147a.5.5 0 0 1 .708 0z"/>
-                                                    </svg>
-                                                    Одобрить
-                                                </button>
-                                            </form>
-                                            <form method="post" asp-controller="Project" asp-action="RejectBid" asp-route-bidId="@bid.Id" class="d-inline ms-1">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                    <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                              d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                    Отклонить
-                                                </button>
-                                            </form>
-                                        }
-                                    </td>
-                                    <td>
-                                        @switch (bid.Status)
-                                        {
-                                            case BidStatus.Accepted:
-                                                <span class="badge bg-success">Одобрена</span>
-                                                break;
-                                            case BidStatus.Rejected:
-                                                <span class="badge bg-secondary">Отклонена</span>
-                                                break;
-                                            default:
-                                                <span class="badge bg-warning text-dark">Рассматривается</span>
-                                                break;
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+        <div style="margin-top: 4rem;"> <!-- ✅ Добавляем отступ -->
+            <!-- Заголовок -->
+            <div class="header">
+                <h1>Заявки на проект</h1>
             </div>
-        }
 
-        else
-        {
-            <p class="text-muted">Заявок пока нет.</p>
-        }
+            @if (Model.Bids != null && Model.Bids.Any())
+            {
+                <div class="custom-table-container">
+                    <h2 class="filters-title text-center mb-4">Заявки на проект</h2>
+
+                    <div class="table-responsive">
+                        <table class="table custom-table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Фрилансер</th>
+                                    <th>Цена</th>
+                                    <th>Срок (дней)</th>
+                                    <th>Комментарий</th>
+                                    <th>Действия</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var bid in Model.Bids.OrderByDescending(b => b.CreatedAt))
+                                {
+                                    <tr>
+                                        <td><a asp-controller="PublicProfile" asp-action="Public" asp-route-userId="@bid.FreelancerId">@bid.Freelancer?.UserName</a></td>
+                                        <td class="text-success">@bid.Amount.ToString("C", new CultureInfo("ru-RU"))</td>
+                                        <td>@bid.DurationInDays</td>
+                                        <td>@bid.Comment</td>
+                                        <td>
+                                            <a asp-controller="Bid" asp-action="Details" asp-route-id="@bid.Id" class="btn btn-sm btn-outline-primary me-1">
+                                                <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                Посмотреть
+                                            </a>
+                                            @if (bid.Status == BidStatus.Pending)
+                                            {
+                                                <form method="post" asp-controller="Project" asp-action="AcceptBid" asp-route-projectId="@Model.Id" asp-route-bidId="@bid.Id" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-success">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
+                                                            <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7.5 7.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6 10.293l7.146-7.147a.5.5 0 0 1 .708 0z"/>
+                                                        </svg>
+                                                        Одобрить
+                                                    </button>
+                                                </form>
+                                                <form method="post" asp-controller="Project" asp-action="RejectBid" asp-route-bidId="@bid.Id" class="d-inline ms-1">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                  d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                        Отклонить
+                                                    </button>
+                                                </form>
+                                            }
+                                        </td>
+                                        <td>
+                                            @switch (bid.Status)
+                                            {
+                                                case BidStatus.Accepted:
+                                                    <span class="badge bg-success">Одобрена</span>
+                                                    break;
+                                                case BidStatus.Rejected:
+                                                    <span class="badge bg-secondary">Отклонена</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge bg-warning text-dark">Рассматривается</span>
+                                                    break;
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted">Заявок пока нет.</p>
+            }
+        </div>
     }
 </div>

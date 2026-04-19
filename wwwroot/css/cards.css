@@ -415,3 +415,880 @@
     padding: 20px;
     margin-bottom: 16px;
 }
+
+/* =============================================
+   ШАБЛОНЫ ЗАДАЧ - АДАПТИВНЫЕ СТИЛИ С ТЕМАМИ
+   ============================================= */
+
+/* Контейнер карточек шаблонов */
+#templateCards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+/* Базовая карточка шаблона */
+.template-card {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    min-width: 140px;
+    flex: 1;
+    transition: all 0.3s ease;
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Градиентный эффект при наведении */
+.template-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gradient);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 0;
+}
+
+.template-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px -10px rgba(139, 92, 246, 0.3);
+    border-color: var(--primary-light);
+}
+
+.template-card:hover::before {
+    opacity: 0.05;
+}
+
+/* Выбранная карточка */
+.template-card.selected {
+    border-color: var(--primary);
+    background: var(--surface);
+}
+
+.template-card.selected::before {
+    opacity: 0.08;
+}
+
+/* Содержимое карточки */
+.template-card-content {
+    position: relative;
+    z-index: 1;
+}
+
+.template-card-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    transition: color 0.3s ease;
+}
+
+.template-card:hover .template-card-title {
+    color: var(--primary-light);
+}
+
+.template-card.selected .template-card-title {
+    color: var(--primary);
+}
+
+.template-card-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* Блок превью шаблона */
+.template-preview-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--primary);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 12px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.template-preview-box:hover {
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.12);
+    border-left-color: var(--primary-light);
+}
+
+.template-preview-header {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.template-preview-header::before {
+    content: '📋';
+    font-size: 16px;
+}
+
+/* Список задач в превью */
+#templateTasksList {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+#templateTasksList .task-item {
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+#templateTasksList .task-item:hover {
+    background: var(--surface);
+    border-color: var(--primary-light);
+    transform: translateX(4px);
+}
+
+#templateTasksList .task-item::before {
+    content: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+#templateTasksList .task-item-title {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Hint для отсутствия шаблонов */
+#noTemplatesHint {
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-top: 8px;
+    border: 1px dashed var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.5;
+}
+
+#noTemplatesHint::before {
+    content: '💡';
+    display: block;
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    #templateCards {
+        flex-direction: column;
+    }
+
+    .template-card {
+        min-width: 100%;
+    }
+}
+
+/* =============================================
+   РАБОТА С ЗАДАЧАМИ (WORKITEMS)
+   ============================================= */
+
+/* Контейнер задач */
+.work-items-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-top: 2rem;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(108, 99, 255, 0.08);
+}
+
+.work-items-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.work-items-title::before {
+    content: '✅';
+    font-size: 1.2rem;
+}
+
+/* Прогресс бар */
+.progress-container {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: var(--background);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.progress-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.progress-percentage {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 1rem;
+}
+
+.progress-bar-wrapper {
+    height: 12px;
+    background: var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    border-radius: 6px;
+    transition: width 0.6s ease;
+    position: relative;
+}
+
+.progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Список задач */
+.work-items-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.work-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.work-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--border);
+    transition: background 0.3s ease;
+}
+
+.work-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.12);
+    border-color: var(--primary-light);
+}
+
+.work-item:hover::before {
+    background: var(--primary-light);
+}
+
+.work-item.completed {
+    background: rgba(16, 185, 129, 0.05);
+    border-color: var(--success);
+}
+
+.work-item.completed::before {
+    background: var(--success);
+}
+
+/* Чекбокс задачи */
+.work-item-checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.work-item-checkbox:checked {
+    background: var(--success);
+    border-color: var(--success);
+}
+
+.work-item-checkbox:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+/* Номер задачи */
+.work-item-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.work-item.completed .work-item-number {
+    background: var(--success);
+}
+
+/* Заголовок задачи */
+.work-item-title {
+    flex: 1;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.4;
+    transition: color 0.3s ease;
+}
+
+.work-item.completed .work-item-title {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+}
+
+/* Действия с задачей */
+.work-item-actions {
+    display: flex;
+    gap: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.work-item:hover .work-item-actions {
+    opacity: 1;
+}
+
+.work-item-action {
+    padding: 0.5rem;
+    border: none;
+    background: var(--surface);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.work-item-action:hover {
+    background: var(--primary);
+    color: white;
+    transform: scale(1.1);
+}
+
+.work-item-action.delete:hover {
+    background: var(--danger);
+}
+
+/* Форма добавления задачи */
+.add-work-item-container {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: var(--background);
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.add-work-item-container:hover {
+    border-color: var(--primary-light);
+    background: var(--surface);
+}
+
+.add-work-item-form {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.add-work-item-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.add-work-item-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
+}
+
+.add-work-item-btn {
+    padding: 0.75rem 1.5rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.add-work-item-btn:hover {
+    background: var(--primary-light);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+}
+
+/* Кнопка переключения формы */
+.toggle-add-form-btn {
+    width: 100%;
+    padding: 1rem;
+    background: var(--surface);
+    border: 1px dashed var(--primary);
+    border-radius: 12px;
+    color: var(--primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.toggle-add-form-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-style: solid;
+}
+
+/* Пустое состояние */
+.empty-work-items {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-secondary);
+}
+
+.empty-work-items-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-work-items-text {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Шаблоны для пустого состояния */
+.template-suggestions {
+    margin-top: 1.5rem;
+}
+
+.template-suggestion-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.template-suggestion-cards {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.template-suggestion-card {
+    padding: 1rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    min-width: 120px;
+}
+
+.template-suggestion-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.15);
+}
+
+.template-suggestion-card h5 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.template-suggestion-card p {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .work-items-container {
+        padding: 1.5rem;
+    }
+
+    .add-work-item-form {
+        flex-direction: column;
+    }
+
+    .add-work-item-input {
+        min-width: 100%;
+    }
+
+    .template-suggestion-cards {
+        flex-direction: column;
+    }
+}
+
+/* Дополнения к предыдущим стилям WorkItems */
+
+/* Drag handle для перетаскивания */
+.work-item-drag-handle {
+    cursor: grab;
+    padding: 0.5rem;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+.work-item-drag-handle:hover {
+    opacity: 1;
+    color: var(--primary);
+}
+
+.work-item-drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Состояния при перетаскивании */
+.work-item-ghost {
+    opacity: 0.5;
+    background: var(--primary-light) !important;
+}
+
+.work-item-chosen {
+    transform: scale(1.02);
+    box-shadow: 0 8px 20px rgba(108, 99, 255, 0.3) !important;
+}
+
+.work-item-drag {
+    transform: rotate(2deg);
+}
+
+/* Улучшенная форма добавления */
+.add-form-grid {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.add-form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.add-form-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.add-form-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
+/* Быстрый выбор шаблонов */
+.template-quick-actions {
+    padding: 1rem;
+    background: var(--background);
+    border-radius: 12px;
+    border: 1px dashed var(--border);
+}
+
+.template-cards-row {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.template-quick-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    min-width: 140px;
+    flex: 1;
+}
+
+.template-quick-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.15);
+}
+
+.template-quick-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+}
+
+.template-quick-count {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Улучшение внешнего вида полей */
+.add-work-item-input {
+    transition: all 0.3s ease;
+    resize: vertical;
+}
+
+.add-work-item-input:hover {
+    border-color: var(--primary-light);
+}
+
+/* Описание задачи */
+.work-item-description {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+    line-height: 1.4;
+    max-width: 100%;
+    word-break: break-word;
+}
+
+.work-item-meta {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    opacity: 0.8;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .template-cards-row {
+        flex-direction: column;
+    }
+
+    .template-quick-card {
+        min-width: 100%;
+    }
+
+    .add-form-actions {
+        flex-direction: column;
+    }
+
+    .add-work-item-btn {
+        width: 100%;
+    }
+
+    .work-item-drag-handle {
+        padding: 0.25rem;
+    }
+}
+
+/* Фиксированные стили для controls */
+.work-items-controls {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.5rem;
+}
+
+/* Убираем z-index проблемы */
+.work-items-container {
+    position: relative;
+    z-index: 1;
+}
+
+/* Сетка для всех шаблонов */
+.template-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.template-quick-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.template-quick-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gradient);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 0;
+}
+
+.template-quick-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 99, 255, 0.15);
+}
+
+.template-quick-card:hover::before {
+    opacity: 0.05;
+}
+
+.template-quick-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 1;
+    line-height: 1.3;
+}
+
+.template-quick-count {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    position: relative;
+    z-index: 1;
+}
+
+.template-quick-card:hover .template-quick-title {
+    color: var(--primary);
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+    .template-cards-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .template-quick-card {
+        padding: 0.75rem;
+    }
+
+    .template-quick-title {
+        font-size: 0.85rem;
+    }
+}
+
+/* Улучшенные стили для пустого состояния */
+.empty-work-items {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.empty-work-items-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.6;
+}
+
+.empty-work-items-text {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}

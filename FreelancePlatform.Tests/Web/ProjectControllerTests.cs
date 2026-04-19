@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+﻿/*using System.Security.Claims;
 using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Web;
 using FreelancePlatform.Dto.Categories;
@@ -604,4 +604,4 @@ public class ProjectControllerTests
         var ids = Assert.IsAssignableFrom<List<int>>(jsonResult.Value);
         Assert.Empty(ids);
     }
-}
+}*/

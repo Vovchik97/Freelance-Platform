@@ -3,6 +3,7 @@ using System;
 using FreelancePlatform.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FreelancePlatform.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260418085857_AddWorkItems")]
+    partial class AddWorkItems
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -50,21 +53,6 @@ namespace FreelancePlatform.Migrations
                     b.HasIndex("ServicesId");
 
                     b.ToTable("CategoryService");
-                });
-
-            modelBuilder.Entity("CategoryTaskTemplate", b =>
-                {
-                    b.Property<int>("CategoriesId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TaskTemplatesId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("CategoriesId", "TaskTemplatesId");
-
-                    b.HasIndex("TaskTemplatesId");
-
-                    b.ToTable("CategoryTaskTemplate");
                 });
 
             modelBuilder.Entity("FreelancePlatform.Models.BalanceTransaction", b =>
@@ -162,7 +150,12 @@ namespace FreelancePlatform.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("TaskTemplateId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("TaskTemplateId");
 
                     b.ToTable("Categories");
                 });
@@ -1085,21 +1078,6 @@ namespace FreelancePlatform.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("CategoryTaskTemplate", b =>
-                {
-                    b.HasOne("FreelancePlatform.Models.Category", null)
-                        .WithMany()
-                        .HasForeignKey("CategoriesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("FreelancePlatform.Models.TaskTemplate", null)
-                        .WithMany()
-                        .HasForeignKey("TaskTemplatesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("FreelancePlatform.Models.Bid", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "Freelancer")
@@ -1117,6 +1095,13 @@ namespace FreelancePlatform.Migrations
                     b.Navigation("Freelancer");
 
                     b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("FreelancePlatform.Models.Category", b =>
+                {
+                    b.HasOne("FreelancePlatform.Models.TaskTemplate", null)
+                        .WithMany("Categories")
+                        .HasForeignKey("TaskTemplateId");
                 });
 
             modelBuilder.Entity("FreelancePlatform.Models.GroupChatMention", b =>
@@ -1464,6 +1449,8 @@ namespace FreelancePlatform.Migrations
 
             modelBuilder.Entity("FreelancePlatform.Models.TaskTemplate", b =>
                 {
+                    b.Navigation("Categories");
+
                     b.Navigation("Items");
                 });
 #pragma warning restore 612, 618

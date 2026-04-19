@@ -37,7 +37,7 @@ builder.Services.AddScoped<IBalanceService>(sp => sp.GetRequiredService<BalanceS
 builder.Services.AddScoped<CategorySuggestionService>();
 builder.Services.AddScoped<RecommendationService>();
 builder.Services.AddScoped<ProjectActivityLogService>();
-
+builder.Services.AddScoped<WorkItemService>();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole>()

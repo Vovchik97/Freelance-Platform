@@ -1,0 +1,388 @@
+﻿@model dynamic
+@using FreelancePlatform.Models
+
+@{
+    var workItems = ViewBag.WorkItems as List<WorkItem> ?? new();
+    var progress = (double?)(ViewBag.Progress) ?? 0;
+    var allTemplates = ViewBag.TaskTemplates as List<TaskTemplate>;
+    
+    // Определить тип (проект или заказ)
+    bool isProject = Model is Project;
+    var project = Model as Project;
+    var order = Model as Order;
+    int? projectId = isProject ? project?.Id : null;
+    int? orderId = !isProject ? order?.Id : null;
+    
+    // Получить категории для фильтрации шаблонов
+    List<int> categoryIds = new();
+    if (isProject && project?.Categories != null)
+    {
+        categoryIds = project.Categories.Select(c => c.Id).ToList();
+    }
+    else if (!isProject && order?.Service?.Categories != null)
+    {
+        categoryIds = order.Service.Categories.Select(c => c.Id).ToList();
+    }
+    
+    // Фильтруем шаблоны по категориям
+    var filteredTemplates = allTemplates?.Where(t => 
+        !categoryIds.Any() || // Если нет категорий - показываем все
+        t.Categories.Any(tc => categoryIds.Contains(tc.Id))
+    ).ToList() ?? new List<TaskTemplate>();
+    
+    // Получить текущий URL из ViewBag
+    var returnUrl = ViewBag.ReturnUrl as string ?? "";
+}
+
+@if (workItems.Any() || User.IsInRole("Client"))
+{
+    <div class="work-items-container">
+        <h3 class="work-items-title">
+            📋 Чек-лист задач
+            <span class="text-muted" style="font-size: 14px; font-weight: normal;">
+                @(workItems.Count(w => w.Status == WorkItemStatus.Completed))/@workItems.Count
+            </span>
+        </h3>
+
+        <!-- Прогресс-бар -->
+        @if (workItems.Any())
+        {
+            <div class="progress-container">
+                <div class="progress-header">
+                    <span class="progress-label">Прогресс выполнения</span>
+                    <span class="progress-percentage">@progress.ToString("F0")%</span>
+                </div>
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar-fill" style="width: @progress.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%"></div>
+                </div>
+            </div>
+        }
+
+        <!-- Список задач -->
+        @if (workItems.Any())
+        {
+            <ul class="work-items-list" id="workItemsList">
+                @{int counter = 1;}
+                @foreach (var item in workItems)
+                {
+                    var isCompleted = item.Status == WorkItemStatus.Completed;
+                    var isInProgress = item.Status == WorkItemStatus.InProgress;
+                    
+                    <li class="work-item @(isCompleted ? "completed" : "")" data-id="@item.Id">
+                        <!-- Drag Handle (только для клиента) -->
+                        @if (User.IsInRole("Client"))
+                        {
+                            <div class="work-item-drag-handle" title="Перетащите для изменения порядка">
+                                <svg width="12" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm0 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4-8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm0 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm0 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm0 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                                </svg>
+                            </div>
+                        }
+                        
+                        <!-- Чекбокс -->
+                        <form method="post" asp-controller="WorkItem" asp-action="UpdateStatus" style="display: inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="workItemId" value="@item.Id" />
+                            <input type="hidden" name="status" value="@(isCompleted ? WorkItemStatus.InProgress : WorkItemStatus.Completed)" />
+                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                            <input type="checkbox" 
+                                   class="work-item-checkbox"
+                                   @(isCompleted ? "checked" : "")
+                                   onchange="this.form.submit()" />
+                        </form>
+                        
+                        <!-- Номер задачи -->
+                        <div class="work-item-number">@counter</div>
+                        
+                        <!-- Содержимое -->
+                        <div class="work-item-content">
+                            <div class="work-item-title">@item.Title</div>
+                            @if (!string.IsNullOrEmpty(item.Description))
+                            {
+                                <div class="work-item-description">@item.Description</div>
+                            }
+                            <div class="work-item-meta">
+                                Добавлено @item.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                                @if (!string.IsNullOrEmpty(item.CreatedBy?.UserName))
+                                {
+                                    <text> • @item.CreatedBy.UserName</text>
+                                }
+                                @if (item.CompletedAt.HasValue)
+                                {
+                                    <text> • Завершено @item.CompletedAt.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</text>
+                                }
+                            </div>
+                        </div>
+                        
+                        <!-- Действия -->
+                        @if (User.IsInRole("Client"))
+                        {
+                            <div class="work-item-actions">
+                                <form method="post" asp-controller="WorkItem" asp-action="Delete" style="display: inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="workItemId" value="@item.Id" />
+                                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                    <button type="submit" class="work-item-action delete" title="Удалить" 
+                                            onclick="return confirm('Удалить задачу?')">
+                                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                            <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        }
+                    </li>
+                    counter++;
+                }
+            </ul>
+        }
+        else if (User.IsInRole("Client"))
+        {
+            <div class="empty-work-items">
+                <div class="empty-work-items-icon">📝</div>
+                <div class="empty-work-items-text">Нет задач</div>
+                <p class="text-muted">Добавьте задачи вручную или выберите готовый шаблон ниже</p>
+            </div>
+        }
+
+        <!-- Кнопки управления (ВСЕГДА для клиента) -->
+        @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Client"))
+        {
+            <div class="work-items-controls">
+                <!-- Кнопка добавления -->
+                <button type="button" class="toggle-add-form-btn" onclick="toggleAddForm()" id="toggleBtn">
+                    ➕ Добавить задачу
+                </button>
+                
+                <!-- Шаблоны (показываем ВСЕ доступные) -->
+                @if (filteredTemplates.Any())
+                {
+                    <div class="template-quick-actions" style="margin-top: 1rem;">
+                        <h6 style="margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.9rem;">
+                            📑 Или выберите шаблон (@filteredTemplates.Count доступно):
+                        </h6>
+                        <div class="template-cards-grid">
+                            @foreach (var template in filteredTemplates)
+                            {
+                                @if (isProject)
+                                {
+                                    <form method="post" 
+                                          asp-controller="WorkItem" 
+                                          asp-action="ApplyTemplateToProject"
+                                          asp-route-projectId="@projectId"
+                                          style="display: inline;">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" name="templateId" value="@template.Id" class="template-quick-card" title="@template.Description">
+                                            <div class="template-quick-title">@template.Name</div>
+                                            <div class="template-quick-count">@template.Items.Count задач</div>
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form method="post" 
+                                          asp-controller="WorkItem" 
+                                          asp-action="ApplyTemplateToOrder"
+                                          asp-route-orderId="@orderId"
+                                          style="display: inline;">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" name="templateId" value="@template.Id" class="template-quick-card" title="@template.Description">
+                                            <div class="template-quick-title">@template.Name</div>
+                                            <div class="template-quick-count">@template.Items.Count задач</div>
+                                        </button>
+                                    </form>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+                else if (!categoryIds.Any())
+                {
+                    <p class="text-muted small mt-3 mb-0">
+                        💡 Для этого @(isProject ? "проекта" : "заказа") не выбраны категории
+                    </p>
+                }
+                else
+                {
+                    <p class="text-muted small mt-3 mb-0">
+                        💡 Нет подходящих шаблонов для выбранных категорий
+                    </p>
+                }
+            </div>
+
+            <!-- Форма добавления задачи -->
+            <div id="addFormContainer" class="add-work-item-container" style="display: none;">
+                <h5 class="mb-3">Добавить новую задачу</h5>
+                
+                @if (isProject)
+                {
+                    <form method="post" 
+                          asp-controller="WorkItem" 
+                          asp-action="AddToProject"
+                          asp-route-projectId="@projectId">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="add-form-grid">
+                            <div class="add-form-group">
+                                <label class="add-form-label">Название задачи</label>
+                                <input type="text" name="Title" class="add-work-item-input" placeholder="Введите название..." required />
+                            </div>
+                            <div class="add-form-group">
+                                <label class="add-form-label">Описание (опционально)</label>
+                                <textarea name="Description" class="add-work-item-input" rows="3" placeholder="Подробное описание задачи..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="add-form-actions">
+                            <button type="submit" class="add-work-item-btn">
+                                ✅ Добавить задачу
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="toggleAddForm()">
+                                Отмена
+                            </button>
+                        </div>
+                    </form>
+                }
+                else
+                {
+                    <form method="post" 
+                          asp-controller="WorkItem" 
+                          asp-action="AddToOrder"
+                          asp-route-orderId="@orderId">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="add-form-grid">
+                            <div class="add-form-group">
+                                <label class="add-form-label">Название задачи</label>
+                                <input type="text" name="Title" class="add-work-item-input" placeholder="Введите название..." required />
+                            </div>
+                            <div class="add-form-group">
+                                <label class="add-form-label">Описание (опционально)</label>
+                                <textarea name="Description" class="add-work-item-input" rows="3" placeholder="Подробное описание задачи..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="add-form-actions">
+                            <button type="submit" class="add-work-item-btn">
+                                ✅ Добавить задачу
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="toggleAddForm()">
+                                Отмена
+                            </button>
+                        </div>
+                    </form>
+                }
+            </div>
+        }
+    </div>
+}
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+function toggleAddForm() {
+    var form = document.getElementById('addFormContainer');
+    var btn = document.getElementById('toggleBtn');
+    
+    if (form.style.display === 'none' || form.style.display === '') {
+        form.style.display = 'block';
+        btn.textContent = '❌ Отмена';
+        // Фокус на поле ввода
+        setTimeout(() => {
+            var input = form.querySelector('input[name="Title"]');
+            if (input) input.focus();
+        }, 100);
+    } else {
+        form.style.display = 'none';
+        btn.textContent = '➕ Добавить задачу';
+    }
+}
+
+// Функция для получения CSRF токена
+function getAntiForgeryToken() {
+    var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+    return tokenInput ? tokenInput.value : '';
+}
+
+// Drag & Drop для изменения порядка задач
+document.addEventListener('DOMContentLoaded', function() {
+    var list = document.getElementById('workItemsList');
+    var isClient = @Html.Raw(User.IsInRole("Client") ? "true" : "false");
+    
+    if (list && isClient) {
+        var sortable = Sortable.create(list, {
+            handle: '.work-item-drag-handle',
+            ghostClass: 'work-item-ghost',
+            chosenClass: 'work-item-chosen',
+            dragClass: 'work-item-drag',
+            animation: 150,
+            onEnd: function(evt) {
+                // Собираем новый порядок ID
+                var items = Array.from(list.children);
+                var order = items.map(item => item.getAttribute('data-id'))
+                                 .filter(id => id && id !== 'null');
+                
+                if (order.length === 0) {
+                    console.warn('Нет элементов для сортировки');
+                    return;
+                }
+
+                // Подготавливаем данные для отправки
+                var requestData = {
+                    workItemIds: order.map(id => parseInt(id))
+                };
+
+                @if (isProject)
+                {
+                    <text>requestData.projectId = @projectId;</text>
+                }
+                else
+                {
+                    <text>requestData.orderId = @orderId;</text>
+                }
+
+                // Отправляем на сервер
+                fetch('@Url.Action("UpdateOrder", "WorkItem")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': getAntiForgeryToken()
+                    },
+                    body: JSON.stringify(requestData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Ошибка сети: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        console.log('Порядок обновлён успешно');
+                        // Обновляем номера задач
+                        updateTaskNumbers();
+                    } else {
+                        throw new Error(data.message || 'Неизвестная ошибка');
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при обновлении порядка:', error);
+                    alert('Не удалось обновить порядок задач. Попробуйте обновить страницу.');
+                    location.reload();
+                });
+            }
+        });
+    }
+});
+
+// Обновление номеров задач после сортировки
+function updateTaskNumbers() {
+    var items = document.querySelectorAll('.work-item');
+    items.forEach(function(item, index) {
+        var numberElement = item.querySelector('.work-item-number');
+        if (numberElement) {
+            numberElement.textContent = index + 1;
+        }
+    });
+}
+</script>

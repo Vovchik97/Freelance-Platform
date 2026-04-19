@@ -19,13 +19,15 @@ public class OrderController : Controller
     private readonly UserManager<IdentityUser> _userManager;
     private readonly IEmailSender _emailSender;
     private readonly BalanceService _balanceService;
+    private readonly WorkItemService _workItemService;
 
-    public OrderController(AppDbContext context, UserManager<IdentityUser> userManager, IEmailSender emailSender, BalanceService balanceService)
+    public OrderController(AppDbContext context, UserManager<IdentityUser> userManager, IEmailSender emailSender, BalanceService balanceService, WorkItemService workItemService)
     {
         _context = context;
         _userManager = userManager;
         _emailSender = emailSender;
         _balanceService = balanceService;
+        _workItemService = workItemService;
     }
 
     [AllowAnonymous]
@@ -35,40 +37,70 @@ public class OrderController : Controller
             .Include(o => o.Client)
             .Include(o => o.Service)
                 .ThenInclude(s => s!.Freelancer)
+            .Include(o => o.Service)
+                .ThenInclude(s => s!.Categories)
+            .Include(o => o.WorkItems)
+                .ThenInclude(w => w.CreatedBy)
             .FirstOrDefaultAsync(o => o.Id == id);
 
         if (order == null)
         {
             return NotFound();
         }
+        
+        var progress = await _workItemService.GetProgressAsync(null, id);
+
+        ViewBag.Progress = progress;
+        ViewBag.WorkItems = order.WorkItems.OrderBy(w => w.OrderIndex).ToList();
+        ViewBag.TaskTemplates = await _context.TaskTemplates
+            .Include(t => t.Items)
+            .Include(t => t.Categories)
+            .ToListAsync();
 
         return View(order);
     }
 
     [Authorize(Roles = "Client")]
-    public IActionResult Create(int serviceId)
+    public async Task<IActionResult> Create(int serviceId)
     {
         var dto = new CreateOrderDto
         {
             ServiceId = serviceId
         };
         ViewBag.ServiceId = serviceId;
+        ViewBag.TaskTemplates = _context.TaskTemplates
+            .Include(t => t.Items)
+            .Include(t => t.Categories)
+            .ToList();
+
+        var service = await _context.Services
+            .Include(s => s.Categories)
+            .FirstOrDefaultAsync(s => s.Id == serviceId);
+
+        ViewBag.ServiceCategoryIds = service?.Categories.Select(c => c.Id).ToList() ?? new List<int>();
         return View();
     }
 
     [HttpPost]
     [Authorize(Roles = "Client")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(CreateOrderDto dto)
+    public async Task<IActionResult> Create(CreateOrderDto dto, int? templateId = null)
     {
         if (!ModelState.IsValid)
         {
+            ViewBag.TaskTemplates = await _context.TaskTemplates
+                .Include(t => t.Items)
+                .Include(t => t.Categories)
+                .ToListAsync();
+            ViewBag.ServiceId = dto.ServiceId;
             return View(dto);
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var service = await _context.Services
             .Include(s => s.Freelancer)
+            .Include(s => s.Orders)
+                .ThenInclude(o => o.Client)
             .FirstOrDefaultAsync(s => s.Id == dto.ServiceId);
         var client = await _userManager.GetUserAsync(User);
 
@@ -77,13 +109,34 @@ public class OrderController : Controller
         if (hasActiveOrder)
         {
             ModelState.AddModelError(string.Empty, "Вы уже отправили заказ на эту услугу.");
-            ViewBag.ProjectId = dto.ServiceId;
+            ViewBag.TaskTemplates = await _context.TaskTemplates
+                .Include(t => t.Items)
+                .Include(t => t.Categories)
+                .ToListAsync();
+            ViewBag.ServiceId = dto.ServiceId;
             return View(dto);
         }
 
-        if (service == null || service.Freelancer == null)
+        if (service == null)
         {
-            return NotFound("Услуга или фрилансер не найдены.");
+            ModelState.AddModelError(string.Empty, "Услуга не найдена.");
+            ViewBag.TaskTemplates = await _context.TaskTemplates
+                .Include(t => t.Items)
+                .Include(t => t.Categories)
+                .ToListAsync();
+            ViewBag.ServiceId = dto.ServiceId;
+            return View(dto);
+        }
+        
+        if (service.Freelancer == null)
+        {
+            ModelState.AddModelError(string.Empty, "Фрилансер не найден.");
+            ViewBag.TaskTemplates = await _context.TaskTemplates
+                .Include(t => t.Items)
+                .Include(t => t.Categories)
+                .ToListAsync();
+            ViewBag.ServiceId = dto.ServiceId;
+            return View(dto);
         }
         
         if (client == null)
@@ -111,9 +164,13 @@ public class OrderController : Controller
             );
         }
 
-
         await _context.Orders.AddAsync(order);
         await _context.SaveChangesAsync();
+        
+        if (templateId.HasValue && templateId > 0)
+        {
+            await _workItemService.CreateFromTemplateAsync(templateId.Value, null, order.Id, client.Id);
+        }
 
         return RedirectToAction(nameof(MyOrders));
     }
@@ -169,11 +226,18 @@ public class OrderController : Controller
     public async Task<IActionResult> Delete(int id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id && o.ClientId == userId);
+        var order = await _context.Orders
+            .Include(o => o.WorkItems)
+            .FirstOrDefaultAsync(o => o.Id == id && o.ClientId == userId);
 
         if (order == null)
         {
             return NotFound();
+        }
+        
+        if (order.WorkItems != null && order.WorkItems.Any())
+        {
+            _context.WorkItems.RemoveRange(order.WorkItems);
         }
 
         _context.Orders.Remove(order);

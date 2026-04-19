@@ -1,15 +1,19 @@
 ﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model FreelancePlatform.Dto.Orders.CreateOrderDto
 @{
-ViewData["Title"] = "Откликнуться на проект";
+ViewData["Title"] = "Заказать услугу";
+var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
+?? new List<TaskTemplate>();
 }
 
 <div class="container mt-5" style="max-width: 700px;">
     <div class="filters-card mx-auto">
         <h2 class="filters-title mb-4">Заказать услугу</h2>
 
-        <form asp-action="Create" asp-route-serviceId="@ViewBag.ServiceId" method="post" novalidate>
+        <form asp-action="Create" method="post" novalidate>
             @Html.AntiForgeryToken()
+            
+            <input type="hidden" name="serviceId" value="@ViewBag.ServiceId" />
             
             <div class="filters-row">
                 <div class="input-group mb-3">
@@ -24,6 +28,64 @@ ViewData["Title"] = "Откликнуться на проект";
                 <textarea asp-for="Comment" class="form-input" rows="4"></textarea>
                 <span asp-validation-for="Comment" class="text-danger"></span>
             </div>
+
+            <!-- Шаблон задач -->
+            @if (taskTemplates.Any())
+            {
+                <div class="input-group mt-4" id="templateSection" style="display:none;">
+                    <label class="form-label fw-semibold">
+                        📋 Шаблон задач
+                        <span class="text-muted fw-normal">(опционально)</span>
+                    </label>
+
+                    <div id="noTemplatesHint" style="display:none;">
+                        Для выбранных категорий нет готовых шаблонов — добавьте задачи вручную после создания проекта.
+                    </div>
+
+                    <div id="templateCards">
+                        <!-- Карточка "Без шаблона" -->
+                        <label class="template-card selected"
+                               id="template-label-none"
+                               data-category-ids="">
+                            <input type="radio" name="templateId" value="" checked style="display:none;" />
+                            <div class="template-card-content">
+                                <span class="template-card-title">Без шаблона</span>
+                                <span class="template-card-meta">Добавлю задачи вручную</span>
+                            </div>
+                        </label>
+
+                        @foreach (var template in taskTemplates)
+                        {
+                            var categoryIds = string.Join(",", template.Categories.Select(c => c.Id));
+                            var tasksJson = System.Text.Json.JsonSerializer.Serialize(
+                                template.Items.OrderBy(i => i.OrderIndex).Select(i => i.Title)
+                            );
+
+                            <label class="template-card"
+                                   id="template-label-@template.Id"
+                                   data-category-ids="@categoryIds"
+                                   data-tasks='@Html.Raw(tasksJson)'>
+                                <input type="radio" name="templateId" value="@template.Id" style="display:none;" />
+                                <div class="template-card-content">
+                                    <span class="template-card-title">@template.Name</span>
+                                    <span class="template-card-meta">@template.Items.Count задач</span>
+                                </div>
+                            </label>
+                        }
+                    </div>
+
+                    <div id="templatePreview" style="display:none;" class="template-preview-box">
+                        <div class="template-preview-header">
+                            Задачи шаблона:
+                        </div>
+                        <div id="templateTasksList"></div>
+                    </div>
+
+                    <small class="text-muted d-block mt-2">
+                        💡 Шаблон создаст готовый чек-лист. Вы сможете изменить задачи после создания проекта.
+                    </small>
+                </div>
+            }
 
             <button type="submit" class="btn btn-primary w-100">Заказать услугу</button>
         </form>
@@ -41,5 +103,99 @@ ViewData["Title"] = "Откликнуться на проект";
 </div>
 
 @section Scripts {
-@{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }
+<script>
+    var serviceCategoryIds = [@Html.Raw(string.Join(", ", (ViewBag.ServiceCategoryIds as List<int> ?? new List<int>()).Select(id => "\"" + id + "\"")))];
+
+    // Выбор шаблона
+    function selectTemplate(templateId, clickedLabel) {
+        // Убираем класс selected у всех карточек
+        document.querySelectorAll('.template-card').forEach(function(card) {
+            card.classList.remove('selected');
+        });
+
+        // Добавляем класс selected к кликнутой карточке
+        clickedLabel.classList.add('selected');
+
+        // Отмечаем соответствующий radio
+        var radio = clickedLabel.querySelector('input[type="radio"]');
+        if (radio) radio.checked = true;
+
+        var preview = document.getElementById('templatePreview');
+        var tasksList = document.getElementById('templateTasksList');
+
+        if (!templateId) {
+            preview.style.display = 'none';
+            return;
+        }
+
+        // Получаем задачи из data-атрибута
+        var tasksJson = clickedLabel.getAttribute('data-tasks');
+        if (tasksJson) {
+            try {
+                var tasks = JSON.parse(tasksJson);
+                if (tasks && tasks.length > 0) {
+                    tasksList.innerHTML = tasks.map(function(task, index) {
+                        return '<div class="task-item">' +
+                            '<span style="width:22px; height:22px; border-radius:50%; background:#e8e6ff;' +
+                            'display:flex; align-items:center; justify-content:center; font-size:11px;' +
+                            'color:#6c63ff; font-weight:700; flex-shrink:0;">' + (index + 1) + '</span>' +
+                            '<span class="task-item-title">' + task + '</span>' +
+                            '</div>';
+                    }).join('');
+                    preview.style.display = 'block';
+                } else {
+                    preview.style.display = 'none';
+                }
+            } catch (e) {
+                console.error('Ошибка парсинга задач:', e);
+                preview.style.display = 'none';
+            }
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const noTemplatesHint = document.getElementById('noTemplatesHint');
+        let anyVisible = false;
+
+        // Фильтруем карточки по категориям
+        document.querySelectorAll('[id^="template-label-"]').forEach(function(card) {
+            if (card.id === 'template-label-none') return;
+
+            const rawIds = card.getAttribute('data-category-ids') || '';
+
+            if (rawIds === '') {
+                card.style.display = 'flex';
+                anyVisible = true;
+                return;
+            }
+
+            const templateCatIds = rawIds.split(',').map(s => s.trim());
+            const matches = templateCatIds.some(tid => serviceCategoryIds.includes(tid));
+
+            card.style.display = matches ? 'flex' : 'none';
+            if (matches) anyVisible = true;
+        });
+
+        if (noTemplatesHint) {
+            noTemplatesHint.style.display = anyVisible ? 'none' : 'block';
+        }
+        
+        // Показываем секцию шаблонов
+        const templateSection = document.getElementById('templateSection');
+        if (templateSection) {
+            templateSection.style.display = 'block';
+        }
+        
+        // Добавляем обработчики кликов на карточки
+        document.querySelectorAll('.template-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const templateId = this.querySelector('input[type="radio"]')?.value || '';
+                selectTemplate(templateId, this);
+            });
+        });
+    });
+</script>

@@ -21,6 +21,10 @@ public class Project
 
     [ForeignKey("SelectedFreelancerId")]
     public IdentityUser? SelectedFreelancer { get; set; }
+    
+    public int? TaskTemplateId { get; set; }
+    public TaskTemplate? TaskTemplate { get; set; }
+    public List<WorkItem> WorkItems { get; set; } = new();
 
     public bool IsTeamProject { get; set; } = false;
     public List<ProjectMember> Members { get; set; } = new();

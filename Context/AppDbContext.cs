@@ -26,6 +26,8 @@ public class AppDbContext : IdentityDbContext
     public DbSet<GroupChatMention> GroupChatMentions { get; set; }
     public DbSet<GroupChatMessageRead> GroupChatMessageReads { get; set; }
     public DbSet<PaymentShare> PaymentShares { get; set; }
+    public DbSet<TaskTemplate> TaskTemplates { get; set; }
+    public DbSet<WorkItem> WorkItems { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) 
     {

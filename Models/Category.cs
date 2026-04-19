@@ -12,4 +12,6 @@ public class Category
     
     public ICollection<Service> Services { get; set; } = new List<Service>();
     public ICollection<Project> Projects { get; set; } = new List<Project>();
+    
+    public ICollection<TaskTemplate> TaskTemplates { get; set; } = new List<TaskTemplate>();
 }

@@ -14,4 +14,8 @@ public class Order
     public int DurationInDays { get; set; }
     public DateTime CreatedAt { get; set; }
     public OrderStatus Status { get; set; } = OrderStatus.Pending;
+    
+    public int? TaskTemplateId { get; set; }
+    public TaskTemplate? TaslTemplate { get; set; }
+    public List<WorkItem> WorkItems { get; set; } = new();
 }
