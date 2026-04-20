@@ -216,11 +216,11 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catWeb }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Дизайн макета", OrderIndex = 1 },
-                        new() { Title = "Верстка HTML/CSS", OrderIndex = 2 },
-                        new() { Title = "Подключение форм", OrderIndex = 3 },
-                        new() { Title = "Тестирование", OrderIndex = 4 },
-                        new() { Title = "Развёртывание", OrderIndex = 5 }
+                        new() { Title = "Дизайн макета", Description = "Создать макет в Figma или Adobe XD с учетом брендинга и UX принципов", OrderIndex = 1 },
+                        new() { Title = "Верстка HTML/CSS", Description = "Сверстать адаптивную страницу под различные устройства и браузеры", OrderIndex = 2 },
+                        new() { Title = "Подключение форм", Description = "Настроить формы обратной связи, подписки и валидацию данных", OrderIndex = 3 },
+                        new() { Title = "Тестирование", Description = "Протестировать работу на разных браузерах, устройствах и скоростях интернета", OrderIndex = 4 },
+                        new() { Title = "Развёртывание", Description = "Залить сайт на хостинг, настроить домен и SSL-сертификат", OrderIndex = 5 }
                     }
                 },
                 new TaskTemplate
@@ -230,14 +230,14 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catWeb }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Анализ требований", OrderIndex = 1 },
-                        new() { Title = "Дизайн системы", OrderIndex = 2 },
-                        new() { Title = "Верстка всех страниц", OrderIndex = 3 },
-                        new() { Title = "CMS интеграция", OrderIndex = 4 },
-                        new() { Title = "SEO оптимизация", OrderIndex = 5 },
-                        new() { Title = "Мобильная адаптация", OrderIndex = 6 },
-                        new() { Title = "Тестирование", OrderIndex = 7 },
-                        new() { Title = "Развёртывание", OrderIndex = 8 }
+                        new() { Title = "Анализ требований", Description = "Провести интервью с заказчиком, определить цели и задачи сайта", OrderIndex = 1 },
+                        new() { Title = "Дизайн системы", Description = "Создать дизайн-систему, определить стиль и компоненты", OrderIndex = 2 },
+                        new() { Title = "Верстка всех страниц", Description = "Сверстать все страницы сайта согласно макетам", OrderIndex = 3 },
+                        new() { Title = "CMS интеграция", Description = "Интегрировать систему управления контентом для удобного редактирования", OrderIndex = 4 },
+                        new() { Title = "SEO оптимизация", Description = "Оптимизировать сайт для поисковых систем (мета-теги, структура, скорость)", OrderIndex = 5 },
+                        new() { Title = "Мобильная адаптация", Description = "Адаптировать сайт под мобильные устройства и планшеты", OrderIndex = 6 },
+                        new() { Title = "Тестирование", Description = "Комплексное тестирование функционала и кроссбраузерности", OrderIndex = 7 },
+                        new() { Title = "Развёртывание", Description = "Развернуть сайт на производственном сервере и настроить домен", OrderIndex = 8 }
                     }
                 },
                 new TaskTemplate
@@ -247,16 +247,16 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catWeb }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Анализ требований", OrderIndex = 1 },
-                        new() { Title = "Дизайн интерфейса", OrderIndex = 2 },
-                        new() { Title = "Верстка фронтенда", OrderIndex = 3 },
-                        new() { Title = "Backend разработка", OrderIndex = 4 },
-                        new() { Title = "Интеграция платежей", OrderIndex = 5 },
-                        new() { Title = "Интеграция доставки", OrderIndex = 6 },
-                        new() { Title = "Admin панель", OrderIndex = 7 },
-                        new() { Title = "Система уведомлений", OrderIndex = 8 },
-                        new() { Title = "Тестирование", OrderIndex = 9 },
-                        new() { Title = "Развёртывание", OrderIndex = 10 }
+                        new() { Title = "Анализ требований", Description = "Определить функционал магазина, способы оплаты и доставки", OrderIndex = 1 },
+                        new() { Title = "Дизайн интерфейса", Description = "Создать дизайн каталога, карточек товаров и процесса покупки", OrderIndex = 2 },
+                        new() { Title = "Верстка фронтенда", Description = "Сверстать все страницы магазина с адаптивным дизайном", OrderIndex = 3 },
+                        new() { Title = "Backend разработка", Description = "Разработать серверную часть: каталог, корзина, заказы, пользователи", OrderIndex = 4 },
+                        new() { Title = "Интеграция платежей", Description = "Подключить платежные системы (Stripe, PayPal, банковские карты)", OrderIndex = 5 },
+                        new() { Title = "Интеграция доставки", Description = "Интегрировать сервисы доставки и расчет стоимости", OrderIndex = 6 },
+                        new() { Title = "Admin панель", Description = "Создать панель администратора для управления товарами и заказами", OrderIndex = 7 },
+                        new() { Title = "Система уведомлений", Description = "Настроить email-уведомления о заказах и SMS-информирование", OrderIndex = 8 },
+                        new() { Title = "Тестирование", Description = "Протестировать весь процесс покупки и работу платежей", OrderIndex = 9 },
+                        new() { Title = "Развёртывание", Description = "Развернуть магазин на сервере и настроить безопасность", OrderIndex = 10 }
                     }
                 },
                 new TaskTemplate
@@ -266,16 +266,16 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catWeb }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Архитектура приложения", OrderIndex = 1 },
-                        new() { Title = "Дизайн компонентов", OrderIndex = 2 },
-                        new() { Title = "Разработка фронтенда", OrderIndex = 3 },
-                        new() { Title = "API разработка", OrderIndex = 4 },
-                        new() { Title = "Аутентификация", OrderIndex = 5 },
-                        new() { Title = "State management", OrderIndex = 6 },
-                        new() { Title = "Unit тестирование", OrderIndex = 7 },
-                        new() { Title = "E2E тестирование", OrderIndex = 8 },
-                        new() { Title = "Оптимизация", OrderIndex = 9 },
-                        new() { Title = "Развёртывание", OrderIndex = 10 }
+                        new() { Title = "Архитектура приложения", Description = "Спроектировать структуру приложения и выбрать технологический стек", OrderIndex = 1 },
+                        new() { Title = "Дизайн компонентов", Description = "Создать дизайн UI компонентов и интерактивных элементов", OrderIndex = 2 },
+                        new() { Title = "Разработка фронтенда", Description = "Разработать пользовательский интерфейс на React или Vue.js", OrderIndex = 3 },
+                        new() { Title = "API разработка", Description = "Создать RESTful API для взаимодействия фронтенда с сервером", OrderIndex = 4 },
+                        new() { Title = "Аутентификация", Description = "Реализовать систему авторизации и аутентификации пользователей", OrderIndex = 5 },
+                        new() { Title = "State management", Description = "Настроить управление состоянием приложения (Redux, Vuex)", OrderIndex = 6 },
+                        new() { Title = "Unit тестирование", Description = "Написать unit-тесты для компонентов и функций", OrderIndex = 7 },
+                        new() { Title = "E2E тестирование", Description = "Создать end-to-end тесты для пользовательских сценариев", OrderIndex = 8 },
+                        new() { Title = "Оптимизация", Description = "Оптимизировать производительность и размер bundle'а", OrderIndex = 9 },
+                        new() { Title = "Развёртывание", Description = "Настроить CI/CD и развернуть приложение на сервере", OrderIndex = 10 }
                     }
                 },
                 new TaskTemplate
@@ -285,16 +285,16 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catWeb }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Дизайн API", OrderIndex = 1 },
-                        new() { Title = "Разработка endpoints", OrderIndex = 2 },
-                        new() { Title = "Работа с БД", OrderIndex = 3 },
-                        new() { Title = "Аутентификация", OrderIndex = 4 },
-                        new() { Title = "Авторизация", OrderIndex = 5 },
-                        new() { Title = "Валидация данных", OrderIndex = 6 },
-                        new() { Title = "Кэширование", OrderIndex = 7 },
-                        new() { Title = "Документация API", OrderIndex = 8 },
-                        new() { Title = "Unit тестирование", OrderIndex = 9 },
-                        new() { Title = "Развёртывание", OrderIndex = 10 }
+                        new() { Title = "Дизайн API", Description = "Спроектировать структуру API endpoints и формат данных", OrderIndex = 1 },
+                        new() { Title = "Разработка endpoints", Description = "Создать все необходимые REST endpoints с правильными HTTP методами", OrderIndex = 2 },
+                        new() { Title = "Работа с БД", Description = "Настроить подключение к базе данных и создать модели данных", OrderIndex = 3 },
+                        new() { Title = "Аутентификация", Description = "Реализовать систему аутентификации (JWT токены, OAuth)", OrderIndex = 4 },
+                        new() { Title = "Авторизация", Description = "Настроить права доступа и роли пользователей", OrderIndex = 5 },
+                        new() { Title = "Валидация данных", Description = "Добавить валидацию входящих данных и обработку ошибок", OrderIndex = 6 },
+                        new() { Title = "Кэширование", Description = "Настроить кэширование для повышения производительности", OrderIndex = 7 },
+                        new() { Title = "Документация API", Description = "Создать документацию API с примерами использования (Swagger/OpenAPI)", OrderIndex = 8 },
+                        new() { Title = "Unit тестирование", Description = "Написать unit и integration тесты для всех endpoints", OrderIndex = 9 },
+                        new() { Title = "Развёртывание", Description = "Развернуть API на сервере и настроить мониторинг", OrderIndex = 10 }
                     }
                 },
 
@@ -306,12 +306,12 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catMobile }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Дизайн UI/UX", OrderIndex = 1 },
-                        new() { Title = "Разработка интерфейсов", OrderIndex = 2 },
-                        new() { Title = "Бизнес-логика", OrderIndex = 3 },
-                        new() { Title = "Локальное хранилище", OrderIndex = 4 },
-                        new() { Title = "Тестирование", OrderIndex = 5 },
-                        new() { Title = "Публикация", OrderIndex = 6 }
+                        new() { Title = "Дизайн UI/UX", Description = "Создать пользовательский интерфейс с учетом гайдлайнов платформы", OrderIndex = 1 },
+                        new() { Title = "Разработка интерфейсов", Description = "Создать все экраны приложения и навигацию между ними", OrderIndex = 2 },
+                        new() { Title = "Бизнес-логика", Description = "Реализовать основную функциональность и обработку данных", OrderIndex = 3 },
+                        new() { Title = "Локальное хранилище", Description = "Настроить сохранение данных на устройстве пользователя", OrderIndex = 4 },
+                        new() { Title = "Тестирование", Description = "Протестировать приложение на разных устройствах и версиях ОС", OrderIndex = 5 },
+                        new() { Title = "Публикация", Description = "Подготовить и опубликовать приложение в App Store/Google Play", OrderIndex = 6 }
                     }
                 },
                 new TaskTemplate
@@ -321,16 +321,16 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catMobile }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Дизайн UI/UX", OrderIndex = 1 },
-                        new() { Title = "Setup проекта", OrderIndex = 2 },
-                        new() { Title = "Разработка компонентов", OrderIndex = 3 },
-                        new() { Title = "API интеграция", OrderIndex = 4 },
-                        new() { Title = "Локальная БД", OrderIndex = 5 },
-                        new() { Title = "Native модули", OrderIndex = 6 },
-                        new() { Title = "Тестирование iOS", OrderIndex = 7 },
-                        new() { Title = "Тестирование Android", OrderIndex = 8 },
-                        new() { Title = "Публикация в App Store", OrderIndex = 9 },
-                        new() { Title = "Публикация в Google Play", OrderIndex = 10 }
+                        new() { Title = "Дизайн UI/UX", Description = "Создать адаптивный дизайн для iOS и Android платформ", OrderIndex = 1 },
+                        new() { Title = "Setup проекта", Description = "Настроить проект React Native/Flutter с необходимыми зависимостями", OrderIndex = 2 },
+                        new() { Title = "Разработка компонентов", Description = "Создать переиспользуемые компоненты для обеих платформ", OrderIndex = 3 },
+                        new() { Title = "API интеграция", Description = "Интегрировать приложение с backend API для обмена данными", OrderIndex = 4 },
+                        new() { Title = "Локальная БД", Description = "Настроить локальную базу данных для оффлайн работы", OrderIndex = 5 },
+                        new() { Title = "Native модули", Description = "Добавить платформо-специфичные функции (камера, GPS, уведомления)", OrderIndex = 6 },
+                        new() { Title = "Тестирование iOS", Description = "Протестировать приложение на различных устройствах iOS", OrderIndex = 7 },
+                        new() { Title = "Тестирование Android", Description = "Протестировать приложение на различных устройствах Android", OrderIndex = 8 },
+                        new() { Title = "Публикация в App Store", Description = "Подготовить и опубликовать приложение в Apple App Store", OrderIndex = 9 },
+                        new() { Title = "Публикация в Google Play", Description = "Подготовить и опубликовать приложение в Google Play Store", OrderIndex = 10 }
                     }
                 },
                 new TaskTemplate
@@ -340,19 +340,19 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catMobile }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Архитектура приложения", OrderIndex = 1 },
-                        new() { Title = "Дизайн системы", OrderIndex = 2 },
-                        new() { Title = "Разработка фронтенда", OrderIndex = 3 },
-                        new() { Title = "Backend интеграция", OrderIndex = 4 },
-                        new() { Title = "WebSocket/Real-time", OrderIndex = 5 },
-                        new() { Title = "Оффлайн синхронизация", OrderIndex = 6 },
-                        new() { Title = "Геолокация", OrderIndex = 7 },
-                        new() { Title = "Push уведомления", OrderIndex = 8 },
-                        new() { Title = "Аналитика", OrderIndex = 9 },
-                        new() { Title = "Юнит тесты", OrderIndex = 10 },
-                        new() { Title = "UI/UX тесты", OrderIndex = 11 },
-                        new() { Title = "Оптимизация", OrderIndex = 12 },
-                        new() { Title = "Публикация", OrderIndex = 13 }
+                        new() { Title = "Архитектура приложения", Description = "Спроектировать масштабируемую архитектуру с учетом сложности", OrderIndex = 1 },
+                        new() { Title = "Дизайн системы", Description = "Создать дизайн-систему и comprehensive UI kit", OrderIndex = 2 },
+                        new() { Title = "Разработка фронтенда", Description = "Создать сложные пользовательские интерфейсы и анимации", OrderIndex = 3 },
+                        new() { Title = "Backend интеграция", Description = "Интегрировать с multiple API endpoints и микросервисами", OrderIndex = 4 },
+                        new() { Title = "WebSocket/Real-time", Description = "Реализовать real-time функциональность (чаты, уведомления)", OrderIndex = 5 },
+                        new() { Title = "Оффлайн синхронизация", Description = "Настроить синхронизацию данных между устройством и сервером", OrderIndex = 6 },
+                        new() { Title = "Геолокация", Description = "Интегрировать GPS функциональность и карты", OrderIndex = 7 },
+                        new() { Title = "Push уведомления", Description = "Настроить систему push-уведомлений для обеих платформ", OrderIndex = 8 },
+                        new() { Title = "Аналитика", Description = "Интегрировать системы аналитики и отслеживания поведения", OrderIndex = 9 },
+                        new() { Title = "Юнит тесты", Description = "Написать comprehensive unit тесты для всех компонентов", OrderIndex = 10 },
+                        new() { Title = "UI/UX тесты", Description = "Создать автоматизированные UI тесты и usability тестирование", OrderIndex = 11 },
+                        new() { Title = "Оптимизация", Description = "Оптимизировать производительность, память и время загрузки", OrderIndex = 12 },
+                        new() { Title = "Публикация", Description = "Развернуть приложение в production с настройкой CI/CD", OrderIndex = 13 }
                     }
                 },
                 new TaskTemplate
@@ -362,16 +362,16 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catMobile }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Game Design Document", OrderIndex = 1 },
-                        new() { Title = "Концепт-арт", OrderIndex = 2 },
-                        new() { Title = "Разработка ядра игры", OrderIndex = 3 },
-                        new() { Title = "Graphics & Animation", OrderIndex = 4 },
-                        new() { Title = "Sound & Music", OrderIndex = 5 },
-                        new() { Title = "UI/UX интерфейс", OrderIndex = 6 },
-                        new() { Title = "Gameplay mechanics", OrderIndex = 7 },
-                        new() { Title = "Оптимизация", OrderIndex = 8 },
-                        new() { Title = "Beta тестирование", OrderIndex = 9 },
-                        new() { Title = "Публикация", OrderIndex = 10 }
+                        new() { Title = "Game Design Document", Description = "Создать подробный документ с описанием геймплея и механик", OrderIndex = 1 },
+                        new() { Title = "Концепт-арт", Description = "Разработать визуальный стиль игры и концепт-арт персонажей", OrderIndex = 2 },
+                        new() { Title = "Разработка ядра игры", Description = "Создать основные игровые механики и game loop", OrderIndex = 3 },
+                        new() { Title = "Graphics & Animation", Description = "Создать графические ассеты, анимации и визуальные эффекты", OrderIndex = 4 },
+                        new() { Title = "Sound & Music", Description = "Добавить звуковые эффекты, фоновую музыку и аудио", OrderIndex = 5 },
+                        new() { Title = "UI/UX интерфейс", Description = "Создать игровой интерфейс, меню и HUD элементы", OrderIndex = 6 },
+                        new() { Title = "Gameplay mechanics", Description = "Реализовать все игровые механики, уровни и прогрессию", OrderIndex = 7 },
+                        new() { Title = "Оптимизация", Description = "Оптимизировать производительность для мобильных устройств", OrderIndex = 8 },
+                        new() { Title = "Beta тестирование", Description = "Провести beta-тестирование с реальными игроками", OrderIndex = 9 },
+                        new() { Title = "Публикация", Description = "Опубликовать игру в App Store и Google Play", OrderIndex = 10 }
                     }
                 },
                 new TaskTemplate
@@ -381,16 +381,16 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catMobile }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Дизайн интерфейса", OrderIndex = 1 },
-                        new() { Title = "Swift разработка", OrderIndex = 2 },
-                        new() { Title = "Core Data", OrderIndex = 3 },
-                        new() { Title = "Network запросы", OrderIndex = 4 },
-                        new() { Title = "UserDefaults", OrderIndex = 5 },
-                        new() { Title = "Notifications", OrderIndex = 6 },
-                        new() { Title = "Unit тесты", OrderIndex = 7 },
-                        new() { Title = "UI тесты", OrderIndex = 8 },
-                        new() { Title = "Code review", OrderIndex = 9 },
-                        new() { Title = "Отправка в App Store", OrderIndex = 10 }
+                        new() { Title = "Дизайн интерфейса", Description = "Создать дизайн согласно Apple Human Interface Guidelines", OrderIndex = 1 },
+                        new() { Title = "Swift разработка", Description = "Разработать приложение на Swift с использованием UIKit/SwiftUI", OrderIndex = 2 },
+                        new() { Title = "Core Data", Description = "Настроить Core Data для локального хранения данных", OrderIndex = 3 },
+                        new() { Title = "Network запросы", Description = "Реализовать сетевые запросы с обработкой ошибок", OrderIndex = 4 },
+                        new() { Title = "UserDefaults", Description = "Настроить сохранение пользовательских настроек", OrderIndex = 5 },
+                        new() { Title = "Notifications", Description = "Интегрировать локальные и push уведомления", OrderIndex = 6 },
+                        new() { Title = "Unit тесты", Description = "Написать unit тесты с XCTest framework", OrderIndex = 7 },
+                        new() { Title = "UI тесты", Description = "Создать UI тесты для автоматизации тестирования интерфейса", OrderIndex = 8 },
+                        new() { Title = "Code review", Description = "Провести ревью кода и рефакторинг", OrderIndex = 9 },
+                        new() { Title = "Отправка в App Store", Description = "Подготовить и отправить приложение на ревью в App Store", OrderIndex = 10 }
                     }
                 },
 
@@ -402,12 +402,12 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catDesign }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Исследование конкурентов", OrderIndex = 1 },
-                        new() { Title = "Концепция и эскизы", OrderIndex = 2 },
-                        new() { Title = "Первые варианты", OrderIndex = 3 },
-                        new() { Title = "Доработка по feedback", OrderIndex = 4 },
-                        new() { Title = "Финальный вариант", OrderIndex = 5 },
-                        new() { Title = "Подготовка файлов", OrderIndex = 6 }
+                        new() { Title = "Исследование конкурентов", Description = "Проанализировать конкурентов и тренды в индустрии", OrderIndex = 1 },
+                        new() { Title = "Концепция и эскизы", Description = "Создать первичные концепции и эскизы логотипа", OrderIndex = 2 },
+                        new() { Title = "Первые варианты", Description = "Разработать несколько детализированных вариантов логотипа", OrderIndex = 3 },
+                        new() { Title = "Доработка по feedback", Description = "Внести изменения согласно отзывам заказчика", OrderIndex = 4 },
+                        new() { Title = "Финальный вариант", Description = "Создать финальную версию логотипа в векторном формате", OrderIndex = 5 },
+                        new() { Title = "Подготовка файлов", Description = "Подготовить логотип в различных форматах и размерах", OrderIndex = 6 }
                     }
                 },
                 new TaskTemplate
@@ -417,15 +417,15 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catDesign }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Анализ требований", OrderIndex = 1 },
-                        new() { Title = "User Research", OrderIndex = 2 },
-                        new() { Title = "Wireframes", OrderIndex = 3 },
-                        new() { Title = "High-Fidelity Mockups", OrderIndex = 4 },
-                        new() { Title = "Design System", OrderIndex = 5 },
-                        new() { Title = "Прототипирование", OrderIndex = 6 },
-                        new() { Title = "Usability тестирование", OrderIndex = 7 },
-                        new() { Title = "Итерация дизайна", OrderIndex = 8 },
-                        new() { Title = "Подготовка для разработки", OrderIndex = 9 }
+                        new() { Title = "Анализ требований", Description = "Провести интервью с заказчиком и проанализировать потребности", OrderIndex = 1 },
+                        new() { Title = "User Research", Description = "Исследовать целевую аудиторию и создать user personas", OrderIndex = 2 },
+                        new() { Title = "Wireframes", Description = "Создать low-fidelity wireframes для структуры интерфейса", OrderIndex = 3 },
+                        new() { Title = "High-Fidelity Mockups", Description = "Разработать детализированные mockups с финальным дизайном", OrderIndex = 4 },
+                        new() { Title = "Design System", Description = "Создать дизайн-систему с компонентами и стилями", OrderIndex = 5 },
+                        new() { Title = "Прототипирование", Description = "Создать интерактивный прототип для демонстрации UX flow", OrderIndex = 6 },
+                        new() { Title = "Usability тестирование", Description = "Протестировать прототип с реальными пользователями", OrderIndex = 7 },
+                        new() { Title = "Итерация дизайна", Description = "Внести улучшения на основе результатов тестирования", OrderIndex = 8 },
+                        new() { Title = "Подготовка для разработки", Description = "Подготовить все ассеты и спецификации для разработчиков", OrderIndex = 9 }
                     }
                 },
                 new TaskTemplate
@@ -435,14 +435,14 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catDesign }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Brand Strategy", OrderIndex = 1 },
-                        new() { Title = "Logo разработка", OrderIndex = 2 },
-                        new() { Title = "Color Palette", OrderIndex = 3 },
-                        new() { Title = "Typography", OrderIndex = 4 },
-                        new() { Title = "Brand Guidelines", OrderIndex = 5 },
-                        new() { Title = "Визуальные элементы", OrderIndex = 6 },
-                        new() { Title = "Фирменный стиль", OrderIndex = 7 },
-                        new() { Title = "Mock-ups применения", OrderIndex = 8 }
+                        new() { Title = "Brand Strategy", Description = "Разработать стратегию бренда и позиционирование", OrderIndex = 1 },
+                        new() { Title = "Logo разработка", Description = "Создать логотип и различные его вариации", OrderIndex = 2 },
+                        new() { Title = "Color Palette", Description = "Разработать фирменную цветовую палитру", OrderIndex = 3 },
+                        new() { Title = "Typography", Description = "Выбрать и настроить фирменную типографику", OrderIndex = 4 },
+                        new() { Title = "Brand Guidelines", Description = "Создать brand book с правилами использования", OrderIndex = 5 },
+                        new() { Title = "Визуальные элементы", Description = "Разработать дополнительные графические элементы", OrderIndex = 6 },
+                        new() { Title = "Фирменный стиль", Description = "Применить брендинг к различным носителям", OrderIndex = 7 },
+                        new() { Title = "Mock-ups применения", Description = "Создать mockups применения бренда в реальности", OrderIndex = 8 }
                     }
                 },
                 new TaskTemplate
@@ -452,15 +452,15 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catDesign }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Анализ конкурентов", OrderIndex = 1 },
-                        new() { Title = "Карта сайта (sitemap)", OrderIndex = 2 },
-                        new() { Title = "Wireframes", OrderIndex = 3 },
-                        new() { Title = "Дизайн главной страницы", OrderIndex = 4 },
-                        new() { Title = "Дизайн внутренних страниц", OrderIndex = 5 },
-                        new() { Title = "Мобильная версия", OrderIndex = 6 },
-                        new() { Title = "Интерактивные элементы", OrderIndex = 7 },
-                        new() { Title = "Feedback итерация", OrderIndex = 8 },
-                        new() { Title = "Финальный макет", OrderIndex = 9 }
+                        new() { Title = "Анализ конкурентов", Description = "Изучить дизайн конкурирующих сайтов и тренды", OrderIndex = 1 },
+                        new() { Title = "Карта сайта (sitemap)", Description = "Создать структуру сайта и навигацию", OrderIndex = 2 },
+                        new() { Title = "Wireframes", Description = "Разработать wireframes для всех страниц", OrderIndex = 3 },
+                        new() { Title = "Дизайн главной страницы", Description = "Создать детализированный дизайн главной страницы", OrderIndex = 4 },
+                        new() { Title = "Дизайн внутренних страниц", Description = "Разработать дизайн всех внутренних страниц", OrderIndex = 5 },
+                        new() { Title = "Мобильная версия", Description = "Адаптировать дизайн под мобильные устройства", OrderIndex = 6 },
+                        new() { Title = "Интерактивные элементы", Description = "Создать дизайн hover-эффектов и анимаций", OrderIndex = 7 },
+                        new() { Title = "Feedback итерация", Description = "Внести изменения на основе отзывов заказчика", OrderIndex = 8 },
+                        new() { Title = "Финальный макет", Description = "Подготовить финальные файлы для верстки", OrderIndex = 9 }
                     }
                 },
                 new TaskTemplate
@@ -470,13 +470,13 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catDesign }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Концепция", OrderIndex = 1 },
-                        new() { Title = "Эскизы", OrderIndex = 2 },
-                        new() { Title = "Линейные работы", OrderIndex = 3 },
-                        new() { Title = "Цветовая обработка", OrderIndex = 4 },
-                        new() { Title = "Детализация", OrderIndex = 5 },
-                        new() { Title = "Финальная обработка", OrderIndex = 6 },
-                        new() { Title = "Доработка по замечаниям", OrderIndex = 7 }
+                        new() { Title = "Концепция", Description = "Разработать концепцию и стиль иллюстраций", OrderIndex = 1 },
+                        new() { Title = "Эскизы", Description = "Создать первичные эскизы и наброски", OrderIndex = 2 },
+                        new() { Title = "Линейные работы", Description = "Создать чистые линейные рисунки", OrderIndex = 3 },
+                        new() { Title = "Цветовая обработка", Description = "Добавить цвет и освещение к иллюстрациям", OrderIndex = 4 },
+                        new() { Title = "Детализация", Description = "Добавить детали и финальную обработку", OrderIndex = 5 },
+                        new() { Title = "Финальная обработка", Description = "Провести финальную обработку и коррекцию", OrderIndex = 6 },
+                        new() { Title = "Доработка по замечаниям", Description = "Внести правки согласно feedback заказчика", OrderIndex = 7 }
                     }
                 },
 
@@ -488,13 +488,13 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catMarketing }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Стратегия", OrderIndex = 1 },
-                        new() { Title = "Контент-план", OrderIndex = 2 },
-                        new() { Title = "Создание контента", OrderIndex = 3 },
-                        new() { Title = "Дизайн постов", OrderIndex = 4 },
-                        new() { Title = "Публикация и расписание", OrderIndex = 5 },
-                        new() { Title = "Взаимодействие с аудиторией", OrderIndex = 6 },
-                        new() { Title = "Анализ результатов", OrderIndex = 7 }
+                        new() { Title = "Стратегия", Description = "Разработать стратегию продвижения в социальных сетях", OrderIndex = 1 },
+                        new() { Title = "Контент-план", Description = "Создать календарь публикаций и темы контента", OrderIndex = 2 },
+                        new() { Title = "Создание контента", Description = "Написать тексты и подготовить материалы для публикаций", OrderIndex = 3 },
+                        new() { Title = "Дизайн постов", Description = "Создать визуалы и графику для социальных сетей", OrderIndex = 4 },
+                        new() { Title = "Публикация и расписание", Description = "Опубликовать контент согласно календарю", OrderIndex = 5 },
+                        new() { Title = "Взаимодействие с аудиторией", Description = "Отвечать на комментарии и вести диалог с подписчиками", OrderIndex = 6 },
+                        new() { Title = "Анализ результатов", Description = "Проанализировать метрики и эффективность кампании", OrderIndex = 7 }
                     }
                 },
                 new TaskTemplate
@@ -504,13 +504,13 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catMarketing }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Стратегия", OrderIndex = 1 },
-                        new() { Title = "Сегментация аудитории", OrderIndex = 2 },
-                        new() { Title = "Написание писем", OrderIndex = 3 },
-                        new() { Title = "Дизайн писем", OrderIndex = 4 },
-                        new() { Title = "A/B тестирование", OrderIndex = 5 },
-                        new() { Title = "Отправка", OrderIndex = 6 },
-                        new() { Title = "Анализ метрик", OrderIndex = 7 }
+                        new() { Title = "Стратегия", Description = "Разработать стратегию email маркетинга и цели кампании", OrderIndex = 1 },
+                        new() { Title = "Сегментация аудитории", Description = "Разделить аудиторию на сегменты для персонализации", OrderIndex = 2 },
+                        new() { Title = "Написание писем", Description = "Создать тексты писем с убедительными subject lines", OrderIndex = 3 },
+                        new() { Title = "Дизайн писем", Description = "Создать HTML-шаблоны писем с адаптивным дизайном", OrderIndex = 4 },
+                        new() { Title = "A/B тестирование", Description = "Провести A/B тесты subject lines и содержания", OrderIndex = 5 },
+                        new() { Title = "Отправка", Description = "Настроить и запустить email рассылки", OrderIndex = 6 },
+                        new() { Title = "Анализ метрик", Description = "Проанализировать open rate, click rate и конверсию", OrderIndex = 7 }
                     }
                 },
                 new TaskTemplate
@@ -520,14 +520,14 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catMarketing }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Анализ ниши", OrderIndex = 1 },
-                        new() { Title = "Контент стратегия", OrderIndex = 2 },
-                        new() { Title = "Написание статей", OrderIndex = 3 },
-                        new() { Title = "Создание видео", OrderIndex = 4 },
-                        new() { Title = "Дизайн инфографики", OrderIndex = 5 },
-                        new() { Title = "SEO оптимизация", OrderIndex = 6 },
-                        new() { Title = "Распределение контента", OrderIndex = 7 },
-                        new() { Title = "Анализ эффективности", OrderIndex = 8 }
+                        new() { Title = "Анализ ниши", Description = "Исследовать нишу, конкурентов и потребности аудитории", OrderIndex = 1 },
+                        new() { Title = "Контент стратегия", Description = "Разработать стратегию контента и editorial calendar", OrderIndex = 2 },
+                        new() { Title = "Написание статей", Description = "Создать качественные статьи и blog посты", OrderIndex = 3 },
+                        new() { Title = "Создание видео", Description = "Снять и смонтировать видео контент для различных платформ", OrderIndex = 4 },
+                        new() { Title = "Дизайн инфографики", Description = "Создать информативную и привлекательную инфографику", OrderIndex = 5 },
+                        new() { Title = "SEO оптимизация", Description = "Оптимизировать контент под ключевые слова и поисковики", OrderIndex = 6 },
+                        new() { Title = "Распределение контента", Description = "Распространить контент по различным каналам", OrderIndex = 7 },
+                        new() { Title = "Анализ эффективности", Description = "Измерить эффективность контента и ROI", OrderIndex = 8 }
                     }
                 },
                 new TaskTemplate
@@ -537,14 +537,14 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catMarketing }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Анализ целевой аудитории", OrderIndex = 1 },
-                        new() { Title = "Выбор платформы", OrderIndex = 2 },
-                        new() { Title = "Создание объявлений", OrderIndex = 3 },
-                        new() { Title = "Setup кампании", OrderIndex = 4 },
-                        new() { Title = "Установка пикселей", OrderIndex = 5 },
-                        new() { Title = "Запуск кампании", OrderIndex = 6 },
-                        new() { Title = "Оптимизация", OrderIndex = 7 },
-                        new() { Title = "Анализ результатов", OrderIndex = 8 }
+                        new() { Title = "Анализ целевой аудитории", Description = "Исследовать целевую аудиторию и создать buyer personas", OrderIndex = 1 },
+                        new() { Title = "Выбор платформы", Description = "Выбрать подходящие рекламные платформы (Google Ads, Facebook и др.)", OrderIndex = 2 },
+                        new() { Title = "Создание объявлений", Description = "Написать compelling ad copy и создать креативы", OrderIndex = 3 },
+                        new() { Title = "Setup кампании", Description = "Настроить таргетинг, бюджет и стратегию ставок", OrderIndex = 4 },
+                        new() { Title = "Установка пикселей", Description = "Настроить пиксели отслеживания и conversion tracking", OrderIndex = 5 },
+                        new() { Title = "Запуск кампании", Description = "Запустить кампанию и провести первичную проверку", OrderIndex = 6 },
+                        new() { Title = "Оптимизация", Description = "Оптимизировать кампанию на основе данных performance", OrderIndex = 7 },
+                        new() { Title = "Анализ результатов", Description = "Проанализировать ROI, CPC, conversion rate и другие метрики", OrderIndex = 8 }
                     }
                 },
 
@@ -556,10 +556,10 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catCopy }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Исследование", OrderIndex = 1 },
-                        new() { Title = "Первый черновик", OrderIndex = 2 },
-                        new() { Title = "Доработка по feedback", OrderIndex = 3 },
-                        new() { Title = "Финальная версия", OrderIndex = 4 }
+                        new() { Title = "Исследование", Description = "Изучить продукт, аудиторию и конкурентов", OrderIndex = 1 },
+                        new() { Title = "Первый черновик", Description = "Написать первую версию текста", OrderIndex = 2 },
+                        new() { Title = "Доработка по feedback", Description = "Внести правки согласно замечаниям заказчика", OrderIndex = 3 },
+                        new() { Title = "Финальная версия", Description = "Подготовить итоговую версию текста", OrderIndex = 4 }
                     }
                 },
                 new TaskTemplate
@@ -569,16 +569,16 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catCopy }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Брифинг и анализ", OrderIndex = 1 },
-                        new() { Title = "Исследование целевой аудитории", OrderIndex = 2 },
-                        new() { Title = "Разработка структуры", OrderIndex = 3 },
-                        new() { Title = "Написание черновиков", OrderIndex = 4 },
-                        new() { Title = "Корректировка", OrderIndex = 5 },
-                        new() { Title = "Feedback сессия 1", OrderIndex = 6 },
-                        new() { Title = "Доработка", OrderIndex = 7 },
-                        new() { Title = "Feedback сессия 2", OrderIndex = 8 },
-                        new() { Title = "Финальная доработка", OrderIndex = 9 },
-                        new() { Title = "Финальная версия", OrderIndex = 10 }
+                        new() { Title = "Брифинг и анализ", Description = "Провести детальный брифинг и анализ задачи", OrderIndex = 1 },
+                        new() { Title = "Исследование целевой аудитории", Description = "Глубоко изучить целевую аудиторию и их потребности", OrderIndex = 2 },
+                        new() { Title = "Разработка структуры", Description = "Создать логичную структуру и план текста", OrderIndex = 3 },
+                        new() { Title = "Написание черновиков", Description = "Написать черновые версии всех разделов", OrderIndex = 4 },
+                        new() { Title = "Корректировка", Description = "Провести самостоятельную корректировку и редактирование", OrderIndex = 5 },
+                        new() { Title = "Feedback сессия 1", Description = "Обсудить первую версию с заказчиком", OrderIndex = 6 },
+                        new() { Title = "Доработка", Description = "Внести изменения по результатам первого feedback", OrderIndex = 7 },
+                        new() { Title = "Feedback сессия 2", Description = "Провести вторую сессию обратной связи", OrderIndex = 8 },
+                        new() { Title = "Финальная доработка", Description = "Внести последние правки и улучшения", OrderIndex = 9 },
+                        new() { Title = "Финальная версия", Description = "Подготовить итоговую отполированную версию", OrderIndex = 10 }
                     }
                 },
                 new TaskTemplate
@@ -588,15 +588,15 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catCopy }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Анализ продукта", OrderIndex = 1 },
-                        new() { Title = "Анализ целевой аудитории", OrderIndex = 2 },
-                        new() { Title = "USP определение", OrderIndex = 3 },
-                        new() { Title = "Написание заголовков", OrderIndex = 4 },
-                        new() { Title = "Написание основного текста", OrderIndex = 5 },
-                        new() { Title = "Написание CTA", OrderIndex = 6 },
-                        new() { Title = "A/B версии", OrderIndex = 7 },
-                        new() { Title = "Тестирование", OrderIndex = 8 },
-                        new() { Title = "Оптимизация", OrderIndex = 9 }
+                        new() { Title = "Анализ продукта", Description = "Детально изучить продукт, его преимущества и особенности", OrderIndex = 1 },
+                        new() { Title = "Анализ целевой аудитории", Description = "Исследовать боли, потребности и мотивации целевой аудитории", OrderIndex = 2 },
+                        new() { Title = "USP определение", Description = "Сформулировать уникальное торговое предложение", OrderIndex = 3 },
+                        new() { Title = "Написание заголовков", Description = "Создать цепляющие и продающие заголовки", OrderIndex = 4 },
+                        new() { Title = "Написание основного текста", Description = "Написать убедительный основной текст с benefits", OrderIndex = 5 },
+                        new() { Title = "Написание CTA", Description = "Создать призывы к действию и финальные предложения", OrderIndex = 6 },
+                        new() { Title = "A/B версии", Description = "Подготовить альтернативные версии для тестирования", OrderIndex = 7 },
+                        new() { Title = "Тестирование", Description = "Протестировать эффективность различных версий", OrderIndex = 8 },
+                        new() { Title = "Оптимизация", Description = "Оптимизировать текст на основе результатов тестов", OrderIndex = 9 }
                     }
                 },
                 new TaskTemplate
@@ -606,13 +606,13 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catCopy }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Сбор информации", OrderIndex = 1 },
-                        new() { Title = "Структурирование", OrderIndex = 2 },
-                        new() { Title = "Написание", OrderIndex = 3 },
-                        new() { Title = "Добавление диаграмм", OrderIndex = 4 },
-                        new() { Title = "Проверка точности", OrderIndex = 5 },
-                        new() { Title = "Редактирование", OrderIndex = 6 },
-                        new() { Title = "Финальный обзор", OrderIndex = 7 }
+                        new() { Title = "Сбор информации", Description = "Собрать всю техническую информацию от экспертов", OrderIndex = 1 },
+                        new() { Title = "Структурирование", Description = "Организовать информацию в логичную структуру", OrderIndex = 2 },
+                        new() { Title = "Написание", Description = "Написать документацию понятным техническим языком", OrderIndex = 3 },
+                        new() { Title = "Добавление диаграмм", Description = "Создать схемы, диаграммы и визуальные пояснения", OrderIndex = 4 },
+                        new() { Title = "Проверка точности", Description = "Проверить техническую точность с экспертами", OrderIndex = 5 },
+                        new() { Title = "Редактирование", Description = "Отредактировать текст для ясности и читаемости", OrderIndex = 6 },
+                        new() { Title = "Финальный обзор", Description = "Провести финальную проверку и форматирование", OrderIndex = 7 }
                     }
                 },
 
@@ -624,12 +624,12 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catSeo }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Техническая проверка", OrderIndex = 1 },
-                        new() { Title = "On-page анализ", OrderIndex = 2 },
-                        new() { Title = "Off-page анализ", OrderIndex = 3 },
-                        new() { Title = "Конкурентный анализ", OrderIndex = 4 },
-                        new() { Title = "Анализ ключевых слов", OrderIndex = 5 },
-                        new() { Title = "Отчет и рекомендации", OrderIndex = 6 }
+                        new() { Title = "Техническая проверка", Description = "Проверить скорость загрузки, мобильность, индексацию", OrderIndex = 1 },
+                        new() { Title = "On-page анализ", Description = "Анализ контента, мета-тегов, структуры страниц", OrderIndex = 2 },
+                        new() { Title = "Off-page анализ", Description = "Исследование ссылочного профиля и внешних факторов", OrderIndex = 3 },
+                        new() { Title = "Конкурентный анализ", Description = "Анализ SEO стратегий основных конкурентов", OrderIndex = 4 },
+                        new() { Title = "Анализ ключевых слов", Description = "Исследование текущих позиций и возможностей", OrderIndex = 5 },
+                        new() { Title = "Отчет и рекомендации", Description = "Подготовить детальный отчет с планом улучшений", OrderIndex = 6 }
                     }
                 },
                 new TaskTemplate
@@ -639,14 +639,14 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catSeo }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Исследование ключевых слов", OrderIndex = 1 },
-                        new() { Title = "On-page оптимизация", OrderIndex = 2 },
-                        new() { Title = "Technical SEO", OrderIndex = 3 },
-                        new() { Title = "Content оптимизация", OrderIndex = 4 },
-                        new() { Title = "Link building", OrderIndex = 5 },
-                        new() { Title = "Local SEO", OrderIndex = 6 },
-                        new() { Title = "Schema markup", OrderIndex = 7 },
-                        new() { Title = "Мониторинг и отчеты", OrderIndex = 8 }
+                        new() { Title = "Исследование ключевых слов", Description = "Найти релевантные ключевые слова с хорошим потенциалом", OrderIndex = 1 },
+                        new() { Title = "On-page оптимизация", Description = "Оптимизировать title, meta, заголовки и контент", OrderIndex = 2 },
+                        new() { Title = "Technical SEO", Description = "Исправить технические проблемы и улучшить crawlability", OrderIndex = 3 },
+                        new() { Title = "Content оптимизация", Description = "Оптимизировать существующий контент под ключевые слова", OrderIndex = 4 },
+                        new() { Title = "Link building", Description = "Построить качественный ссылочный профиль", OrderIndex = 5 },
+                        new() { Title = "Local SEO", Description = "Оптимизировать для локального поиска (если применимо)", OrderIndex = 6 },
+                        new() { Title = "Schema markup", Description = "Внедрить структурированные данные", OrderIndex = 7 },
+                        new() { Title = "Мониторинг и отчеты", Description = "Настроить отслеживание позиций и подготовить отчеты", OrderIndex = 8 }
                     }
                 },
                 new TaskTemplate
@@ -656,13 +656,13 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catSeo }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Анализ ниши", OrderIndex = 1 },
-                        new() { Title = "Сбор ключевых слов", OrderIndex = 2 },
-                        new() { Title = "Анализ конкурентов", OrderIndex = 3 },
-                        new() { Title = "Фильтрация и группировка", OrderIndex = 4 },
-                        new() { Title = "Анализ сложности", OrderIndex = 5 },
-                        new() { Title = "Анализ объема поиска", OrderIndex = 6 },
-                        new() { Title = "Отчет с рекомендациями", OrderIndex = 7 }
+                        new() { Title = "Анализ ниши", Description = "Изучить специфику ниши и особенности поискового поведения", OrderIndex = 1 },
+                        new() { Title = "Сбор ключевых слов", Description = "Собрать максимальный список потенциальных ключевых слов", OrderIndex = 2 },
+                        new() { Title = "Анализ конкурентов", Description = "Исследовать ключевые слова конкурентов", OrderIndex = 3 },
+                        new() { Title = "Фильтрация и группировка", Description = "Отфильтровать и сгруппировать ключевые слова по темам", OrderIndex = 4 },
+                        new() { Title = "Анализ сложности", Description = "Оценить сложность продвижения по каждому ключевому слову", OrderIndex = 5 },
+                        new() { Title = "Анализ объема поиска", Description = "Проанализировать частоту запросов и сезонность", OrderIndex = 6 },
+                        new() { Title = "Отчет с рекомендациями", Description = "Подготовить итоговый отчет с приоритетами", OrderIndex = 7 }
                     }
                 },
                 new TaskTemplate
@@ -672,13 +672,13 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catSeo }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Анализ текущего профиля", OrderIndex = 1 },
-                        new() { Title = "Исследование конкурентов", OrderIndex = 2 },
-                        new() { Title = "Поиск источников ссылок", OrderIndex = 3 },
-                        new() { Title = "Outreach кампании", OrderIndex = 4 },
-                        new() { Title = "Создание контента для ссылок", OrderIndex = 5 },
-                        new() { Title = "Отслеживание прогресса", OrderIndex = 6 },
-                        new() { Title = "Отчетность", OrderIndex = 7 }
+                        new() { Title = "Анализ текущего профиля", Description = "Проанализировать существующие обратные ссылки", OrderIndex = 1 },
+                        new() { Title = "Исследование конкурентов", Description = "Изучить ссылочные профили успешных конкурентов", OrderIndex = 2 },
+                        new() { Title = "Поиск источников ссылок", Description = "Найти качественные сайты для размещения ссылок", OrderIndex = 3 },
+                        new() { Title = "Outreach кампании", Description = "Связаться с владельцами сайтов для получения ссылок", OrderIndex = 4 },
+                        new() { Title = "Создание контента для ссылок", Description = "Подготовить качественный контент для линкбилдинга", OrderIndex = 5 },
+                        new() { Title = "Отслеживание прогресса", Description = "Мониторить получение новых ссылок", OrderIndex = 6 },
+                        new() { Title = "Отчетность", Description = "Подготавливать регулярные отчеты по линкбилдингу", OrderIndex = 7 }
                     }
                 },
 
@@ -690,13 +690,13 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catTest }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Изучение требований", OrderIndex = 1 },
-                        new() { Title = "Разработка тест-планов", OrderIndex = 2 },
-                        new() { Title = "Функциональное тестирование", OrderIndex = 3 },
-                        new() { Title = "Регрессионное тестирование", OrderIndex = 4 },
-                        new() { Title = "Баг репортинг", OrderIndex = 5 },
-                        new() { Title = "Performance тестирование", OrderIndex = 6 },
-                        new() { Title = "Финальная проверка", OrderIndex = 7 }
+                        new() { Title = "Изучение требований", Description = "Детально изучить техническое задание и требования", OrderIndex = 1 },
+                        new() { Title = "Разработка тест-планов", Description = "Создать comprehensive тест-планы и test cases", OrderIndex = 2 },
+                        new() { Title = "Функциональное тестирование", Description = "Протестировать все функции согласно требованиям", OrderIndex = 3 },
+                        new() { Title = "Регрессионное тестирование", Description = "Убедиться, что новые изменения не сломали существующий функционал", OrderIndex = 4 },
+                        new() { Title = "Баг репортинг", Description = "Документировать найденные баги с подробным описанием", OrderIndex = 5 },
+                        new() { Title = "Performance тестирование", Description = "Протестировать производительность под нагрузкой", OrderIndex = 6 },
+                        new() { Title = "Финальная проверка", Description = "Провести итоговую проверку перед релизом", OrderIndex = 7 }
                     }
                 },
                 new TaskTemplate
@@ -706,13 +706,13 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catTest }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Анализ требований", OrderIndex = 1 },
-                        new() { Title = "Выбор фреймворка", OrderIndex = 2 },
-                        new() { Title = "Setup окружения", OrderIndex = 3 },
-                        new() { Title = "Разработка тестов", OrderIndex = 4 },
-                        new() { Title = "Интеграция CI/CD", OrderIndex = 5 },
-                        new() { Title = "Maintenance тестов", OrderIndex = 6 },
-                        new() { Title = "Отчетность", OrderIndex = 7 }
+                        new() { Title = "Анализ требований", Description = "Определить что именно нужно покрыть автотестами", OrderIndex = 1 },
+                        new() { Title = "Выбор фреймворка", Description = "Выбрать подходящий framework для автотестирования", OrderIndex = 2 },
+                        new() { Title = "Setup окружения", Description = "Настроить среду разработки и выполнения тестов", OrderIndex = 3 },
+                        new() { Title = "Разработка тестов", Description = "Написать автоматизированные тесты для ключевого функционала", OrderIndex = 4 },
+                        new() { Title = "Интеграция CI/CD", Description = "Интегрировать автотесты в pipeline CI/CD", OrderIndex = 5 },
+                        new() { Title = "Maintenance тестов", Description = "Поддерживать актуальность тестов при изменениях", OrderIndex = 6 },
+                        new() { Title = "Отчетность", Description = "Настроить детальную отчетность по результатам тестов", OrderIndex = 7 }
                     }
                 },
                 new TaskTemplate
@@ -722,13 +722,13 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catTest }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Анализ угроз", OrderIndex = 1 },
-                        new() { Title = "Проверка уязвимостей", OrderIndex = 2 },
-                        new() { Title = "Penetration testing", OrderIndex = 3 },
-                        new() { Title = "Анализ шифрования", OrderIndex = 4 },
-                        new() { Title = "Проверка аутентификации", OrderIndex = 5 },
-                        new() { Title = "SQL injection тесты", OrderIndex = 6 },
-                        new() { Title = "Отчет с рекомендациями", OrderIndex = 7 }
+                        new() { Title = "Анализ угроз", Description = "Идентифицировать потенциальные угрозы безопасности", OrderIndex = 1 },
+                        new() { Title = "Проверка уязвимостей", Description = "Сканировать приложение на известные уязвимости", OrderIndex = 2 },
+                        new() { Title = "Penetration testing", Description = "Провести проникающее тестирование системы", OrderIndex = 3 },
+                        new() { Title = "Анализ шифрования", Description = "Проверить правильность реализации шифрования", OrderIndex = 4 },
+                        new() { Title = "Проверка аутентификации", Description = "Протестировать систему аутентификации и авторизации", OrderIndex = 5 },
+                        new() { Title = "SQL injection тесты", Description = "Проверить защищенность от SQL инъекций", OrderIndex = 6 },
+                        new() { Title = "Отчет с рекомендациями", Description = "Подготовить отчет с найденными проблемами и рекомендациями", OrderIndex = 7 }
                     }
                 },
 
@@ -740,14 +740,14 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catAdmin }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Анализ требований", OrderIndex = 1 },
-                        new() { Title = "Выбор инструментов", OrderIndex = 2 },
-                        new() { Title = "Setup сервера", OrderIndex = 3 },
-                        new() { Title = "CI/CD настройка", OrderIndex = 4 },
-                        new() { Title = "Database setup", OrderIndex = 5 },
-                        new() { Title = "Безопасность", OrderIndex = 6 },
-                        new() { Title = "Мониторинг", OrderIndex = 7 },
-                        new() { Title = "Документация", OrderIndex = 8 }
+                        new() { Title = "Анализ требований", Description = "Определить требования к инфраструктуре и нагрузке", OrderIndex = 1 },
+                        new() { Title = "Выбор инструментов", Description = "Выбрать подходящие инструменты для CI/CD и мониторинга", OrderIndex = 2 },
+                        new() { Title = "Setup сервера", Description = "Настроить production сервера и окружение", OrderIndex = 3 },
+                        new() { Title = "CI/CD настройка", Description = "Настроить автоматическое развертывание и интеграцию", OrderIndex = 4 },
+                        new() { Title = "Database setup", Description = "Настроить базы данных и репликацию", OrderIndex = 5 },
+                        new() { Title = "Безопасность", Description = "Настроить security конфигурации и firewall", OrderIndex = 6 },
+                        new() { Title = "Мониторинг", Description = "Настроить мониторинг производительности и алерты", OrderIndex = 7 },
+                        new() { Title = "Документация", Description = "Документировать инфраструктуру и процедуры", OrderIndex = 8 }
                     }
                 },
                 new TaskTemplate
@@ -757,15 +757,15 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catAdmin }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Выбор облачного провайдера", OrderIndex = 1 },
-                        new() { Title = "Setup аккаунта", OrderIndex = 2 },
-                        new() { Title = "Настройка VPC", OrderIndex = 3 },
-                        new() { Title = "Deploy приложения", OrderIndex = 4 },
-                        new() { Title = "Database настройка", OrderIndex = 5 },
-                        new() { Title = "Load balancing", OrderIndex = 6 },
-                        new() { Title = "Auto-scaling", OrderIndex = 7 },
-                        new() { Title = "Мониторинг и логирование", OrderIndex = 8 },
-                        new() { Title = "Backup & Recovery", OrderIndex = 9 }
+                        new() { Title = "Выбор облачного провайдера", Description = "Выбрать подходящего cloud provider (AWS, Azure, GCP)", OrderIndex = 1 },
+                        new() { Title = "Setup аккаунта", Description = "Настроить cloud аккаунт и billing", OrderIndex = 2 },
+                        new() { Title = "Настройка VPC", Description = "Настроить виртуальную приватную сеть", OrderIndex = 3 },
+                        new() { Title = "Deploy приложения", Description = "Развернуть приложение в облачной среде", OrderIndex = 4 },
+                        new() { Title = "Database настройка", Description = "Настроить managed database сервисы", OrderIndex = 5 },
+                        new() { Title = "Load balancing", Description = "Настроить балансировщики нагрузки", OrderIndex = 6 },
+                        new() { Title = "Auto-scaling", Description = "Настроить автоматическое масштабирование", OrderIndex = 7 },
+                        new() { Title = "Мониторинг и логирование", Description = "Настроить cloud-native мониторинг и логи", OrderIndex = 8 },
+                        new() { Title = "Backup & Recovery", Description = "Настроить резервное копирование и disaster recovery", OrderIndex = 9 }
                     }
                 },
                 new TaskTemplate
@@ -775,15 +775,15 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catAdmin }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Setup сервера", OrderIndex = 1 },
-                        new() { Title = "Установка ОС", OrderIndex = 2 },
-                        new() { Title = "Настройка сети", OrderIndex = 3 },
-                        new() { Title = "Установка ПО", OrderIndex = 4 },
-                        new() { Title = "Настройка безопасности", OrderIndex = 5 },
-                        new() { Title = "Firewall конфигурация", OrderIndex = 6 },
-                        new() { Title = "Backup стратегия", OrderIndex = 7 },
-                        new() { Title = "Monitoring setup", OrderIndex = 8 },
-                        new() { Title = "Техническая поддержка", OrderIndex = 9 }
+                        new() { Title = "Setup сервера", Description = "Настроить физические или виртуальные серверы", OrderIndex = 1 },
+                        new() { Title = "Установка ОС", Description = "Установить и настроить операционную систему", OrderIndex = 2 },
+                        new() { Title = "Настройка сети", Description = "Настроить сетевые подключения и конфигурации", OrderIndex = 3 },
+                        new() { Title = "Установка ПО", Description = "Установить необходимое программное обеспечение", OrderIndex = 4 },
+                        new() { Title = "Настройка безопасности", Description = "Настроить security политики и доступы", OrderIndex = 5 },
+                        new() { Title = "Firewall конфигурация", Description = "Настроить firewall правила и защиту", OrderIndex = 6 },
+                        new() { Title = "Backup стратегия", Description = "Реализовать стратегию резервного копирования", OrderIndex = 7 },
+                        new() { Title = "Monitoring setup", Description = "Настроить мониторинг состояния сервера", OrderIndex = 8 },
+                        new() { Title = "Техническая поддержка", Description = "Обеспечить ongoing техническую поддержку", OrderIndex = 9 }
                     }
                 },
 
@@ -795,13 +795,13 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catAnalytics }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Определение KPI", OrderIndex = 1 },
-                        new() { Title = "Сбор данных", OrderIndex = 2 },
-                        new() { Title = "Очистка данных", OrderIndex = 3 },
-                        new() { Title = "Анализ", OrderIndex = 4 },
-                        new() { Title = "Визуализация", OrderIndex = 5 },
-                        new() { Title = "Выводы и рекомендации", OrderIndex = 6 },
-                        new() { Title = "Отчет", OrderIndex = 7 }
+                        new() { Title = "Определение KPI", Description = "Определить ключевые показатели эффективности для анализа", OrderIndex = 1 },
+                        new() { Title = "Сбор данных", Description = "Собрать необходимые данные из различных источников", OrderIndex = 2 },
+                        new() { Title = "Очистка данных", Description = "Очистить и подготовить данные для анализа", OrderIndex = 3 },
+                        new() { Title = "Анализ", Description = "Провести статистический анализ и найти закономерности", OrderIndex = 4 },
+                        new() { Title = "Визуализация", Description = "Создать наглядные графики и диаграммы", OrderIndex = 5 },
+                        new() { Title = "Выводы и рекомендации", Description = "Сформулировать выводы и actionable рекомендации", OrderIndex = 6 },
+                        new() { Title = "Отчет", Description = "Подготовить comprehensive отчет с результатами", OrderIndex = 7 }
                     }
                 },
                 new TaskTemplate
@@ -811,14 +811,14 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catAnalytics }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Анализ бизнес-процессов", OrderIndex = 1 },
-                        new() { Title = "Определение метрик", OrderIndex = 2 },
-                        new() { Title = "Выбор инструмента BI", OrderIndex = 3 },
-                        new() { Title = "Setup подключений", OrderIndex = 4 },
-                        new() { Title = "Разработка dashboards", OrderIndex = 5 },
-                        new() { Title = "Создание отчетов", OrderIndex = 6 },
-                        new() { Title = "Setup автоматизации", OrderIndex = 7 },
-                        new() { Title = "Обучение пользователей", OrderIndex = 8 }
+                        new() { Title = "Анализ бизнес-процессов", Description = "Изучить текущие бизнес-процессы и потребности", OrderIndex = 1 },
+                        new() { Title = "Определение метрик", Description = "Определить ключевые бизнес-метрики для отслеживания", OrderIndex = 2 },
+                        new() { Title = "Выбор инструмента BI", Description = "Выбрать подходящую BI платформу (Tableau, Power BI и др.)", OrderIndex = 3 },
+                        new() { Title = "Setup подключений", Description = "Настроить подключения к источникам данных", OrderIndex = 4 },
+                        new() { Title = "Разработка dashboards", Description = "Создать интерактивные дашборды для мониторинга", OrderIndex = 5 },
+                        new() { Title = "Создание отчетов", Description = "Разработать automated отчеты для stakeholders", OrderIndex = 6 },
+                        new() { Title = "Setup автоматизации", Description = "Настроить автоматическое обновление данных", OrderIndex = 7 },
+                        new() { Title = "Обучение пользователей", Description = "Обучить пользователей работе с BI инструментами", OrderIndex = 8 }
                     }
                 },
                 new TaskTemplate
@@ -828,14 +828,14 @@ public static class DbSeeder
                     Categories = new List<Category>(new[] { catAnalytics }.Where(c => c != null)!),
                     Items = new List<TaskTemplateItem>
                     {
-                        new() { Title = "Гипотеза формулировка", OrderIndex = 1 },
-                        new() { Title = "Расчет размера выборки", OrderIndex = 2 },
-                        new() { Title = "Setup тестирования", OrderIndex = 3 },
-                        new() { Title = "Реализация вариантов", OrderIndex = 4 },
-                        new() { Title = "Запуск теста", OrderIndex = 5 },
-                        new() { Title = "Мониторинг результатов", OrderIndex = 6 },
-                        new() { Title = "Статистический анализ", OrderIndex = 7 },
-                        new() { Title = "Выводы и рекомендации", OrderIndex = 8 }
+                        new() { Title = "Гипотеза формулировка", Description = "Сформулировать четкую гипотезу для тестирования", OrderIndex = 1 },
+                        new() { Title = "Расчет размера выборки", Description = "Рассчитать необходимый размер выборки для статистической значимости", OrderIndex = 2 },
+                        new() { Title = "Setup тестирования", Description = "Настроить инфраструктуру для проведения A/B теста", OrderIndex = 3 },
+                        new() { Title = "Реализация вариантов", Description = "Создать и внедрить варианты A и B для тестирования", OrderIndex = 4 },
+                        new() { Title = "Запуск теста", Description = "Запустить A/B тест и начать сбор данных", OrderIndex = 5 },
+                        new() { Title = "Мониторинг результатов", Description = "Отслеживать прогресс и качество данных", OrderIndex = 6 },
+                        new() { Title = "Статистический анализ", Description = "Провести статистический анализ результатов", OrderIndex = 7 },
+                        new() { Title = "Выводы и рекомендации", Description = "Сделать выводы и дать рекомендации на основе результатов", OrderIndex = 8 }
                     }
                 }
             };

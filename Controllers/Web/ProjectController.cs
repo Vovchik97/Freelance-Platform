@@ -125,6 +125,7 @@ public class ProjectController : Controller
         var project = await _context.Projects
             .Include(p => p.Client)
             .Include(p => p.Categories)
+            .Include(p => p.SelectedFreelancer)
             .Include(p => p.Bids)
                 .ThenInclude(b => b.Freelancer)
             .Include(p => p.WorkItems)
@@ -160,7 +161,15 @@ public class ProjectController : Controller
             .Include(t => t.Items)
             .Include(t => t.Categories)
             .ToListAsync();
-        return View();
+        
+        var model = new CreateProjectDto 
+        { 
+            IsTeamProject = false,
+            Status = ProjectStatus.Open,
+            CategoryIds = new List<int>()
+        };
+        
+        return View(model);
     }
     
     [HttpPost]

@@ -32,17 +32,17 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
             <!-- Шаблон задач -->
             @if (taskTemplates.Any())
             {
-                <div class="input-group mt-4" id="templateSection" style="display:none;">
+                <div class="input-group mt-4" id="templateSection">
                     <label class="form-label fw-semibold">
                         📋 Шаблон задач
                         <span class="text-muted fw-normal">(опционально)</span>
                     </label>
 
-                    <div id="noTemplatesHint" style="display:none;">
-                        Для выбранных категорий нет готовых шаблонов — добавьте задачи вручную после создания проекта.
+                    <div id="noTemplatesHint" style="display:none; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 13px; color: #6c757d;">
+                        Для этой услуги нет готовых шаблонов — добавьте задачи вручную после создания заказа.
                     </div>
 
-                    <div id="templateCards">
+                    <div id="templateCards" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;">
                         <!-- Карточка "Без шаблона" -->
                         <label class="template-card selected"
                                id="template-label-none"
@@ -58,23 +58,28 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
                         {
                             var categoryIds = string.Join(",", template.Categories.Select(c => c.Id));
                             var tasksJson = System.Text.Json.JsonSerializer.Serialize(
-                                template.Items.OrderBy(i => i.OrderIndex).Select(i => i.Title)
+                                template.Items.OrderBy(i => i.OrderIndex).Select(i => i.Title).ToList()
                             );
 
                             <label class="template-card"
                                    id="template-label-@template.Id"
                                    data-category-ids="@categoryIds"
-                                   data-tasks='@Html.Raw(tasksJson)'>
+                                   data-tasks='@Html.Raw(tasksJson)'
+                                   data-description="@(template.Description ?? "")">
                                 <input type="radio" name="templateId" value="@template.Id" style="display:none;" />
                                 <div class="template-card-content">
                                     <span class="template-card-title">@template.Name</span>
+                                    @if (!string.IsNullOrWhiteSpace(template.Description))
+                                    {
+                                        <span class="template-card-description">@template.Description</span>
+                                    }
                                     <span class="template-card-meta">@template.Items.Count задач</span>
                                 </div>
                             </label>
                         }
                     </div>
 
-                    <div id="templatePreview" style="display:none;" class="template-preview-box">
+                    <div id="templatePreview" style="display:none; margin-top: 16px;" class="template-preview-box">
                         <div class="template-preview-header">
                             Задачи шаблона:
                         </div>
@@ -82,7 +87,7 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
                     </div>
 
                     <small class="text-muted d-block mt-2">
-                        💡 Шаблон создаст готовый чек-лист. Вы сможете изменить задачи после создания проекта.
+                        💡 Шаблон создаст готовый чек-лист. Вы сможете изменить задачи после создания заказа.
                     </small>
                 </div>
             }
@@ -108,17 +113,13 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
 <script>
     var serviceCategoryIds = [@Html.Raw(string.Join(", ", (ViewBag.ServiceCategoryIds as List<int> ?? new List<int>()).Select(id => "\"" + id + "\"")))];
 
-    // Выбор шаблона
     function selectTemplate(templateId, clickedLabel) {
-        // Убираем класс selected у всех карточек
         document.querySelectorAll('.template-card').forEach(function(card) {
             card.classList.remove('selected');
         });
 
-        // Добавляем класс selected к кликнутой карточке
         clickedLabel.classList.add('selected');
 
-        // Отмечаем соответствующий radio
         var radio = clickedLabel.querySelector('input[type="radio"]');
         if (radio) radio.checked = true;
 
@@ -130,18 +131,15 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
             return;
         }
 
-        // Получаем задачи из data-атрибута
         var tasksJson = clickedLabel.getAttribute('data-tasks');
         if (tasksJson) {
             try {
                 var tasks = JSON.parse(tasksJson);
-                if (tasks && tasks.length > 0) {
+                if (Array.isArray(tasks) && tasks.length > 0) {
                     tasksList.innerHTML = tasks.map(function(task, index) {
                         return '<div class="task-item">' +
-                            '<span style="width:22px; height:22px; border-radius:50%; background:#e8e6ff;' +
-                            'display:flex; align-items:center; justify-content:center; font-size:11px;' +
-                            'color:#6c63ff; font-weight:700; flex-shrink:0;">' + (index + 1) + '</span>' +
-                            '<span class="task-item-title">' + task + '</span>' +
+                            '<span style="font-weight: 600; color: #6c63ff; min-width: 20px;">' + (index + 1) + '.</span>' +
+                            '<span>' + task + '</span>' +
                             '</div>';
                     }).join('');
                     preview.style.display = 'block';
@@ -150,6 +148,7 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
                 }
             } catch (e) {
                 console.error('Ошибка парсинга задач:', e);
+                console.log('JSON:', tasksJson);
                 preview.style.display = 'none';
             }
         } else {
@@ -161,7 +160,6 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
         const noTemplatesHint = document.getElementById('noTemplatesHint');
         let anyVisible = false;
 
-        // Фильтруем карточки по категориям
         document.querySelectorAll('[id^="template-label-"]').forEach(function(card) {
             if (card.id === 'template-label-none') return;
 
@@ -184,13 +182,6 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
             noTemplatesHint.style.display = anyVisible ? 'none' : 'block';
         }
         
-        // Показываем секцию шаблонов
-        const templateSection = document.getElementById('templateSection');
-        if (templateSection) {
-            templateSection.style.display = 'block';
-        }
-        
-        // Добавляем обработчики кликов на карточки
         document.querySelectorAll('.template-card').forEach(card => {
             card.addEventListener('click', function() {
                 const templateId = this.querySelector('input[type="radio"]')?.value || '';

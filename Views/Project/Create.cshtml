@@ -110,7 +110,7 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
             </div>
 
             <!-- Шаблон задач -->
-            @if (taskTemplates.Any())
+            @if (taskTemplates.Any() && !Model.IsTeamProject)
             {
                 <div class="input-group mt-4" id="templateSection" style="display:none;">
                     <label class="form-label fw-semibold">
@@ -118,7 +118,7 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
                         <span class="text-muted fw-normal">(опционально)</span>
                     </label>
 
-                    <div id="noTemplatesHint" style="display:none;">
+                    <div id="noTemplatesHint" style="display:none; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 13px; color: #6c757d;">
                         Для выбранных категорий нет готовых шаблонов — добавьте задачи вручную после создания проекта.
                     </div>
 
@@ -138,23 +138,28 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
                         {
                             var categoryIds = string.Join(",", template.Categories.Select(c => c.Id));
                             var tasksJson = System.Text.Json.JsonSerializer.Serialize(
-                                template.Items.OrderBy(i => i.OrderIndex).Select(i => i.Title)
+                                template.Items.OrderBy(i => i.OrderIndex).Select(i => i.Title).ToList()
                             );
 
                             <label class="template-card"
                                    id="template-label-@template.Id"
                                    data-category-ids="@categoryIds"
-                                   data-tasks='@Html.Raw(tasksJson)'>
+                                   data-tasks='@Html.Raw(tasksJson)'
+                                   data-description="@(template.Description ?? "")">
                                 <input type="radio" name="templateId" value="@template.Id" style="display:none;" />
                                 <div class="template-card-content">
                                     <span class="template-card-title">@template.Name</span>
+                                    @if (!string.IsNullOrWhiteSpace(template.Description))
+                                    {
+                                        <span class="template-card-description">@template.Description</span>
+                                    }
                                     <span class="template-card-meta">@template.Items.Count задач</span>
                                 </div>
                             </label>
                         }
                     </div>
 
-                    <div id="templatePreview" style="display:none;" class="template-preview-box">
+                    <div id="templatePreview" style="display:none; margin-top: 16px;" class="template-preview-box">
                         <div class="template-preview-header">
                             Задачи шаблона:
                         </div>
@@ -164,6 +169,13 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
                     <small class="text-muted d-block mt-2">
                         💡 Шаблон создаст готовый чек-лист. Вы сможете изменить задачи после создания проекта.
                     </small>
+                </div>
+            }
+            else if (Model.IsTeamProject)
+            {
+                <div class="alert alert-info mt-4" style="margin-bottom: 0;">
+                    <strong>ℹ️ Командные проекты</strong><br>
+                    Для командных проектов задачи создаются непосредственно в панели управления после создания проекта. Lead сможет добавлять, назначать и управлять задачами прямо там.
                 </div>
             }
 
@@ -194,7 +206,7 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
             label.style.background = 'transparent';
             label.style.color = '#6c63ff';
         }
-        updateTemplates(); // Обновляем шаблоны при изменении категорий
+        updateTemplates();
     }
 
     function selectAllCategories() {
@@ -283,9 +295,6 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
         }
     }
 
-    // ============= ШАБЛОНЫ =============
-    
-    // Получаем выбранные категории
     function getCheckedCategoryIds() {
         var ids = [];
         document.querySelectorAll('input[name="CategoryIds"]:checked').forEach(function(cb) {
@@ -294,11 +303,34 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
         return ids;
     }
 
-    // Обновление видимости шаблонов
+    function updateTemplateVisibility() {
+        var isTeamCheckbox = document.getElementById('isTeamProject');
+        var templateSection = document.getElementById('templateSection');
+        
+        if (!isTeamCheckbox || !templateSection) return;
+        
+        var isTeamProject = isTeamCheckbox.checked;
+        
+        if (isTeamProject) {
+            // Скрываем шаблоны для командных проектов
+            templateSection.style.display = 'none';
+        } else {
+            // Показываем шаблоны для обычных проектов (если есть выбранные категории)
+            var checkedIds = getCheckedCategoryIds();
+            templateSection.style.display = checkedIds.length > 0 ? 'block' : 'none';
+        }
+    }
+
     function updateTemplates() {
         var checkedIds = getCheckedCategoryIds();
         var templateSection = document.getElementById('templateSection');
         var noTemplatesHint = document.getElementById('noTemplatesHint');
+        var isTeamCheckbox = document.getElementById('isTeamProject');
+        
+        // Если командный проект - не показываем шаблоны
+        if (isTeamCheckbox && isTeamCheckbox.checked) {
+            return;
+        }
 
         if (checkedIds.length === 0) {
             templateSection.style.display = 'none';
@@ -332,7 +364,6 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
             noTemplatesHint.style.display = anyVisible ? 'none' : 'block';
         }
 
-        // Если текущий выбранный шаблон скрылся — сбросить на "без шаблона"
         var selectedCard = document.querySelector('[id^="template-label-"]:not(#template-label-none) input[type="radio"]:checked');
         if (selectedCard) {
             var parentCard = selectedCard.closest('[id^="template-label-"]');
@@ -342,17 +373,13 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
         }
     }
 
-    // Выбор шаблона
     function selectTemplate(templateId, clickedLabel) {
-        // Убираем класс selected у всех карточек
         document.querySelectorAll('.template-card').forEach(function(card) {
             card.classList.remove('selected');
         });
 
-        // Добавляем класс selected к кликнутой карточке
         clickedLabel.classList.add('selected');
 
-        // Отмечаем соответствующий radio
         var radio = clickedLabel.querySelector('input[type="radio"]');
         if (radio) radio.checked = true;
 
@@ -364,18 +391,15 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
             return;
         }
 
-        // Получаем задачи из data-атрибута
         var tasksJson = clickedLabel.getAttribute('data-tasks');
         if (tasksJson) {
             try {
                 var tasks = JSON.parse(tasksJson);
-                if (tasks && tasks.length > 0) {
+                if (Array.isArray(tasks) && tasks.length > 0) {
                     tasksList.innerHTML = tasks.map(function(task, index) {
                         return '<div class="task-item">' +
-                            '<span style="width:22px; height:22px; border-radius:50%; background:#e8e6ff;' +
-                            'display:flex; align-items:center; justify-content:center; font-size:11px;' +
-                            'color:#6c63ff; font-weight:700; flex-shrink:0;">' + (index + 1) + '</span>' +
-                            '<span class="task-item-title">' + task + '</span>' +
+                            '<span style="font-weight: 600; color: #6c63ff; min-width: 20px;">' + (index + 1) + '.</span>' +
+                            '<span>' + task + '</span>' +
                             '</div>';
                     }).join('');
                     preview.style.display = 'block';
@@ -384,6 +408,7 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
                 }
             } catch (e) {
                 console.error('Ошибка парсинга задач:', e);
+                console.log('JSON:', tasksJson);
                 preview.style.display = 'none';
             }
         } else {
@@ -391,9 +416,15 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
         }
     }
 
-    // ============= ИНИЦИАЛИЗАЦИЯ =============
-    
     document.addEventListener('DOMContentLoaded', function() {
+        // Обработчик для чекбокса командного проекта
+        var isTeamCheckbox = document.getElementById('isTeamProject');
+        if (isTeamCheckbox) {
+            isTeamCheckbox.addEventListener('change', function() {
+                updateTemplateVisibility();
+            });
+        }
+
         // Обработчики для чекбоксов категорий
         document.querySelectorAll('input[name="CategoryIds"]').forEach(function(cb) {
             cb.addEventListener('change', function() {
@@ -409,7 +440,8 @@ var taskTemplates = ViewBag.TaskTemplates as List<TaskTemplate>
             });
         });
 
-        // Первичное обновление шаблонов
+        // Первичное обновление
+        updateTemplateVisibility();
         updateTemplates();
     });
 </script>

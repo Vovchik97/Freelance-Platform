@@ -32,9 +32,42 @@
     
     // Получить текущий URL из ViewBag
     var returnUrl = ViewBag.ReturnUrl as string ?? "";
+    
+    // Проверка прав доступа
+    bool canAccessWorkItems = false;
+    
+    if (User.IsInRole("Client"))
+    {
+        // Клиент всегда может видеть свои WorkItems
+        if (isProject)
+        {
+            canAccessWorkItems = project?.Client?.UserName == User.Identity?.Name;
+        }
+        else if (order != null)
+        {
+            canAccessWorkItems = order.Client?.UserName == User.Identity?.Name;
+        }
+    }
+    else if (User.IsInRole("Freelancer"))
+    {
+        // Фрилансер может видеть WorkItems только если:
+        if (isProject)
+        {
+            // Для проекта - только если он выбран клиентом
+            canAccessWorkItems = project?.SelectedFreelancer?.UserName == User.Identity?.Name;
+        }
+        else if (order != null)
+        {
+            // Для заказа - только если заказ принят фрилансером
+            canAccessWorkItems = order.Service?.Freelancer?.UserName == User.Identity?.Name && 
+                               (order.Status == OrderStatus.Accepted || 
+                                order.Status == OrderStatus.Paid || 
+                                order.Status == OrderStatus.Completed);
+        }
+    }
 }
 
-@if (workItems.Any() || User.IsInRole("Client"))
+@if (canAccessWorkItems && (workItems.Any() || User.IsInRole("Client")))
 {
     <div class="work-items-container">
         <h3 class="work-items-title">
@@ -70,7 +103,7 @@
                     
                     <li class="work-item @(isCompleted ? "completed" : "")" data-id="@item.Id">
                         <!-- Drag Handle (только для клиента) -->
-                        @if (User.IsInRole("Client"))
+                        @if (User.IsInRole("Client") && canAccessWorkItems)
                         {
                             <div class="work-item-drag-handle" title="Перетащите для изменения порядка">
                                 <svg width="12" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -115,7 +148,7 @@
                         </div>
                         
                         <!-- Действия -->
-                        @if (User.IsInRole("Client"))
+                        @if (User.IsInRole("Client") && canAccessWorkItems)
                         {
                             <div class="work-item-actions">
                                 <form method="post" asp-controller="WorkItem" asp-action="Delete" style="display: inline;">
@@ -137,7 +170,7 @@
                 }
             </ul>
         }
-        else if (User.IsInRole("Client"))
+        else if (User.IsInRole("Client") && canAccessWorkItems)
         {
             <div class="empty-work-items">
                 <div class="empty-work-items-icon">📝</div>
@@ -146,8 +179,8 @@
             </div>
         }
 
-        <!-- Кнопки управления (ВСЕГДА для клиента) -->
-        @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Client"))
+        <!-- Кнопки управления (ТОЛЬКО для клиента с доступом) -->
+        @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Client") && canAccessWorkItems)
         {
             <div class="work-items-controls">
                 <!-- Кнопка добавления -->
@@ -171,11 +204,17 @@
                                           asp-controller="WorkItem" 
                                           asp-action="ApplyTemplateToProject"
                                           asp-route-projectId="@projectId"
-                                          style="display: inline;">
+                                          style="display: contents;">
                                         @Html.AntiForgeryToken()
-                                        <button type="submit" name="templateId" value="@template.Id" class="template-quick-card" title="@template.Description">
-                                            <div class="template-quick-title">@template.Name</div>
-                                            <div class="template-quick-count">@template.Items.Count задач</div>
+                                        <button type="submit" name="templateId" value="@template.Id" class="template-card" style="display: flex; align-items: stretch;">
+                                            <div class="template-card-content">
+                                                <span class="template-card-title">@template.Name</span>
+                                                @if (!string.IsNullOrWhiteSpace(template.Description))
+                                                {
+                                                    <span class="template-card-description">@template.Description</span>
+                                                }
+                                                <span class="template-card-meta">@template.Items.Count задач</span>
+                                            </div>
                                         </button>
                                     </form>
                                 }
@@ -185,23 +224,23 @@
                                           asp-controller="WorkItem" 
                                           asp-action="ApplyTemplateToOrder"
                                           asp-route-orderId="@orderId"
-                                          style="display: inline;">
+                                          style="display: contents;">
                                         @Html.AntiForgeryToken()
-                                        <button type="submit" name="templateId" value="@template.Id" class="template-quick-card" title="@template.Description">
-                                            <div class="template-quick-title">@template.Name</div>
-                                            <div class="template-quick-count">@template.Items.Count задач</div>
+                                        <button type="submit" name="templateId" value="@template.Id" class="template-card" style="display: flex; align-items: stretch;">
+                                            <div class="template-card-content">
+                                                <span class="template-card-title">@template.Name</span>
+                                                @if (!string.IsNullOrWhiteSpace(template.Description))
+                                                {
+                                                    <span class="template-card-description">@template.Description</span>
+                                                }
+                                                <span class="template-card-meta">@template.Items.Count задач</span>
+                                            </div>
                                         </button>
                                     </form>
                                 }
                             }
                         </div>
                     </div>
-                }
-                else if (!categoryIds.Any())
-                {
-                    <p class="text-muted small mt-3 mb-0">
-                        💡 Для этого @(isProject ? "проекта" : "заказа") не выбраны категории
-                    </p>
                 }
                 else
                 {
@@ -246,7 +285,7 @@
                 }
                 else
                 {
-                    <form method="post" 
+                                        <form method="post" 
                           asp-controller="WorkItem" 
                           asp-action="AddToOrder"
                           asp-route-orderId="@orderId">
@@ -275,6 +314,46 @@
                 }
             </div>
         }
+    </div>
+}
+else if (User.IsInRole("Freelancer") && isProject)
+{
+    <!-- Сообщение для фрилансера, который не выбран -->
+    <div class="work-items-container">
+        <div class="empty-work-items">
+            <div class="empty-work-items-icon">🔒</div>
+            <div class="empty-work-items-text">Задачи недоступны</div>
+            @if (project?.Status == ProjectStatus.Open)
+            {
+                <p class="text-muted">Задачи станут доступны после того, как клиент выберет вас для работы над проектом</p>
+            }
+            else if (project?.SelectedFreelancer != null && project.SelectedFreelancer.UserName != User.Identity?.Name)
+            {
+                <p class="text-muted">Для работы над проектом выбран другой фрилансер: <strong>@project.SelectedFreelancer.UserName</strong></p>
+            }
+            else
+            {
+                <p class="text-muted">Проект находится в статусе, не позволяющем просматривать задачи</p>
+            }
+        </div>
+    </div>
+}
+else if (User.IsInRole("Freelancer") && !isProject && order != null)
+{
+    <!-- Сообщение для фрилансера по заказу -->
+    <div class="work-items-container">
+        <div class="empty-work-items">
+            <div class="empty-work-items-icon">🔒</div>
+            <div class="empty-work-items-text">Задачи недоступны</div>
+            @if (order.Status == OrderStatus.Pending)
+            {
+                <p class="text-muted">Задачи станут доступны после принятия заказа</p>
+            }
+            else
+            {
+                <p class="text-muted">Заказ не принят или завершён</p>
+            }
+        </div>
     </div>
 }
 
@@ -308,8 +387,9 @@ function getAntiForgeryToken() {
 document.addEventListener('DOMContentLoaded', function() {
     var list = document.getElementById('workItemsList');
     var isClient = @Html.Raw(User.IsInRole("Client") ? "true" : "false");
+    var canAccess = @Html.Raw((ViewBag.CanAccessWorkItems ?? false).ToString().ToLower());
     
-    if (list && isClient) {
+    if (list && isClient && canAccess) {
         var sortable = Sortable.create(list, {
             handle: '.work-item-drag-handle',
             ghostClass: 'work-item-ghost',

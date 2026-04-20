@@ -32,6 +32,7 @@ public class WorkItemService
                 ProjectId = projectId,
                 OrderId = orderId,
                 Title = i.Title,
+                Description = i.Description,
                 OrderIndex = i.OrderIndex,
                 Status = WorkItemStatus.NotStarted,
                 CreatedById = createdById,

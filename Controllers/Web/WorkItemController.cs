@@ -48,7 +48,7 @@ public class WorkItemController : Controller
     public async Task<IActionResult> AddToOrder(int orderId, CreateWorkItemDto dto)
     {
         var order = await _context.Orders.FindAsync(orderId);
-        if (order == null || order.ClientId != User.FindFirstValue(ClaimTypes.NameIdentifier))
+        if (order == null || (order.ClientId != User.FindFirstValue(ClaimTypes.NameIdentifier) && order.Service!.FreelancerId != User.FindFirstValue(ClaimTypes.NameIdentifier)));
         {
             return Forbid();
         }
@@ -66,7 +66,10 @@ public class WorkItemController : Controller
     {
         var item = await _context.WorkItems
             .Include(w => w.Project)
+                .ThenInclude(p => p.SelectedFreelancer)
             .Include(w => w.Order)
+                .ThenInclude(o => o.Service)
+                    .ThenInclude(s => s.Freelancer)
             .FirstOrDefaultAsync(w => w.Id == workItemId);
 
         if (item == null)
