@@ -1,0 +1,196 @@
+﻿@page "{id}"
+@using FreelancePlatform.Models
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model FreelancePlatform.Areas.Identity.Pages.Admin.TaskTemplates.EditModel
+@{
+ViewData["Title"] = "Редактировать шаблон";
+}
+
+<h2>✏️ Редактировать шаблон</h2>
+
+<form method="post" class="mt-4">
+    <input type="hidden" asp-for="Template.Id" />
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Название -->
+            <div class="mb-3">
+                <label asp-for="Template.Name" class="form-label">Название</label>
+                <input asp-for="Template.Name" class="form-control" />
+                <span asp-validation-for="Template.Name" class="text-danger"></span>
+            </div>
+
+            <!-- Описание -->
+            <div class="mb-3">
+                <label asp-for="Template.Description" class="form-label">Описание</label>
+                <textarea asp-for="Template.Description" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Template.Description" class="text-danger"></span>
+            </div>
+
+            <!-- Категории -->
+            <div class="mb-3">
+                <label class="form-label">Категории</label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;">
+                    @foreach (var category in Model.AllCategories)
+                    {
+                    var isChecked = Model.Template.Categories.Any(c => c.Id == category.Id);
+                    <div class="form-check" style="padding: 8px 12px; border: 2px solid var(--border); border-radius: 6px;
+                        background-color: @(isChecked ? "var(--primary)" : "var(--surface)");
+                        color: @(isChecked ? "white" : "var(--text-primary)");">
+                        <input class="form-check-input" type="checkbox"
+                               name="categoryIds" value="@category.Id"
+                               id="cat_@category.Id" @(isChecked ? "checked" : "")
+                               onchange="this.parentElement.style.background = this.checked ? 'var(--primary)' : 'var(--surface)';
+                                            this.parentElement.style.color = this.checked ? 'white' : 'var(--text-primary)';" />
+                        <label class="form-check-label" for="cat_@category.Id">
+                            @category.Name
+                        </label>
+                    </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Задачи -->
+            <div class="mb-3">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <label class="form-label" style="margin-bottom: 0;">Задачи шаблона</label>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTaskRow()">
+                        ➕ Добавить задачу
+                    </button>
+                </div>
+
+                <div id="tasksContainer">
+                    @{
+                    var itemsList = Model.Template.Items.OrderBy(i => i.OrderIndex).ToList();
+                    for (int i = 0; i < itemsList.Count; i++)
+                    {
+                    var item = itemsList[i];
+                    <div class="card mb-2" data-task-index="@i" style="background-color: var(--surface-light); border-color: var(--border);">
+                        <div class="card-body p-3">
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-10">
+                                    <input type="text" name="Items[@i].Title" value="@item.Title" class="form-control" placeholder="Название задачи" required />
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-sm btn-danger w-100" onclick="removeTaskRow(this, @i)">
+                                        ✕ Удалить
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <textarea name="Items[@i].Description" class="form-control" rows="2" placeholder="Описание задачи (необязательно)">@item.Description</textarea>
+                                </div>
+                            </div>
+                            <input type="hidden" name="Items[@i].OrderIndex" value="@item.OrderIndex" />
+                        </div>
+                    </div>
+                    }
+                    }
+                </div>
+            </div>
+
+            <!-- Кнопки -->
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">💾 Сохранить</button>
+                <a asp-page="Index" class="btn btn-secondary">← Отмена</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+<style>
+    .form-control {
+        background-color: var(--surface) !important;
+        border-color: var(--border) !important;
+        color: var(--text-primary) !important;
+    }
+    .form-control::placeholder {
+        color: var(--text-secondary);
+        opacity: 0.7;
+    }
+    .form-control:focus {
+        background-color: var(--surface) !important;
+        border-color: var(--primary) !important;
+        color: var(--text-primary) !important;
+        box-shadow: 0 0 0 0.2rem rgba(108, 99, 255, 0.25);
+    }
+    textarea.form-control {
+        resize: vertical;
+    }
+</style>
+
+@section Scripts {
+<script>
+    let taskCounter = @Model.Template.Items.Count;
+
+    function addTaskRow() {
+        const container = document.getElementById('tasksContainer');
+        const index = taskCounter++;
+
+        const html = `
+                <div class="card mb-2" data-task-index="${index}" style="background-color: var(--surface-light); border-color: var(--border);">
+                    <div class="card-body p-3">
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-10">
+                                <input type="text" name="Items[${index}].Title" class="form-control" placeholder="Название задачи" required />
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-sm btn-danger w-100" onclick="removeTaskRow(this, ${index})">
+                                    ✕ Удалить
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <textarea name="Items[${index}].Description" class="form-control" rows="2" placeholder="Описание задачи (необязательно)"></textarea>
+                            </div>
+                        </div>
+                        <input type="hidden" name="Items[${index}].OrderIndex" value="${index + 1}" />
+                    </div>
+                </div>
+            `;
+
+        container.insertAdjacentHTML('beforeend', html);
+        reindexTasks();
+    }
+
+    function removeTaskRow(button, index) {
+        const taskDiv = button.closest('.card');
+        taskDiv.remove();
+        reindexTasks();
+    }
+
+    function reindexTasks() {
+        const tasks = document.querySelectorAll('#tasksContainer .card');
+        tasks.forEach((task, newIndex) => {
+            // Обновляем data-атрибут
+            task.setAttribute('data-task-index', newIndex);
+
+            // Обновляем name атрибуты всех полей внутри задачи
+            const titleInput = task.querySelector('input[name*=".Title"]');
+            const descTextarea = task.querySelector('textarea[name*=".Description"]');
+            const orderInput = task.querySelector('input[name*=".OrderIndex"]');
+
+            if (titleInput) {
+                titleInput.name = `Items[${newIndex}].Title`;
+            }
+            if (descTextarea) {
+                descTextarea.name = `Items[${newIndex}].Description`;
+            }
+            if (orderInput) {
+                orderInput.name = `Items[${newIndex}].OrderIndex`;
+                orderInput.value = newIndex + 1;
+            }
+
+            // Обновляем onclick у кнопки удаления
+            const deleteBtn = task.querySelector('.btn-danger');
+            if (deleteBtn) {
+                deleteBtn.setAttribute('onclick', `removeTaskRow(this, ${newIndex})`);
+            }
+        });
+
+        taskCounter = tasks.length;
+    }
+</script>
+}

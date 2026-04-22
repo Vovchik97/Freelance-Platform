@@ -1,4 +1,4 @@
-﻿/*using System.Security.Claims;
+﻿using System.Security.Claims;
 using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Web;
 using FreelancePlatform.Dto.Categories;
@@ -23,6 +23,7 @@ public class ProjectControllerTests
     private readonly CategorySuggestionService _categorySuggestionService;
     private readonly RecommendationService _recommendationService;
     private readonly ProjectController _controller;
+    private readonly WorkItemService _workItemService;
 
     public ProjectControllerTests()
     {
@@ -33,6 +34,7 @@ public class ProjectControllerTests
         _balanceService = new Mock<BalanceService>(_context);
         _categorySuggestionService = new CategorySuggestionService(_context);
         _recommendationService = new RecommendationService(_context);
+        _workItemService = new WorkItemService(_context);
         
         _mockUserManager = GetMockUserManager();
         _controller = new ProjectController(
@@ -40,7 +42,8 @@ public class ProjectControllerTests
             _mockUserManager.Object,
             _balanceService.Object,
             _categorySuggestionService,
-            _recommendationService);
+            _recommendationService,
+            _workItemService);
     }
     
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()
@@ -604,4 +607,4 @@ public class ProjectControllerTests
         var ids = Assert.IsAssignableFrom<List<int>>(jsonResult.Value);
         Assert.Empty(ids);
     }
-}*/
+}

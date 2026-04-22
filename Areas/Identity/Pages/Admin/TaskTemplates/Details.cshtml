@@ -1,0 +1,144 @@
+﻿@page "{id}"
+@using FreelancePlatform.Models
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model FreelancePlatform.Areas.Identity.Pages.Admin.TaskTemplates.DetailsModel
+@{
+    ViewData["Title"] = "Детали шаблона";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>📋 @Model.Template?.Name</h2>
+    <div class="d-flex gap-2">
+        <a asp-page="Edit" asp-route-id="@Model.Template?.Id" class="btn btn-warning">✏️ Редактировать</a>
+        <a asp-page="Index" class="btn btn-secondary">← Назад</a>
+    </div>
+</div>
+
+@if (Model.Template != null)
+{
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Описание -->
+            <div class="card mb-3" style="background-color: var(--surface); border-color: var(--border);">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: var(--text-primary);">Описание</h5>
+                    <p class="card-text" style="color: var(--text-secondary);">
+                        @if (!string.IsNullOrWhiteSpace(Model.Template.Description))
+                        {
+                            @Model.Template.Description
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </p>
+                </div>
+            </div>
+
+            <!-- Категории -->
+            <div class="card mb-3" style="background-color: var(--surface); border-color: var(--border);">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: var(--text-primary);">Категории</h5>
+                    @if (Model.Template.Categories.Any())
+                    {
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            @foreach (var category in Model.Template.Categories)
+                            {
+                                <span class="badge" style="background-color: var(--primary); color: white; padding: 6px 12px;">@category.Name</span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="text-muted" style="color: var(--text-secondary);">Категории не выбраны</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Задачи -->
+            <div class="card" style="background-color: var(--surface); border-color: var(--border);">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: var(--text-primary);">Задачи (@Model.Template.Items.Count)</h5>
+                    @if (Model.Template.Items.Any())
+                    {
+                        <div class="tasks-list">
+                            @foreach (var item in Model.Template.Items.OrderBy(i => i.OrderIndex))
+                            {
+                                <div class="task-item mb-3 pb-3" style="border-bottom: 1px solid var(--border);">
+                                    <div class="d-flex align-items-start gap-2">
+                                        <span class="badge" style="background-color: var(--primary-light); color: var(--text-primary); min-width: 30px; padding: 4px 8px;">@item.OrderIndex</span>
+                                        <div class="flex-grow-1">
+                                            <strong style="color: var(--text-primary);">@item.Title</strong>
+                                            @if (!string.IsNullOrWhiteSpace(item.Description))
+                                            {
+                                                <p class="mt-2 mb-0" style="color: var(--text-secondary); font-size: 0.9rem;">@item.Description</p>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="text-muted" style="color: var(--text-secondary);">Задач нет</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .task-item:last-child {
+        border-bottom: none !important;
+        margin-bottom: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    
+    /* Дополнительные стили для карточек */
+    .card {
+        background-color: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+    
+    .card-title {
+        color: var(--text-primary);
+        font-weight: 600;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid var(--primary);
+        padding-bottom: 0.5rem;
+        display: inline-block;
+    }
+    
+    .badge {
+        font-weight: 500;
+        border-radius: 6px;
+    }
+    
+    .btn-warning {
+        background-color: #f0ad4e;
+        border-color: #f0ad4e;
+        color: #1a1a2e;
+    }
+    
+    .btn-warning:hover {
+        background-color: #ec971f;
+        border-color: #ec971f;
+        color: #1a1a2e;
+    }
+    
+    .btn-secondary {
+        background-color: var(--surface-light);
+        border-color: var(--border);
+        color: var(--text-primary);
+    }
+    
+    .btn-secondary:hover {
+        background-color: var(--border);
+        border-color: var(--border);
+        color: var(--text-primary);
+    }
+</style>

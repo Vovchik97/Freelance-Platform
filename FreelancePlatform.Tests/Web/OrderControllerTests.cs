@@ -1,4 +1,4 @@
-﻿/*using System.Security.Claims;
+﻿using System.Security.Claims;
 using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Web;
 using FreelancePlatform.Dto.Orders;
@@ -18,6 +18,7 @@ public class OrderControllerTests
     private readonly Mock<UserManager<IdentityUser>> _mockUserManager;
     private readonly Mock<BalanceService> _mockBalanceService;
     private readonly OrderController _controller;
+    private readonly WorkItemService _workItemService;
 
     public OrderControllerTests()
     {
@@ -29,7 +30,13 @@ public class OrderControllerTests
         var emailSender = new FakeEmailSender();
         _mockUserManager = GetMockUserManager();
         _mockBalanceService = new Mock<BalanceService>(_context);
-        _controller = new OrderController(_context, _mockUserManager.Object, emailSender, _mockBalanceService.Object);
+        _workItemService = new WorkItemService(_context);
+        
+        _controller = new OrderController(_context, 
+            _mockUserManager.Object, 
+            emailSender, 
+            _mockBalanceService.Object,
+            _workItemService);
     }
     
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()
@@ -95,10 +102,10 @@ public class OrderControllerTests
     }
 
     [Fact]
-    public void Create_Get_ReturnsView()
+    public async Task Create_Get_ReturnsView()
     {
-        var result = _controller.Create(5);
-        var view = Assert.IsType<ViewResult>(result);
+        var result = await _controller.Create(5);
+        Assert.IsType<ViewResult>(result);
     }
     
     [Fact]
@@ -216,4 +223,4 @@ public class OrderControllerTests
         Assert.Equal(2, model.Count());
 
     }
-}*/
+}
