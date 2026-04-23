@@ -368,8 +368,8 @@ public class PaymentController : Controller
 
             var myPayments = payments.Where(p =>
                 p.PayerId == userId ||
-                (p.Type == PaymentType.Order && p.Order?.Service?.FreelancerId == userId) ||
-                (p.Type == PaymentType.Project && p.Project?.SelectedFreelancerId == userId)
+                (p.Type == PaymentType.Order && p.Order?.Service?.FreelancerId == userId && p.Order.Status == OrderStatus.Completed) ||
+                (p.Type == PaymentType.Project && p.Project?.SelectedFreelancerId == userId && p.Project?.IsTeamProject == false && p.Project.Status == ProjectStatus.Completed)
             ).ToList();
 
             var items = myPayments.OrderByDescending(p => p.CreatedAt).ToList();
