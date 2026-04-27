@@ -1,0 +1,72 @@
+﻿@{
+    ViewData["Title"] = "Пожаловаться";
+    bool hasActiveReport = ViewBag.HasActiveReport ?? false;
+}
+
+<div class="container mt-5" style="max-width: 600px;">
+    <div class="filters-card">
+        <h2 class="filters-title mb-4">Пожаловаться</h2>
+
+        @if (hasActiveReport)
+        {
+            <div class="alert alert-warning d-flex align-items-center gap-2 mb-0">
+                <span style="font-size: 20px;">⚠️</span>
+                <div>
+                    <strong>У вас уже есть активная жалоба на этого пользователя.</strong>
+                    <div class="text-muted mt-1" style="font-size: 13px;">
+                        Дождитесь пока администратор рассмотрит текущую жалобу —
+                        после этого вы сможете подать новую.
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3 d-flex gap-2">
+                <a asp-controller="Report" asp-action="My"
+                   class="btn btn-outline-primary btn-sm">
+                    Посмотреть мои жалобы
+                </a>
+                <a href="javascript:history.back()"
+                   class="btn btn-outline-secondary btn-sm">
+                    Назад
+                </a>
+            </div>
+        }
+        else
+        {
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="reportedId" value="@ViewBag.ReportedId" />
+                <input type="hidden" name="orderId"    value="@ViewBag.OrderId" />
+                <input type="hidden" name="projectId"  value="@ViewBag.ProjectId" />
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Причина жалобы</label>
+                    <select name="reason" class="form-select" required>
+                        <option value="">— Выберите причину —</option>
+                        <option value="0">Мошенничество</option>
+                        <option value="1">Срыв сроков</option>
+                        <option value="2">Низкое качество работы</option>
+                        <option value="3">Спам</option>
+                        <option value="4">Оскорбления</option>
+                        <option value="5">Другое</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        Описание
+                        <span class="text-muted fw-normal">(необязательно)</span>
+                    </label>
+                    <textarea name="description" class="form-textarea" rows="4"
+                              maxlength="1000"
+                              placeholder="Опишите ситуацию подробнее..."></textarea>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger">Отправить жалобу</button>
+                    <a href="javascript:history.back()"
+                       class="btn btn-outline-secondary">Отмена</a>
+                </div>
+            </form>
+        }
+    </div>
+</div>

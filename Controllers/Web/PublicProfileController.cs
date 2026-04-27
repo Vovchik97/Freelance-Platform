@@ -1,6 +1,7 @@
 ﻿using FreelancePlatform.Context;
 using FreelancePlatform.Dto.Profiles;
 using FreelancePlatform.Models;
+using FreelancePlatform.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
@@ -13,11 +14,19 @@ public class PublicProfileController : Controller
 {
     private readonly AppDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly IReputationService _reputationService;
+    private readonly IBlacklistService _blacklistService;
     
-    public PublicProfileController(AppDbContext context, UserManager<IdentityUser> userManager)
+    public PublicProfileController(
+        AppDbContext context, 
+        UserManager<IdentityUser> userManager,
+        IReputationService reputationService,
+        IBlacklistService blacklistService)
     {
         _context = context;
         _userManager = userManager;
+        _reputationService = reputationService;
+        _blacklistService = blacklistService;
     }
 
     [AllowAnonymous]
@@ -25,12 +34,29 @@ public class PublicProfileController : Controller
     {
         if (string.IsNullOrEmpty(userId))
             return NotFound();
-        
+
         // всегда тянем пользователя
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
             return NotFound();
 
+        var userRoles = await _userManager.GetRolesAsync(user);
+
+        if (userRoles.Contains("Freelancer"))
+        {
+            return await FreelancerProfile(userId);
+        }
+        else if (userRoles.Contains("Client"))
+        {
+            return await ClientProfile(userId);
+        }
+
+        return NotFound();
+    }
+    
+    private async Task<IActionResult> FreelancerProfile(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
         var profile = await _context.UserProfiles
             .FirstOrDefaultAsync(p => p.UserId == userId);
 
@@ -54,6 +80,12 @@ public class PublicProfileController : Controller
         
         var allReviews = services.SelectMany(s => s.Reviews).ToList();
 
+        var reputation = await _reputationService.GetAsync(userId);
+        var reputationHistory = await _reputationService.GetHistoryAsync(userId);
+        
+        var currentUserId = _userManager.GetUserId(User);
+        var isBlockedByMe = currentUserId != null && await _blacklistService.IsBlockedAsync(currentUserId, userId);
+        
         var dto = new PublicProfileDto
         {
             UserId = userId,
@@ -66,14 +98,59 @@ public class PublicProfileController : Controller
             AvgCommunication = allReviews.Any() ? allReviews.Average(r => r.CommunicationRating) : null,
             AvgDeadline      = allReviews.Any() ? allReviews.Average(r => r.DeadlineRating)      : null,
             AvgPrice         = allReviews.Any() ? allReviews.Average(r => r.PriceRating)         : null,
+            ReputationScore = reputation.Score,
+            ReputationHistory = reputationHistory.Take(5).ToList(),
+            IsBlockedByMe = isBlockedByMe,
+            IsFreelancer = true
         };
 
         return View(dto);
     }
 
+    private async Task<IActionResult> ClientProfile(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        var profile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
 
-    // GET: /Profiles/My
-    [Authorize(Roles = "Freelancer")]
+        var projects = await _context.Projects
+            .Where(p => p.ClientId == userId)
+            .Include(p => p.Bids)
+            .ToListAsync();
+        
+        var projectDtos = projects.Select(p => new ProjectInfoDto
+        {
+            Id = p.Id,
+            Title = p.Title,
+            Description = p.Description,
+            Budget = p.Budget,
+            ClientId = p.ClientId,
+            Status = p.Status.ToString(),
+            BidsCount = p.Bids.Count
+        }).ToList();
+
+        var reputation = await _reputationService.GetAsync(userId);
+        var reputationHistory = await _reputationService.GetHistoryAsync(userId);
+        
+        var currentUserId = _userManager.GetUserId(User);
+        var isBlockedByMe = currentUserId != null && await _blacklistService.IsBlockedAsync(currentUserId, userId);
+
+        var dto = new PublicProfileDto
+        {
+            UserId = userId,
+            UserName = user!.UserName ?? "(Без имени)",
+            AboutMe = profile?.AboutMe ?? string.Empty,
+            Services = new List<ServiceInfoDto>(),
+            Projects = projectDtos,
+            ReputationScore = reputation.Score,
+            ReputationHistory = reputationHistory.Take(5).ToList(),
+            IsBlockedByMe = isBlockedByMe,
+            IsFreelancer = false
+        };
+
+        return View(dto);
+    }
+    
+    [Authorize(Roles = "Freelancer, Client")]
     public async Task<IActionResult> My()
     {
         var user = await _userManager.GetUserAsync(User);

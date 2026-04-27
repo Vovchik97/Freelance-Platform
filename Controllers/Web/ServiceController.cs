@@ -20,17 +20,23 @@ public class ServiceController : Controller
     private readonly UserManager<IdentityUser> _userManager;
     private readonly CategorySuggestionService _categorySuggestionService;
     private readonly RecommendationService _recommendationService;
+    private readonly IReputationService _reputationService;
+    private readonly IBlacklistService _blacklistService;
 
     public ServiceController(
         AppDbContext context, 
         UserManager<IdentityUser> userManager, 
         CategorySuggestionService categorySuggestionService,
-        RecommendationService recommendationService)
+        RecommendationService recommendationService,
+        IReputationService reputationService,
+        IBlacklistService blacklistService)
     {
         _context = context;
         _userManager = userManager;
         _categorySuggestionService = categorySuggestionService;
         _recommendationService = recommendationService;
+        _reputationService = reputationService;
+        _blacklistService = blacklistService;
     }
     
     [AllowAnonymous]
@@ -82,6 +88,20 @@ public class ServiceController : Controller
             query = query.OrderByDescending(s => s.CreatedAt);
         
         var services = await query.ToListAsync();
+
+        var currentUserId = _userManager.GetUserId(User);
+        if (currentUserId != null)
+        {
+            var blockedUserIds = await _context.BlacklistEntries
+                .Where(b => b.BlockerId == currentUserId || b.BlockedId == currentUserId)
+                .Select(b => b.BlockerId == currentUserId ? b.BlockedId : b.BlockerId)
+                .Distinct()
+                .ToListAsync();
+
+            services = services
+                .Where(s => !blockedUserIds.Contains(s.FreelancerId))
+                .ToList();
+        }
 
         // Все активные категории для фильтра
         ViewBag.AllCategories = await _context.Categories
@@ -358,6 +378,15 @@ public class ServiceController : Controller
             return NotFound();
         }
         
+        var isBlocked = await _blacklistService.IsBlockedEitherWayAsync(
+            service.FreelancerId, order.ClientId);
+
+        if (isBlocked)
+        {
+            TempData["ErrorMessage"] = "Вы не можете принять этот заказ — один из вас заблокировал другого.";
+            return RedirectToAction("Details", new { id = serviceId });
+        }
+        
         order.Status = OrderStatus.Accepted;
         service.SelectedClientId = order.ClientId;
 
@@ -494,11 +523,30 @@ public class ServiceController : Controller
             return RedirectToAction("Details", new { id = dto.ServiceId });
         }
 
+        var service = await _context.Services
+            .FirstOrDefaultAsync(s => s.Id == dto.ServiceId);
+
         var existing = await _context.Reviews
             .FirstOrDefaultAsync(r => r.ServiceId == dto.ServiceId && r.UserId == userId);
 
+        bool isNewReview = existing == null;
+        
         if (existing != null)
         {
+            var oldEventType = existing.Rating >= 4
+                ? ReputationEventType.PositiveReview
+                : ReputationEventType.NegativeReview;
+
+            var reverseType = oldEventType == ReputationEventType.PositiveReview
+                ? ReputationEventType.NegativeReview
+                : ReputationEventType.PositiveReview;
+
+            await _reputationService.AddEventAsync(
+                service!.FreelancerId,
+                reverseType,
+                reason: "Откат предыдущего отзыва при редактировании"
+            );
+            
             existing.Rating = dto.Rating;
             existing.QualityRating = dto.QualityRating;
             existing.CommunicationRating = dto.CommunicationRating;
@@ -528,6 +576,24 @@ public class ServiceController : Controller
         }
         
         await _context.SaveChangesAsync();
+
+        if (service != null && isNewReview)
+        {
+            var reputationEvent = dto.Rating >= 4
+                ? ReputationEventType.PositiveReview
+                : ReputationEventType.NegativeReview;
+            
+            var reason = dto.Rating >= 4
+                ? $"Положительный отзыв (оценка {dto.Rating}/5)"
+                : $"Отрицательный отзыв (оценка {dto.Rating}/5)";
+
+            await _reputationService.AddEventAsync(
+                service.FreelancerId,
+                reputationEvent,
+                reason: reason
+            );
+        }
+        
         TempData["SuccessMessage"] = "Отзыв успешно сохранён!";
         return RedirectToAction("Details", new { id = dto.ServiceId });
     }

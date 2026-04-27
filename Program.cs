@@ -38,6 +38,8 @@ builder.Services.AddScoped<CategorySuggestionService>();
 builder.Services.AddScoped<RecommendationService>();
 builder.Services.AddScoped<ProjectActivityLogService>();
 builder.Services.AddScoped<WorkItemService>();
+builder.Services.AddScoped<IBlacklistService, BlacklistService>();
+builder.Services.AddScoped<IReputationService, ReputationService>();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole>()

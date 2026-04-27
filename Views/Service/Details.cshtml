@@ -1,9 +1,12 @@
 ﻿@using System.Globalization
+@using System.Security.Claims
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @using FreelancePlatform.Dto.Reviews
+@using FreelancePlatform.Services
 @model FreelancePlatform.Models.Service
 @inject UserManager<IdentityUser> UserManager
+@inject IBlacklistService _blacklistService
 
 @{
     ViewData["Title"] = "Детали услуги";
@@ -88,19 +91,31 @@
 
         <!-- Кнопка заказа (клиент) -->
         @{
+            var currentUserId = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
             var currentUserName = User.Identity?.Name;
             bool hasActiveOrder = Model.Orders?.Any(o =>
                 o.Client?.UserName == currentUserName &&
                 (o.Status == OrderStatus.Pending || o.Status == OrderStatus.Accepted)
             ) ?? false;
+            
+            bool isBlocked = false;
+            if (User.IsInRole("Client") && currentUserId != null)
+            {
+                isBlocked = await _blacklistService.IsBlockedEitherWayAsync(
+                    currentUserId, Model.FreelancerId);
+            }
         }
 
-        @if (User.IsInRole("Client") && !hasActiveOrder && Model.Status == ServiceStatus.Available)
+        @if (User.IsInRole("Client") && !hasActiveOrder && !isBlocked && Model.Status == ServiceStatus.Available)
         {
             <a class="btn btn-primary mt-4"
                asp-controller="Order" asp-action="Create" asp-route-serviceId="@Model.Id">
                 Заказать услугу
             </a>
+        }
+        else if (User.IsInRole("Client") && isBlocked)
+        {
+            <p class="text-muted mt-3">Вы заблокировали друг друга и не можете взаимодействовать.</p>
         }
         else if (User.IsInRole("Client") && hasActiveOrder)
         {
@@ -133,7 +148,7 @@
                             @foreach (var order in Model.Orders.OrderByDescending(o => o.CreatedAt))
                             {
                                 <tr>
-                                    <td>@order.Client?.UserName</td>
+                                    <td><a asp-controller="PublicProfile" asp-action="Public" asp-route-userId="@order.ClientId">@order.Client?.UserName</a></td>
                                     <td>@order.DurationInDays</td>
                                     <td>@order.Comment</td>
                                     <td>

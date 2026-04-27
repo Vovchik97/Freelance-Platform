@@ -19,6 +19,8 @@ public class OrderControllerTests
     private readonly Mock<BalanceService> _mockBalanceService;
     private readonly OrderController _controller;
     private readonly WorkItemService _workItemService;
+    private readonly IReputationService _reputationService;
+    private readonly Mock<IBlacklistService> _mockBlacklistService;
 
     public OrderControllerTests()
     {
@@ -31,12 +33,16 @@ public class OrderControllerTests
         _mockUserManager = GetMockUserManager();
         _mockBalanceService = new Mock<BalanceService>(_context);
         _workItemService = new WorkItemService(_context);
+        _reputationService = new ReputationService(_context);
+        _mockBlacklistService = new Mock<IBlacklistService>();
         
         _controller = new OrderController(_context, 
             _mockUserManager.Object, 
             emailSender, 
             _mockBalanceService.Object,
-            _workItemService);
+            _workItemService,
+            _reputationService,
+            _mockBlacklistService.Object);
     }
     
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()

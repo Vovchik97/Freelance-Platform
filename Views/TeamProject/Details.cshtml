@@ -1,5 +1,7 @@
 ﻿@using FreelancePlatform.Models
+@using FreelancePlatform.Services
 @model FreelancePlatform.Models.Project
+@inject IBlacklistService _blacklistService
 @{
     ViewData["Title"] = Model.Title;
     var tab = ViewBag.Tab as string ?? "overview";
@@ -12,6 +14,13 @@
     var isFreelancerOnly = (bool)(ViewBag.IsFreelancerOnly ?? false);
     var unreadChatCount = (int)(ViewBag.UnreadChatCount ?? 0);
     var currentUserIdTask = ViewBag.CurrentUserId as string;
+    
+    bool isBlockedFromTeamProject = false;
+    if (User.IsInRole("Freelancer") && currentUserId != null)
+    {
+        isBlockedFromTeamProject = await _blacklistService.IsBlockedEitherWayAsync(
+            currentUserId, Model.ClientId);
+    }
 }
 
 @if (TempData["Success"] != null)
@@ -158,7 +167,10 @@
                 </div>
                 <div class="meta-item">
                     <strong style="color:var(--text-primary);">Клиент:</strong>
-                    <span class="ms-1">@Model.Client?.UserName</span>
+                    <a asp-controller="PublicProfile" asp-action="Public"
+                       asp-route-userId="@Model.ClientId">
+                        @Model.Client?.UserName
+                    </a>
                 </div>
             </div>
 
@@ -262,7 +274,17 @@
             <!-- Форма отклика для фрилансера -->
             @if (User.IsInRole("Freelancer") && !isMemberView && !isClientView)
             {
-                @if (userBid == null && Model.Status == ProjectStatus.Open)
+                @if (isBlockedFromTeamProject)
+                {
+                    <div class="filters-card"
+                         style="margin-top:1.5rem; box-shadow:none;
+                    border-color:#ef4444; background:rgba(239,68,68,0.05);">
+                        <p style="color:#ef4444; margin:0; font-weight:500;">
+                            Вы заблокировали друг друга и не можете взаимодействовать.
+                        </p>
+                    </div>
+                }
+                else if (userBid == null && Model.Status == ProjectStatus.Open)
                 {
                     <div class="filters-card"
                          style="margin-top:1.5rem; box-shadow:none;
@@ -350,7 +372,10 @@
                             {
                                 <tr>
                                     <td style="color:var(--text-primary);">
-                                        @bid.Freelancer?.UserName
+                                        <a asp-controller="PublicProfile" asp-action="Public"
+                                           asp-route-userId="@bid.FreelancerId">
+                                            @bid.Freelancer?.UserName
+                                        </a>
                                     </td>
                                     <td>
                                         <span class="project-budget">
@@ -477,7 +502,11 @@
                         <!-- Клиент -->
                         <tr>
                             <td style="font-weight:600; color:var(--text-primary);">
-                                @Model.Client?.UserName
+                                <a asp-controller="PublicProfile" asp-action="Public"
+                                   asp-route-userId="@Model.ClientId"
+                                   class="ms-1">
+                                    @Model.Client?.UserName
+                                </a>
                             </td>
                             <td><span class="status-badge status-accepted">Клиент</span></td>
                             <td><span class="status-badge status-open">Активен</span></td>
@@ -491,7 +520,12 @@
                         @foreach (var member in Model.Members.OrderBy(m => m.Status))
                         {
                             <tr>
-                                <td style="color:var(--text-primary);">@member.UserName</td>
+                                <td style="color:var(--text-primary);">
+                                    <a asp-controller="PublicProfile" asp-action="Public"
+                                       asp-route-userId="@member.UserId">
+                                        @member.UserName
+                                    </a>
+                                </td>
                                 <td>
                                     @if (member.Role == ProjectMemberRole.Lead)
                                     {

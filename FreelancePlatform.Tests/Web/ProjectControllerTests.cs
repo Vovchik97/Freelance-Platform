@@ -24,6 +24,8 @@ public class ProjectControllerTests
     private readonly RecommendationService _recommendationService;
     private readonly ProjectController _controller;
     private readonly WorkItemService _workItemService;
+    private readonly IReputationService _reputationService;
+    private readonly IBlacklistService _blacklistService;
 
     public ProjectControllerTests()
     {
@@ -35,6 +37,8 @@ public class ProjectControllerTests
         _categorySuggestionService = new CategorySuggestionService(_context);
         _recommendationService = new RecommendationService(_context);
         _workItemService = new WorkItemService(_context);
+        _reputationService = new ReputationService(_context);
+        _blacklistService = new BlacklistService(_context);
         
         _mockUserManager = GetMockUserManager();
         _controller = new ProjectController(
@@ -43,7 +47,9 @@ public class ProjectControllerTests
             _balanceService.Object,
             _categorySuggestionService,
             _recommendationService,
-            _workItemService);
+            _workItemService,
+            _reputationService,
+            _blacklistService);
     }
     
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()

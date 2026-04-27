@@ -1,0 +1,147 @@
+﻿@* Areas/Identity/Pages/Admin/Reports/Details.cshtml *@
+@page "{id}"
+@using FreelancePlatform.Models
+@model FreelancePlatform.Areas.Identity.Pages.Admin.Reports.DetailsModel
+@{
+    ViewData["Title"] = "Детали жалобы";
+}
+
+<h2>Детали жалобы</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<div class="project-card">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">От кого</dt>
+            <dd class="col-sm-9">@Model.Reporter?.UserName</dd>
+
+            <dt class="col-sm-3">На кого</dt>
+            <dd class="col-sm-9">
+                @Model.Reported?.UserName
+                @if (Model.IsReportedBanned)
+                {
+                    <span class="badge bg-danger ms-2">Забанен</span>
+                }
+            </dd>
+
+            <dt class="col-sm-3">Причина</dt>
+            <dd class="col-sm-9">@GetReasonText(Model.Report?.Reason.ToString())</dd>
+
+            <dt class="col-sm-3">Описание</dt>
+            <dd class="col-sm-9">@(Model.Report?.Description ?? "—")</dd>
+
+            @if (Model.Report?.Order != null)
+            {
+                <dt class="col-sm-3">Заказ</dt>
+                <dd class="col-sm-9">@Model.Report.Order.Service?.Title</dd>
+            }
+
+            @if (Model.Report?.Project != null)
+            {
+                <dt class="col-sm-3">Проект</dt>
+                <dd class="col-sm-9">@Model.Report.Project.Title</dd>
+            }
+
+            <dt class="col-sm-3">Текущий статус</dt>
+            <dd class="col-sm-9">@GetStatusText(Model.Report?.Status.ToString())</dd>
+
+            @if (!string.IsNullOrEmpty(Model.Report?.AdminComment))
+            {
+                <dt class="col-sm-3">Комментарий админа</dt>
+                <dd class="col-sm-9">@Model.Report.AdminComment</dd>
+            }
+
+            <dt class="col-sm-3">Дата</dt>
+            <dd class="col-sm-9">
+                @Model.Report?.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+            </dd>
+        </dl>
+    </div>
+</div>
+
+@if (Model.Report?.Status == ReportStatus.Pending)
+{
+    <div class="project-card mt-4">
+        <div class="card-body">
+            <h5>Принять решение</h5>
+            <form method="post" asp-page-handler="Resolve" asp-route-id="@Model.Report!.Id">
+
+                <div class="mb-3">
+                    <label class="form-label">Новый статус</label>
+                    <select asp-for="NewStatus" class="form-select">
+                        <option value="@ReportStatus.Resolved">Решена (приняты меры)</option>
+                        <option value="@ReportStatus.Rejected">Отклонена</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Комментарий</label>
+                    <textarea asp-for="AdminComment" class="form-textarea" rows="3"
+                              placeholder="Опишите принятое решение..."></textarea>
+                </div>
+
+                @* Снятие очков и бан рядом *@
+                <div class="mb-3 d-flex flex-column gap-2">
+                    <div class="form-check">
+                        <input asp-for="ApplyReputation" class="form-check-input" type="checkbox" />
+                        <label class="form-check-label" asp-for="ApplyReputation">
+                            ⭐ Снять очки репутации (-20)
+                        </label>
+                    </div>
+
+                    @if (!Model.IsReportedBanned)
+                    {
+                        <div class="form-check">
+                            <input asp-for="BanUser" class="form-check-input" type="checkbox" />
+                            <label class="form-check-label text-danger" asp-for="BanUser">
+                                🚫 Забанить пользователя (@Model.Reported?.UserName)
+                            </label>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted" style="font-size: 13px;">
+                            ℹ️ Пользователь уже забанен
+                        </div>
+                    }
+                </div>
+
+                <button type="submit" class="btn btn-primary">Сохранить решение</button>
+            </form>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-secondary mt-4">
+        Жалоба уже закрыта — редактирование недоступно.
+    </div>
+}
+
+<a asp-page="/Admin/Reports/Index" class="btn btn-secondary mt-3">Назад</a>
+
+@functions {
+    string GetReasonText(string? reason) => reason switch
+    {
+        "Fraud"        => "Мошенничество",
+        "LateDelivery" => "Срыв сроков",
+        "PoorQuality"  => "Низкое качество",
+        "Spam"         => "Спам",
+        "Abuse"        => "Оскорбления",
+        "Other"        => "Другое",
+        _              => "Неизвестно"
+    };
+
+    string GetStatusText(string? status) => status switch
+    {
+        "Pending"  => "На рассмотрении",
+        "Reviewed" => "Рассмотрена",
+        "Resolved" => "Решена",
+        "Rejected" => "Отклонена",
+        _          => "Неизвестно"
+    };
+}

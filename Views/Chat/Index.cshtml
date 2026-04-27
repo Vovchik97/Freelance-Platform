@@ -4,6 +4,10 @@ ViewData["Title"] = "Мои чаты";
 var userId = ViewBag.UserId as string;
 var otherUser = ViewBag.OtherUser as string;
 }
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger text-center">@TempData["ErrorMessage"]</div>
+}
 <div class="container">
     <div class="header">
         <h1>Мои чаты</h1>

@@ -18,6 +18,7 @@ public class ChatControllerTests
     private readonly Mock<UserManager<IdentityUser>> _mockUserManager;
     private readonly Mock<SupportBotService> _mockBotService;
     private readonly ChatController _controller;
+    private readonly Mock<IBlacklistService> _mockBlacklistService;
 
     public ChatControllerTests()
     {
@@ -28,7 +29,8 @@ public class ChatControllerTests
         
         _mockUserManager = GetMockUserManager();
         _mockBotService = new Mock<SupportBotService>();
-        _controller = new ChatController(_context, _mockUserManager.Object, _mockBotService.Object);
+        _mockBlacklistService = new Mock<IBlacklistService>();
+        _controller = new ChatController(_context, _mockUserManager.Object, _mockBotService.Object, _mockBlacklistService.Object);
     }
 
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()

@@ -20,14 +20,24 @@ public class OrderController : Controller
     private readonly IEmailSender _emailSender;
     private readonly BalanceService _balanceService;
     private readonly WorkItemService _workItemService;
+    private readonly IReputationService _reputationService;
+    private readonly IBlacklistService _blacklistService;
 
-    public OrderController(AppDbContext context, UserManager<IdentityUser> userManager, IEmailSender emailSender, BalanceService balanceService, WorkItemService workItemService)
+    public OrderController(
+        AppDbContext context, 
+        UserManager<IdentityUser> userManager, 
+        IEmailSender emailSender, BalanceService balanceService, 
+        WorkItemService workItemService,
+        IReputationService reputationService,
+        IBlacklistService blacklistService)
     {
         _context = context;
         _userManager = userManager;
         _emailSender = emailSender;
         _balanceService = balanceService;
         _workItemService = workItemService;
+        _reputationService = reputationService;
+        _blacklistService = blacklistService;
     }
 
     [AllowAnonymous]
@@ -142,6 +152,14 @@ public class OrderController : Controller
         if (client == null)
         {
             return Unauthorized("Пользователь не найден.");
+        }
+
+        var isBlocked = await _blacklistService.IsBlockedEitherWayAsync(userId, service.FreelancerId);
+
+        if (isBlocked)
+        {
+            TempData["ErrorMessage"] = "Вы не можете заказать эту услугу — один из вас заблокировал другого.";
+            return RedirectToAction("Details", "Service", new { id = dto.ServiceId });
         }
 
         var order = new Order
@@ -289,7 +307,52 @@ public class OrderController : Controller
         order.Status = OrderStatus.Completed;
         await _context.SaveChangesAsync();
         
+        await ApplyDeliveryReputationAsync(freelancerId, order.CreatedAt, order.DurationInDays, orderId: order.Id);
+        
         TempData["SuccessMessage"] = "Заказ выполнен.";
         return RedirectToAction(nameof(Details), new { id = order.Id });
+    }
+
+    private async Task ApplyDeliveryReputationAsync(string freelancerId, DateTime startedAt, int durationInDays, int? orderId = null, int? projectId = null)
+    {
+        var now = DateTime.UtcNow;
+        var deadline = startedAt.AddDays(durationInDays);
+
+        ReputationEventType eventType;
+        string reason;
+
+        if (durationInDays <= 0)
+        {
+            // Срок не указан
+            eventType = ReputationEventType.OnTimeDelivery;
+            reason = "Работа выполнена";
+        }
+        else if (now < deadline.AddDays(-1))
+        {
+            // Сдал более чем за день до дедлайна
+            eventType = ReputationEventType.EarlyDelivery;
+            reason = $"Досрочная сдача (срок {durationInDays} дн., дедлайн {deadline:dd.MM.yyyy})";
+        }
+        else if (now <= deadline)
+        {
+            // Сдал в срок
+            eventType = ReputationEventType.OnTimeDelivery;
+            reason = $"Сдача в срок (срок {durationInDays} дн., дедлайн {deadline:dd.MM.yyyy})";
+        }
+        else
+        {
+            // Просрочил
+            var daysLate = (int)(now - deadline).TotalDays;
+            eventType = ReputationEventType.LateDelivery;
+            reason = $"Просрочка на {daysLate} дн. (срок был {durationInDays} дн., дедлайн {deadline:dd.MM.yyyy})";
+        }
+        
+        await _reputationService.AddEventAsync(
+            freelancerId,
+            eventType,
+            orderId,
+            projectId,
+            reason
+        );
     }
 }

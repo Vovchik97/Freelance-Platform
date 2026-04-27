@@ -1,4 +1,6 @@
-﻿namespace FreelancePlatform.Dto.Profiles;
+﻿using FreelancePlatform.Models;
+
+namespace FreelancePlatform.Dto.Profiles;
 
 public class PublicProfileDto
 {
@@ -14,5 +16,11 @@ public class PublicProfileDto
     public double? AvgDeadline { get; set; }
     public double? AvgPrice { get; set; }
     
+    public int ReputationScore { get; set; }
+    public List<ReputationEvent> ReputationHistory { get; set; } = new();
+    public bool IsBlockedByMe { get; set; }
+    public bool IsFreelancer { get; set; }
+    
     public List<ServiceInfoDto> Services { get; set; } = new();
+    public List<ProjectInfoDto> Projects { get; set; } = new();
 }

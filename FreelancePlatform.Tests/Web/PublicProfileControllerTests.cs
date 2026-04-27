@@ -3,7 +3,9 @@ using FreelancePlatform.Context;
 using FreelancePlatform.Controllers.Web;
 using FreelancePlatform.Dto.Profiles;
 using FreelancePlatform.Models;
+using FreelancePlatform.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -26,6 +28,16 @@ public class PublicProfileControllerTests
         var store = new Mock<IUserStore<IdentityUser>>();
         return new Mock<UserManager<IdentityUser>>(store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
     }
+    
+    private Mock<IBlacklistService> GetBlacklistServiceMock()
+    {
+        return new Mock<IBlacklistService>();
+    }
+    
+    private Mock<IReputationService> GetReputationServiceMock()
+    {
+        return new Mock<IReputationService>();
+    }
 
     private void SetUser(PublicProfileController controller, string userId, string userName = "testUser")
     {
@@ -46,7 +58,7 @@ public class PublicProfileControllerTests
     {
         var db = GetDbContext();
         var userManager = GetUserManagerMock();
-        var controller = new PublicProfileController(db, userManager.Object);
+        var controller = new PublicProfileController(db, userManager.Object, null, null);
         
         var result = await controller.Public(null!);
 
@@ -59,7 +71,7 @@ public class PublicProfileControllerTests
         var db = GetDbContext();
         var userManager = GetUserManagerMock();
         userManager.Setup(m => m.FindByIdAsync("u1")).ReturnsAsync((IdentityUser?)null);
-        var controller = new PublicProfileController(db, userManager.Object);
+        var controller = new PublicProfileController(db, userManager.Object, null, null);
         
         var result = await controller.Public("userId");
 
@@ -71,14 +83,55 @@ public class PublicProfileControllerTests
     {
         var db = GetDbContext();
         var userManager = GetUserManagerMock();
+        var blacklistService = GetBlacklistServiceMock();
+        var reputationService = GetReputationServiceMock();
         
         var user = new IdentityUser { Id = "u1", UserName = "testUser" };
+        
         userManager.Setup(m => m.FindByIdAsync("u1")).ReturnsAsync(user);
+        userManager.Setup(m => m.GetRolesAsync(user))
+            .ReturnsAsync(new List<string> { "Freelancer" });
         
         db.UserProfiles.Add(new UserProfile { UserId = "u1", AboutMe = "testAboutMe" });
+        
+        db.Services.Add(new Service 
+        { 
+            Id = 1,
+            FreelancerId = "u1", 
+            Title = "Test Service",
+            Description = "Desc",
+            Price = 100,
+            Status = ServiceStatus.Available,
+            Reviews = new List<Review>(),
+            Orders = new List<Order>()
+        });
+        
         await db.SaveChangesAsync();
+        
+        blacklistService.Setup(s => s.IsBlockedAsync(It.IsAny<string>(), "u1"))
+            .ReturnsAsync(false);
 
-        var controller = new PublicProfileController(db, userManager.Object);
+        reputationService.Setup(s => s.GetAsync("u1"))
+            .ReturnsAsync(new UserReputation { UserId = "u1", Score = 0 });
+        
+        reputationService.Setup(s => s.GetHistoryAsync("u1"))
+            .ReturnsAsync(new List<ReputationEvent>());
+
+        var controller = new PublicProfileController(
+            db, 
+            userManager.Object, 
+            reputationService.Object,
+            blacklistService.Object);
+        
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, "currentUserId")
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) }
+        };
         
         var result = await controller.Public("u1");
 
@@ -86,6 +139,7 @@ public class PublicProfileControllerTests
         var dto = Assert.IsType<PublicProfileDto>(view.Model);
         Assert.Equal("testUser", dto.UserName);
         Assert.Equal("testAboutMe", dto.AboutMe);
+        Assert.Empty(dto.ReputationHistory); 
     }
 
     [Fact]
@@ -96,7 +150,7 @@ public class PublicProfileControllerTests
         var user = new IdentityUser { Id = "u1", UserName = "testUser" };
         userManager.Setup(m => m.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(user);
 
-        var controller = new PublicProfileController(db, userManager.Object);
+        var controller = new PublicProfileController(db, userManager.Object, null, null);
         SetUser(controller, "u1");
 
         var result = await controller.My();
@@ -116,7 +170,7 @@ public class PublicProfileControllerTests
         userManager.Setup(m => m.GetUserAsync(It.IsAny<ClaimsPrincipal>()))
             .ReturnsAsync((IdentityUser?)null);
         
-        var controller = new PublicProfileController(db, userManager.Object);
+        var controller = new PublicProfileController(db, userManager.Object, null, null);
         
         var result = await controller.Edit();
         
@@ -134,7 +188,7 @@ public class PublicProfileControllerTests
         db.UserProfiles.Add(new UserProfile { UserId = "u1", AboutMe = "testAboutMe" });
         await db.SaveChangesAsync();
 
-        var controller = new PublicProfileController(db, userManager.Object);
+        var controller = new PublicProfileController(db, userManager.Object, null, null);
         SetUser(controller, "u1");
         
         var result = await controller.Edit();
@@ -152,7 +206,7 @@ public class PublicProfileControllerTests
         var user = new IdentityUser { Id = "u1", UserName = "testUser" };
         userManager.Setup(m => m.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(user);
         
-        var controller = new PublicProfileController(db, userManager.Object);
+        var controller = new PublicProfileController(db, userManager.Object, null, null);
         SetUser(controller, "u1");
         
         var model = new UserProfile { UserId = "u1", AboutMe = "testAboutMe" };
@@ -176,7 +230,7 @@ public class PublicProfileControllerTests
         db.UserProfiles.Add(new UserProfile { UserId = "u1", AboutMe = "testAboutMe" });
         await db.SaveChangesAsync();
 
-        var controller = new PublicProfileController(db, userManager.Object);
+        var controller = new PublicProfileController(db, userManager.Object, null, null);
         SetUser(controller, "u1");
         
         var model = new UserProfile { UserId = "u1", AboutMe = "testAboutMe2" };

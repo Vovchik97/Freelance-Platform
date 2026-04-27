@@ -1,0 +1,86 @@
+﻿@model List<FreelancePlatform.Models.Report>
+@{
+    var reportedUsers = ViewBag.ReportedUsers as Dictionary<string, string> ?? new();
+    ViewData["Title"] = "Мои жалобы";
+}
+
+<div class="container mt-5">
+    <div class="header">
+        <h1>Мои жалобы</h1>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <p class="text-muted">Вы ещё не подавали жалоб.</p>
+    }
+    else
+    {
+        <div class="custom-table-container">
+            <table class="custom-table">
+                <thead>
+                <tr>
+                    <th>На кого</th>
+                    <th>Причина</th>
+                    <th>Описание</th>
+                    <th>Статус</th>
+                    <th>Ответ</th>
+                    <th>Дата</th>
+                </tr>
+                </thead>
+                <tbody>
+                    @foreach (var report in Model)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-controller="PublicProfile" asp-action="Public"
+                                   asp-route-userId="@report.ReportedId">
+                                    @(reportedUsers.TryGetValue(report.ReportedId, out var name) ? name : report.ReportedId)
+                                </a>
+                            </td>
+                            <td>@GetReasonText(report.Reason.ToString())</td>
+                            <td>@(report.Description ?? "—")</td>
+                            <td>
+                                <span class="badge @GetStatusClass(report.Status.ToString())">
+                                    @GetStatusText(report.Status.ToString())
+                                </span>
+                            </td>
+                            <td>@(report.AdminComment ?? "—")</td>
+                            <td>@report.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@functions {
+    string GetReasonText(string r) => r switch
+    {
+        "Fraud"        => "Мошенничество",
+        "LateDelivery" => "Срыв сроков",
+        "PoorQuality"  => "Низкое качество",
+        "Spam"         => "Спам",
+        "Abuse"        => "Оскорбления",
+        "Other"        => "Другое",
+        _              => "Неизвестно"
+    };
+
+    string GetStatusText(string s) => s switch
+    {
+        "Pending"  => "На рассмотрении",
+        "Reviewed" => "Рассмотрена",
+        "Resolved" => "Решена",
+        "Rejected" => "Отклонена",
+        _          => "Неизвестно"
+    };
+
+    string GetStatusClass(string s) => s switch
+    {
+        "Pending"  => "bg-warning",
+        "Reviewed" => "bg-info",
+        "Resolved" => "bg-success",
+        "Rejected" => "bg-danger",
+        _          => "bg-secondary"
+    };
+}

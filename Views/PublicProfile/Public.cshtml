@@ -1,9 +1,8 @@
 ﻿@using System.Globalization
 @using Microsoft.AspNetCore.Identity
-@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model FreelancePlatform.Dto.Profiles.PublicProfileDto
 
-@inject Microsoft.AspNetCore.Identity.UserManager<IdentityUser> UserManager
+@inject UserManager<IdentityUser> UserManager
 
 @{
     var currentUserId = UserManager.GetUserId(User);
@@ -13,11 +12,9 @@
 
 <div class="container mt-4">
 
-    <!-- ШАПКа профиля -->
+    <!-- ШАПКА -->
     <div class="filters-card mb-4">
         <div class="row g-4 align-items-start">
-
-            <!-- Имя + кнопка редактирования -->
             <div class="col-md-4">
                 <h1 class="mb-1">@Model.UserName</h1>
                 @if (string.IsNullOrWhiteSpace(Model.AboutMe))
@@ -34,9 +31,9 @@
                 }
             </div>
 
-            <!-- Рейтинг + бар-чарт критериев -->
             <div class="col-md-8">
-                @if (Model.AverageRating.HasValue && Model.ReviewsCount > 0)
+                @* Отзывы только для фрилансеров *@
+                @if (Model.IsFreelancer && Model.AverageRating.HasValue && Model.ReviewsCount > 0)
                 {
                     <div class="d-flex align-items-center gap-3 mb-3">
                         <div style="font-size:52px; font-weight:700; color:#6c63ff; line-height:1;">
@@ -50,7 +47,6 @@
                         </div>
                     </div>
 
-                    <!-- Бар-чарт -->
                     <div class="criteria-chart">
                         @{
                             void ProfileBar(string label, double? val)
@@ -74,6 +70,10 @@
                         @{ ProfileBar("Цена / качество",   Model.AvgPrice); }
                     </div>
                 }
+                else if (!Model.IsFreelancer)
+                {
+                    <p class="text-muted">Клиенты не имеют системы отзывов.</p>
+                }
                 else
                 {
                     <p class="text-muted">Отзывов пока нет.</p>
@@ -82,88 +82,332 @@
         </div>
     </div>
 
-    <!-- УСЛУГИ -->
-    <h4 class="mb-3">Услуги</h4>
-    @if (Model.Services == null || !Model.Services.Any())
-    {
-        <p class="text-muted">У этого фрилансера пока нет услуг.</p>
-    }
-    else
-    {
-        foreach (var service in Model.Services)
+    @* РЕПУТАЦИЯ *@
+    <div class="filters-card mb-4">
+        <h4 class="filters-title mb-3">Репутация</h4>
+        <div class="d-flex align-items-center gap-3 mb-3">
+            @{
+                var score = Model.ReputationScore;
+                var scoreColor = score >= 0 ? "#28a745" : "#dc3545";
+            }
+            <div style="font-size: 48px; font-weight: 700; color: @scoreColor; line-height: 1;">
+                @(score >= 0 ? "+" : "")@score
+            </div>
+            <div>
+                <div class="text-muted" style="font-size: 14px;">репутационных очков</div>
+                @if (score >= 50)
+                {
+                    <span class="badge bg-success">⭐ Надёжный @(Model.IsFreelancer ? "исполнитель" : "клиент")</span>
+                }
+                else if (score >= 20)
+                {
+                    <span class="badge bg-primary">👍 Хороший @(Model.IsFreelancer ? "исполнитель" : "клиент")</span>
+                }
+                else if (score >= 0)
+                {
+                    <span class="badge bg-secondary">Новичок</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">⚠️ Низкая репутация</span>
+                }
+            </div>
+        </div>
+
+        @if (Model.ReputationHistory.Any())
         {
-            double svcAvg = service.Reviews?.Any() == true
-                ? service.Reviews.Average(r => r.Rating) : 0.0;
-            int svcCount  = service.Reviews?.Count ?? 0;
+            <h6 class="text-muted mb-2">Последние события:</h6>
+            <div class="d-flex flex-column gap-2">
+                @foreach (var ev in Model.ReputationHistory)
+                {
+                    var isPositive = ev.Points > 0;
+                    <div class="d-flex justify-content-between align-items-center p-2"
+                         style="background: var(--card-bg); border-radius: 8px; border: 1px solid var(--border);">
+                        <div>
+                            <span class="me-2">@GetReputationEventIcon(ev.Type.ToString())</span>
+                            <span style="font-size: 14px;">@GetReputationEventText(ev.Type.ToString())</span>
+                            @if (!string.IsNullOrEmpty(ev.Reason))
+                            {
+                                <div class="text-muted" style="font-size: 12px; margin-top: 2px;">
+                                    @ev.Reason
+                                </div>
+                            }
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span style="font-weight: 700; color: @(isPositive ? "#28a745" : "#dc3545");">
+                                @(isPositive ? "+" : "")@ev.Points
+                            </span>
+                            <span class="text-muted" style="font-size: 11px;">
+                                @ev.CreatedAt.ToLocalTime().ToString("dd.MM")
+                            </span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">Событий репутации пока нет.</p>
+        }
+    </div>
 
-            <div class="project-card">
-                <div class="project-header">
-                    <h3 class="project-title">@service.Title</h3>
-                    <span class="status-badge @(service.Status == "Available" ? "status-open" : "status-cancelled")">
-                        @(service.Status == "Available" ? "Открыта" : "Закрыта")
-                    </span>
-                </div>
+    @* ДЕЙСТВИЯ *@
+    @if (!isOwnProfile && User.Identity?.IsAuthenticated == true
+         && (User.IsInRole("Client") || User.IsInRole("Freelancer")))
+    {
+        <div class="filters-card mb-4">
+            <h4 class="filters-title mb-3">Действия</h4>
+            <div class="d-flex flex-wrap gap-2">
+                <a asp-controller="Report" asp-action="Create"
+                   asp-route-reportedId="@Model.UserId"
+                   class="btn btn-outline-danger btn-sm">
+                    🚩 Пожаловаться
+                </a>
 
-                <div class="project-meta">
-                    <!-- Цена -->
-                    <div class="meta-item">
-                        <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                        </svg>
-                        <span class="project-budget">@service.Price.ToString("C", new CultureInfo("ru-RU"))</span>
+                @if (Model.IsBlockedByMe)
+                {
+                    <form asp-controller="Blacklist" asp-action="Unblock" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="blockedId" value="@Model.UserId" />
+                        <input type="hidden" name="returnUrl"
+                               value="@Url.Action("Public", "PublicProfile", new { userId = Model.UserId })" />
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">
+                            🔓 Разблокировать
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                            data-bs-toggle="modal" data-bs-target="#blockModal">
+                        🚫 Заблокировать
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="modal fade" id="blockModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content"
+                     style="background: var(--surface);
+                            border: 1px solid var(--border);
+                            border-radius: 1rem;
+                            color: var(--text-primary);">
+
+                    <div class="modal-header"
+                         style="border-bottom: 1px solid var(--border);
+                                background: var(--surface-light);
+                                border-radius: 1rem 1rem 0 0;">
+                        <h5 class="modal-title" style="color: var(--text-primary);">
+                            🚫 Заблокировать @Model.UserName?
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                style="filter: var(--btn-close-filter, none);"></button>
                     </div>
 
-                    <!-- Дробный рейтинг услуги -->
-                    <div class="meta-item">
-                        @await Html.PartialAsync("_StarRating", svcAvg)
-                        <span class="ms-1 text-muted" style="font-size:13px;">
-                            @svcAvg.ToString("F1") (@svcCount)
-                        </span>
-                    </div>
-                </div>
+                    <form asp-controller="Blacklist" asp-action="Block" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="modal-body"
+                             style="background: var(--surface);">
+                            <input type="hidden" name="blockedId" value="@Model.UserId" />
+                            <input type="hidden" name="returnUrl"
+                                   value="@Url.Action("Public", "PublicProfile", new { userId = Model.UserId })" />
 
-                <div class="project-actions">
-                    <a asp-action="Details" asp-controller="Service"
-                       asp-route-id="@service.Id" class="btn btn-outline">
-                        Подробнее
-                    </a>
-                    @if (isOwnProfile && service.Status != "Unavailable")
-                    {
-                        <a asp-action="Edit" asp-controller="Service"
-                           asp-route-id="@service.Id" class="btn btn-warning">
-                            Редактировать
-                        </a>
-                        <form asp-action="Delete" asp-controller="Service"
-                              asp-route-id="@service.Id" method="post"
-                              class="d-inline" onsubmit="return confirm('Удалить услугу?')">
-                            <button type="submit" class="btn btn-danger">Удалить</button>
-                        </form>
-                    }
+                            <div class="mb-3">
+                                <label class="form-label"
+                                       style="color: var(--text-secondary); font-size: 0.875rem;">
+                                    Причина (необязательно)
+                                </label>
+                                <input type="text" name="reason" class="form-input"
+                                       style="width: 100%;"
+                                       placeholder="Укажите причину блокировки..."
+                                       maxlength="200" />
+                            </div>
+
+                            <div style="background: var(--surface-light);
+                                        border: 1px solid var(--border);
+                                        border-radius: 0.5rem;
+                                        padding: 0.75rem;
+                                        font-size: 13px;
+                                        color: var(--text-secondary);">
+                                ⚠️ После блокировки этот пользователь не сможет
+                                заказывать ваши услуги и откликаться на ваши проекты.
+                            </div>
+                        </div>
+
+                        <div class="modal-footer"
+                             style="border-top: 1px solid var(--border);
+                                    background: var(--surface-light);
+                                    border-radius: 0 0 1rem 1rem;">
+                            <button type="button" class="btn btn-outline"
+                                    data-bs-dismiss="modal">
+                                Отмена
+                            </button>
+                            <button type="submit" class="btn btn-danger">
+                                🚫 Заблокировать
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
+        </div>
+    }
+
+    @* УСЛУГИ (только для фрилансеров) *@
+    @if (Model.IsFreelancer)
+    {
+        <h4 class="mb-3">Услуги</h4>
+        @if (!Model.Services.Any())
+        {
+            <p class="text-muted">У этого фрилансера пока нет услуг.</p>
+        }
+        else
+        {
+            foreach (var service in Model.Services)
+            {
+                double svcAvg = service.Reviews?.Any() == true
+                    ? service.Reviews.Average(r => r.Rating) : 0.0;
+                int svcCount  = service.Reviews?.Count ?? 0;
+
+                <div class="project-card">
+                    <div class="project-header">
+                        <h3 class="project-title">@service.Title</h3>
+                        <span class="status-badge @(service.Status == "Available" ? "status-open" : "status-cancelled")">
+                            @(service.Status == "Available" ? "Открыта" : "Закрыта")
+                        </span>
+                    </div>
+
+                    <div class="project-meta">
+                        <div class="meta-item">
+                            <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                            <span class="project-budget">@service.Price.ToString("C", new CultureInfo("ru-RU"))</span>
+                        </div>
+
+                        <div class="meta-item">
+                            @await Html.PartialAsync("_StarRating", svcAvg)
+                            <span class="ms-1 text-muted" style="font-size:13px;">
+                                @svcAvg.ToString("F1") (@svcCount)
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="project-actions">
+                        <a asp-action="Details" asp-controller="Service"
+                           asp-route-id="@service.Id" class="btn btn-outline">
+                            Подробнее
+                        </a>
+                        @if (isOwnProfile && service.Status != "Unavailable")
+                        {
+                            <a asp-action="Edit" asp-controller="Service"
+                               asp-route-id="@service.Id" class="btn btn-warning">
+                                Редактировать
+                            </a>
+                            <form asp-action="Delete" asp-controller="Service"
+                                  asp-route-id="@service.Id" method="post"
+                                  class="d-inline" onsubmit="return confirm('Удалить услугу?')">
+                                <button type="submit" class="btn btn-danger">Удалить</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    }
+
+    @* ПРОЕКТЫ (только для клиентов) *@
+    @if (!Model.IsFreelancer)
+    {
+        <h4 class="mb-3">Проекты</h4>
+        @if (!Model.Projects.Any())
+        {
+            <p class="text-muted">У этого клиента пока нет публичных проектов.</p>
+        }
+        else
+        {
+            foreach (var project in Model.Projects)
+            {
+                <div class="project-card">
+                    <div class="project-header">
+                        <h3 class="project-title">@project.Title</h3>
+                        <span class="status-badge @GetProjectStatusClass(project.Status.ToString())">
+                            @GetProjectStatusText(project.Status.ToString())
+                        </span>
+                    </div>
+
+                    <div class="project-meta">
+                        <div class="meta-item">
+                            <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                            <span class="project-budget">@project.Budget.ToString("C", new CultureInfo("ru-RU"))</span>
+                        </div>
+                    </div>
+
+                    <div class="project-actions">
+                        <a asp-action="Details" asp-controller="Project"
+                           asp-route-id="@project.Id" class="btn btn-outline">
+                            Подробнее
+                        </a>
+                        @if (isOwnProfile && project.Status == "Open")
+                        {
+                            <a asp-action="Edit" asp-controller="Project"
+                               asp-route-id="@project.Id" class="btn btn-warning">
+                                Редактировать
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
         }
     }
 </div>
 
 @functions {
-    private string GetStatusClass(string status)
+    string GetReputationEventText(string type) => type switch
     {
-        return status switch
-        {
-            "Available" => "status-open",
-            "Unavailable" => "status-cancelled",
-            _ => "status-open"
-        };
-    }
+        "EarlyDelivery"  => "Досрочная сдача работы",
+        "OnTimeDelivery" => "Сдача в срок",
+        "LateDelivery"   => "Просрочка",
+        "PositiveReview" => "Положительный отзыв",
+        "NegativeReview" => "Отрицательный отзыв",
+        "OrderCancelled" => "Отмена заказа",
+        "ReportResolved" => "Подтверждённая жалоба",
+        _                => type
+    };
 
-    private string GetStatusText(string status)
+    string GetReputationEventIcon(string type) => type switch
     {
-        return status switch
-        {
-            "Available" => "Открыта",
-            "Unavailable" => "Закрыта",
-            _ => "Неизвестно"
-        };
-    }
+        "EarlyDelivery"  => "⚡",
+        "OnTimeDelivery" => "✅",
+        "LateDelivery"   => "⏰",
+        "PositiveReview" => "👍",
+        "NegativeReview" => "👎",
+        "OrderCancelled" => "❌",
+        "ReportResolved" => "⚠️",
+        _                => "•"
+    };
+
+    string GetProjectStatusClass(string status) => status switch
+    {
+        "Open"       => "status-open",
+        "InProgress" => "status-inprogress",
+        "Completed"  => "status-completed",
+        "Cancelled"  => "status-cancelled",
+        "Paid"       => "status-paid",
+        _            => "status-open"
+    };
+
+    string GetProjectStatusText(string status) => status switch
+    {
+        "Open"       => "Открыт",
+        "InProgress" => "В работе",
+        "Completed"  => "Завершён",
+        "Cancelled"  => "Отменён",
+        "Paid"       => "Оплачен",
+        _            => "Неизвестно"
+    };
 }

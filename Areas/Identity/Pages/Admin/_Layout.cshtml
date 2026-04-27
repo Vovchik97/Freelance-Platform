@@ -1,5 +1,6 @@
 ﻿@{
 bool hasNewSupport = ViewData["HasNewSupport"] as bool? ?? false;
+int pendingReportsCount = ViewData["PendingReportsCount"] as int? ?? 0;
 }
 
 <!DOCTYPE html>
@@ -43,6 +44,13 @@ bool hasNewSupport = ViewData["HasNewSupport"] as bool? ?? false;
             @if (hasNewSupport)
             {
                 <span class="badge bg-danger ms-1">!</span>
+            }
+        </a>
+        <a asp-page="/Admin/Reports/Index" class="nav-link">
+            🚩 Жалобы
+            @if (pendingReportsCount > 0)
+            {
+                <span class="badge bg-danger ms-1">@pendingReportsCount</span>
             }
         </a>
         <a asp-page="/Admin/Payments/Index" class="nav-link">💰 Платежи</a>

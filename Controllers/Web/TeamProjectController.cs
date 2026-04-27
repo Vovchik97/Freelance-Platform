@@ -18,14 +18,16 @@ public class TeamProjectController : Controller
     private readonly UserManager<IdentityUser> _userManager;
     private readonly ProjectActivityLogService _logService;
     private readonly BalanceService _balanceService;
+    private readonly IBlacklistService _blacklistService;
 
     public TeamProjectController(AppDbContext context, UserManager<IdentityUser> userManager,
-        ProjectActivityLogService logService, BalanceService balanceService)
+        ProjectActivityLogService logService, BalanceService balanceService, IBlacklistService blacklistService)
     {
         _context = context;
         _userManager = userManager;
         _logService = logService;
         _balanceService = balanceService;
+        _blacklistService = blacklistService;
     }
 
     public async Task<IActionResult> Details(int id, string tab = "overview")
@@ -138,6 +140,15 @@ public class TeamProjectController : Controller
         if (targetUser == null)
         {
             TempData["Error"] = "Пользователь не найден.";
+            return RedirectToAction(nameof(Details), new { id = dto.ProjectId, tab = "team" });
+        }
+        
+        var isBlocked = await _blacklistService.IsBlockedEitherWayAsync(
+            project.ClientId, targetUser.Id);
+
+        if (isBlocked)
+        {
+            TempData["Error"] = "Вы не можете пригласить этого пользователя — один из вас заблокировал другого.";
             return RedirectToAction(nameof(Details), new { id = dto.ProjectId, tab = "team" });
         }
 
@@ -1040,6 +1051,14 @@ public class TeamProjectController : Controller
         if (alreadyBid)
         {
             TempData["Error"] = "Вы уже откликнулись на этот проект.";
+            return RedirectToAction(nameof(Details), new { id = projectId, tab = "overview" });
+        }
+        
+        var isBlocked = await _blacklistService.IsBlockedEitherWayAsync(userId, project.ClientId);
+
+        if (isBlocked)
+        {
+            TempData["Error"] = "Вы не можете откликнуться на этот проект — один из вас заблокировал другого.";
             return RedirectToAction(nameof(Details), new { id = projectId, tab = "overview" });
         }
 

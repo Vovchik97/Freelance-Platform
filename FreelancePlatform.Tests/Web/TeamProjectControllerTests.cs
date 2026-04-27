@@ -19,6 +19,7 @@ public class TeamProjectControllerTests
     private readonly Mock<ProjectActivityLogService> _mockLogService;
     private readonly Mock<BalanceService> _mockBalanceService;
     private readonly TeamProjectController _controller;
+    private readonly IBlacklistService _blacklistService;
 
     public TeamProjectControllerTests()
     {
@@ -31,12 +32,14 @@ public class TeamProjectControllerTests
         _mockLogService = new Mock<ProjectActivityLogService>(_context);
         
         var balanceService = new BalanceService(_context);
+        var blacklistService = new BlacklistService(_context);
 
         _controller = new TeamProjectController(
             _context,
             _mockUserManager.Object,
             _mockLogService.Object,
-            balanceService);
+            balanceService,
+            blacklistService);
 
         var tempData = new Mock<ITempDataDictionary>();
         _controller.TempData = tempData.Object;

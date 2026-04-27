@@ -19,13 +19,17 @@ public class ProjectController : Controller
     private readonly CategorySuggestionService _categorySuggestionService;
     private readonly RecommendationService _recommendationService;
     private readonly WorkItemService _workItemService;
+    private readonly IReputationService _reputationService;
+    private readonly IBlacklistService _blacklistService;
 
     public ProjectController(AppDbContext context, 
         UserManager<IdentityUser> userManager, 
         BalanceService balanceService, 
         CategorySuggestionService categorySuggestionService,
         RecommendationService recommendationService,
-        WorkItemService workItemService)
+        WorkItemService workItemService,
+        IReputationService reputationService,
+        IBlacklistService blacklistService)
     {
         _context = context;
         _userManager = userManager;
@@ -33,6 +37,8 @@ public class ProjectController : Controller
         _categorySuggestionService = categorySuggestionService;
         _recommendationService = recommendationService;
         _workItemService = workItemService;
+        _reputationService = reputationService;
+        _blacklistService = blacklistService;
     }
     
     [AllowAnonymous]
@@ -94,6 +100,20 @@ public class ProjectController : Controller
             query = query.OrderByDescending(p => p.CreatedAt);
         
         var projects = await query.ToListAsync();
+        
+        var currentUserId = _userManager.GetUserId(User);
+        if (currentUserId != null)
+        {
+            var blockedUserIds = await _context.BlacklistEntries
+                .Where(b => b.BlockerId == currentUserId || b.BlockedId == currentUserId)
+                .Select(b => b.BlockerId == currentUserId ? b.BlockedId : b.BlockerId)
+                .Distinct()
+                .ToListAsync();
+
+            projects = projects
+                .Where(p => !blockedUserIds.Contains(p.ClientId))
+                .ToList();
+        }
 
         // Все активные категории для фильтра
         ViewBag.AllCategories = await _context.Categories
@@ -386,6 +406,15 @@ public class ProjectController : Controller
             return NotFound();
         }
         
+        var isBlocked = await _blacklistService.IsBlockedEitherWayAsync(
+            project.ClientId, bid.FreelancerId);
+
+        if (isBlocked)
+        {
+            TempData["ErrorMessage"] = "Вы не можете принять эту заявку — один из вас заблокировал другого.";
+            return RedirectToAction("Details", new { id = projectId });
+        }
+        
         bid.Status = BidStatus.Accepted;
         project.SelectedFreelancerId = bid.FreelancerId;
         project.Status = ProjectStatus.InProgress;
@@ -472,6 +501,11 @@ public class ProjectController : Controller
             return BadRequest("Проект не может быть завершён.");
         }
 
+        if (acceptBid == null)
+        {
+            return BadRequest("Принятая заявка не найдена.");
+        }
+
         await _balanceService.ReleaseForProjectAsync(
             project.ClientId,
             project.SelectedFreelancerId,
@@ -481,6 +515,9 @@ public class ProjectController : Controller
 
         project.Status = ProjectStatus.Completed;
         await _context.SaveChangesAsync();
+
+        await ApplyDeliveryReputationAsync(userId, acceptBid.CreatedAt, acceptBid.DurationInDays,
+            projectId: project.Id);
         
         TempData["SuccessMessage"] = "Проект завершён.";
         return RedirectToAction(nameof(Details), new { id = project.Id });
@@ -566,5 +603,49 @@ public class ProjectController : Controller
         
         var suggestedIds = await _categorySuggestionService.SuggestCategoryIdsAsync(request.Title, request.Description);
         return Json(suggestedIds);
+    }
+
+    private async Task ApplyDeliveryReputationAsync(
+        string freelancerId,
+        DateTime startedAt,
+        int durationInDays,
+        int? orderId = null,
+        int? projectId = null)
+    {
+        var now = DateTime.UtcNow;
+        var deadline = startedAt.AddDays(durationInDays);
+        
+        ReputationEventType eventType;
+        string reason;
+        
+        if (durationInDays <= 0)
+        {
+            eventType = ReputationEventType.OnTimeDelivery;
+            reason = "Работа выполнена";
+        }
+        else if (now < deadline.AddDays(-1))
+        {
+            eventType = ReputationEventType.EarlyDelivery;
+            reason = $"Досрочная сдача (срок {durationInDays} дн., дедлайн {deadline:dd.MM.yyyy})";
+        }
+        else if (now <= deadline)
+        {
+            eventType = ReputationEventType.OnTimeDelivery;
+            reason = $"Сдача в срок (срок {durationInDays} дн., дедлайн {deadline:dd.MM.yyyy})";
+        }
+        else
+        {
+            var daysLate = (int)(now - deadline).TotalDays;
+            eventType = ReputationEventType.LateDelivery;
+            reason = $"Просрочка на {daysLate} дн. (срок был {durationInDays} дн., дедлайн {deadline:dd.MM.yyyy})";
+        }
+
+        await _reputationService.AddEventAsync(
+            freelancerId,
+            eventType,
+            orderId,
+            projectId,
+            reason
+        );
     }
 }

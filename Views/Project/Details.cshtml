@@ -1,6 +1,9 @@
 ﻿@using System.Globalization
+@using System.Security.Claims
+@using FreelancePlatform.Services
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @model FreelancePlatform.Models.Project
+@inject IBlacklistService _blacklistService
 @{
     ViewData["Title"] = "Детали проекта";
 }
@@ -45,7 +48,13 @@
                     break;
             }
         </p>
-        <p><strong>Клиент:</strong> @Model.Client?.Email</p>
+        <p>
+            <strong>Клиент:</strong>
+            <a asp-controller="PublicProfile" asp-action="Public"
+               asp-route-userId="@Model.ClientId">
+                @Model.Client?.UserName
+            </a>
+        </p>
 
         @if (User.Identity?.Name == Model.Client?.UserName && Model.Status == ProjectStatus.Open)
         {
@@ -109,15 +118,26 @@
         @{
             var userName = User.Identity?.Name;
             bool hasBid = Model.Bids?.Any(b => b.Freelancer?.UserName == userName) ?? false;
+            
+            var currentUserId = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+            bool isBlockedFromProject = false;
+            if (User.IsInRole("Freelancer") && currentUserId != null)
+            {
+                isBlockedFromProject = await _blacklistService.IsBlockedEitherWayAsync(
+                    currentUserId, Model.ClientId);
+            }
         }
 
-        @if (User.IsInRole("Freelancer") && !hasBid && Model.Status == ProjectStatus.Open)
+        @if (User.IsInRole("Freelancer") && !hasBid && !isBlockedFromProject && Model.Status == ProjectStatus.Open)
         {
             <a class="btn btn-primary mt-4" asp-controller="Bid" asp-action="Create" asp-route-projectId="@Model.Id">
                 Откликнуться на проект
             </a>
         }
-        
+        else if (User.IsInRole("Freelancer") && isBlockedFromProject)
+        {
+            <p class="text-muted mt-4">Вы заблокировали друг друга и не можете взаимодействовать.</p>
+        }
         else if (User.IsInRole("Freelancer") && hasBid && Model.Status == ProjectStatus.Open)
         {
             <p class="text-muted">Вы уже откликнулись на этот проект.</p>
@@ -145,6 +165,40 @@
         else if (User.IsInRole("Freelancer"))
         {
             <p class="text-muted">Вы не можете откликнуться на этот проект, так как он не является открытым.</p>
+        }
+        
+        @{
+            bool projectDone = Model.Status == ProjectStatus.Completed;
+            bool canReportFl = projectDone && currentUserId == Model.ClientId 
+                                           && Model.SelectedFreelancerId != null;
+            bool canReportCl = projectDone && currentUserId == Model.SelectedFreelancerId;
+        }
+
+        @if (canReportFl || canReportCl)
+        {
+            <div class="mt-3 pt-3" style="border-top: 1px solid var(--border);">
+                <h6 class="text-muted mb-2">Возникли проблемы?</h6>
+                <div class="d-flex gap-2 flex-wrap">
+                    @if (canReportFl)
+                    {
+                        <a asp-controller="Report" asp-action="Create"
+                           asp-route-reportedId="@Model.SelectedFreelancerId"
+                           asp-route-projectId="@Model.Id"
+                           class="btn btn-outline-danger btn-sm">
+                            🚩 Пожаловаться на фрилансера
+                        </a>
+                    }
+                    @if (canReportCl)
+                    {
+                        <a asp-controller="Report" asp-action="Create"
+                           asp-route-reportedId="@Model.ClientId"
+                           asp-route-projectId="@Model.Id"
+                           class="btn btn-outline-danger btn-sm">
+                            🚩 Пожаловаться на клиента
+                        </a>
+                    }
+                </div>
+            </div>
         }
     </div>
     

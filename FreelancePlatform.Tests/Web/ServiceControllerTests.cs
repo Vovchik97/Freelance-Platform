@@ -23,6 +23,8 @@ public class ServiceControllerTests
     private readonly CategorySuggestionService _categorySuggestionService;
     private readonly ServiceController _controller;
     private readonly RecommendationService _recommendationService;
+    private readonly IReputationService _reputationService;
+    private readonly IBlacklistService _blacklistService;
 
     public ServiceControllerTests()
     {
@@ -32,9 +34,11 @@ public class ServiceControllerTests
         _context = new AppDbContext(options);
         _categorySuggestionService = new CategorySuggestionService(_context);
         _recommendationService = new RecommendationService(_context);
+        _reputationService = new ReputationService(_context);
+        _blacklistService = new BlacklistService(_context);
         
         _mockUserManager = GetMockUserManager();
-        _controller = new ServiceController(_context, _mockUserManager.Object, _categorySuggestionService, _recommendationService);
+        _controller = new ServiceController(_context, _mockUserManager.Object, _categorySuggestionService, _recommendationService, _reputationService, _blacklistService);
     }
     
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()

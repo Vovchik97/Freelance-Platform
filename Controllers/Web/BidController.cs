@@ -14,11 +14,13 @@
     {
         private readonly AppDbContext _context;
         private readonly IEmailSender _emailSender;
+        private readonly IBlacklistService _blacklistService;
 
-        public BidController(AppDbContext context, IEmailSender emailSender)
+        public BidController(AppDbContext context, IEmailSender emailSender, IBlacklistService blacklistService)
         {
             _context = context;
             _emailSender = emailSender;
+            _blacklistService = blacklistService;
         }
 
         [AllowAnonymous]
@@ -73,6 +75,21 @@
                 ModelState.AddModelError(string.Empty, "Вы уже отправили заявку на этот проект.");
                 ViewBag.ProjectId = dto.ProjectId;
                 return View(dto);
+            }
+            
+            var project = await _context.Projects
+                .Include(p => p.Client)
+                .Include(p => p.Bids)
+                    .ThenInclude(b => b.Freelancer)
+                .FirstOrDefaultAsync(p => p.Id == dto.ProjectId);
+            
+            var isBlocked = await _blacklistService.IsBlockedEitherWayAsync(
+                userId, project.ClientId);
+
+            if (isBlocked)
+            {
+                TempData["ErrorMessage"] = "Вы не можете откликнуться на этот проект — один из вас заблокировал другого.";
+                return RedirectToAction("Details", "Project", new { id = dto.ProjectId });
             }
             
             var bid = new Bid

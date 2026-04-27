@@ -1,0 +1,60 @@
+﻿@* Views/Blacklist/My.cshtml *@
+@model List<FreelancePlatform.Models.BlacklistEntry>
+@{
+    ViewData["Title"] = "Чёрный список";
+}
+
+<div class="container mt-5">
+    <div class="header">
+        <h1>Чёрный список</h1>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <p class="text-muted">Ваш чёрный список пуст.</p>
+    }
+    else
+    {
+        <div class="custom-table-container">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Пользователь</th>
+                        <th>Причина</th>
+                        <th>Дата</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in Model)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-controller="PublicProfile" asp-action="Public"
+                                   asp-route-userId="@entry.BlockedId">
+                                    @entry.BlockedId
+                                </a>
+                            </td>
+                            <td>@(entry.Reason ?? "—")</td>
+                            <td>@entry.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                            <td>
+                                <form asp-action="Unblock" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="blockedId" value="@entry.BlockedId" />
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                        🔓 Разблокировать
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

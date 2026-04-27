@@ -16,12 +16,18 @@ public class ChatController : Controller
     private readonly AppDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
     private readonly SupportBotService _botService;
+    private readonly IBlacklistService _blacklistService;
 
-    public ChatController(AppDbContext context, UserManager<IdentityUser> userManager, SupportBotService botService)
+    public ChatController(
+        AppDbContext context, 
+        UserManager<IdentityUser> userManager, 
+        SupportBotService botService,
+        IBlacklistService blacklistService)
     {
         _context = context;
         _userManager = userManager;
         _botService = botService;
+        _blacklistService = blacklistService;
     }
 
     public async Task<IActionResult> Index()
@@ -61,6 +67,18 @@ public class ChatController : Controller
             .Include(c => c.Messages)
             .Where(c => c.ClientId == userId || c.FreelancerId == userId)
             .ToListAsync();
+        
+        var blockedUserIds = await _context.BlacklistEntries
+            .Where(b => b.BlockerId == userId || b.BlockedId == userId)
+            .Select(b => b.BlockerId == userId ? b.BlockedId : b.BlockerId)
+            .Distinct()
+            .ToListAsync();
+
+        chats = chats.Where(c => !c.IsSupport &&
+                                 !blockedUserIds.Contains(c.ClientId) &&
+                                 !blockedUserIds.Contains(c.FreelancerId))
+            .Concat(chats.Where(c => c.IsSupport))
+            .ToList();
         
         // Создаем список с дополнительной информацией о чатах
         var chatViewModels = new List<ChatDto>();
@@ -108,6 +126,24 @@ public class ChatController : Controller
             return NotFound();
         }
         
+        string? otherUserId = null;
+        string? otherUserName = null;
+
+        if (!chat.IsSupport)
+        {
+            otherUserId = chat.ClientId == userId ? chat.FreelancerId : chat.ClientId;
+            var otherUser = await _userManager.FindByIdAsync(otherUserId);
+            otherUserName = otherUser?.UserName;
+            
+            var isBlocked = await _blacklistService.IsBlockedEitherWayAsync(userId, otherUserId);
+
+            if (isBlocked)
+            {
+                TempData["ErrorMessage"] = "Этот чат недоступен — один из вас заблокировал другого.";
+                return RedirectToAction("Index");
+            }
+        }
+        
         foreach (var msg in chat.Messages.Where(m => m.SenderId != userId && !m.IsRead))
         {
             msg.IsRead = true;
@@ -115,7 +151,8 @@ public class ChatController : Controller
         await _context.SaveChangesAsync();
         
         ViewBag.UserName = User.Identity!.Name;
-        ViewBag.OtherUser = chat.IsSupport ? "Техподдержка" : (chat.ClientId == userId ? (await _userManager.FindByIdAsync(chat.FreelancerId))?.UserName : (await _userManager.FindByIdAsync(chat.ClientId))?.UserName);
+        ViewBag.OtherUser = chat.IsSupport ? "Техподдержка" : otherUserName;
+        ViewBag.OtherUserId = otherUserId;
         ViewBag.CurrentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         ViewBag.IsSupport = chat.IsSupport;
         ViewBag.IsBotActive = chat.IsBotActive;

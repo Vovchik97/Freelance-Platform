@@ -11,10 +11,21 @@ ViewData["Title"] = "Чат";
 <div class="container">
     <div class="project-card">
         <div class="card-header">
-            Чат с @(Model.IsSupport ? "Техподдержкой" : ViewBag.OtherUser)
+            Чат с 
             @if (Model.IsSupport)
             {
-            <span class="ms-2 text-muted small">(@(ViewBag.IsBotActive ? "Отвечает бот" : "Живой оператор"))</span>
+                @:Техподдержкой
+                <span class="ms-2 text-muted small">
+                    (@(ViewBag.IsBotActive ? "Отвечает бот" : "Живой оператор"))
+                </span>
+            }
+            else
+            {
+                <a asp-controller="PublicProfile" asp-action="Public"
+                   asp-route-userId="@ViewBag.OtherUserId"
+                   style="color: inherit; text-decoration: underline;">
+                    @ViewBag.OtherUser
+                </a>
             }
         </div>
         <div class="card-body" style="height: 400px; overflow-y: auto;">

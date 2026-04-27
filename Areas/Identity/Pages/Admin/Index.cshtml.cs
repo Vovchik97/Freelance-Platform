@@ -1,4 +1,5 @@
 ﻿using FreelancePlatform.Context;
+using FreelancePlatform.Models;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,6 +16,8 @@ public class IndexModel : PageModel
     public async Task OnGetAsync()
     {
         var HasNewSupport = await _context.Chats.AnyAsync(c => c.IsSupport && !c.IsBotActive);
+        var pendingReportsCount = await _context.Reports.CountAsync(r => r.Status == ReportStatus.Pending);
         ViewData["HasNewSupport"] = HasNewSupport;
+        ViewData["PendingReportsCount"] = pendingReportsCount;
     }
 }

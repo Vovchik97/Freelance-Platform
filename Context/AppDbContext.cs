@@ -29,6 +29,10 @@ public class AppDbContext : IdentityDbContext
     public DbSet<TaskTemplate> TaskTemplates { get; set; }
     public DbSet<TaskTemplateItem> TaskTemplateItems { get; set; } 
     public DbSet<WorkItem> WorkItems { get; set; }
+    public DbSet<BlacklistEntry> BlacklistEntries { get; set; }
+    public DbSet<Report> Reports { get; set; }
+    public DbSet<ReputationEvent> ReputationEvents { get; set; }
+    public DbSet<UserReputation> UserReputations { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) 
     {

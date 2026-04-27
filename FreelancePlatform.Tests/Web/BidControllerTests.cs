@@ -17,6 +17,7 @@ public class BidControllerTests
 {
     private readonly AppDbContext _context;
     private readonly BidController _controller;
+    private readonly Mock<IBlacklistService> _mockBlacklistService;
 
     public BidControllerTests()
     {
@@ -24,9 +25,10 @@ public class BidControllerTests
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         _context = new AppDbContext(options);
+        _mockBlacklistService = new Mock<IBlacklistService>();
 
         var emailSender = new FakeEmailSender();
-        _controller = new BidController(_context, emailSender);
+        _controller = new BidController(_context, emailSender, _mockBlacklistService.Object);
     }
 
     private void SetUser(string userId, string role = "Freelancer")

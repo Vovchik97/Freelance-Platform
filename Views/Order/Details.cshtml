@@ -123,6 +123,44 @@ ViewData["Title"] = "Заказ";
             💳 Оплатить заказ
         </a>
         }
+        
+        @{
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var freelancerId  = Model.Service?.FreelancerId;
+            var clientId      = Model.ClientId;
+    
+            // Показываем жалобу только если заказ завершён и пользователь участник
+            bool orderCompleted = Model.Status == OrderStatus.Completed;
+            bool canReportFreelancer = orderCompleted && currentUserId == clientId && freelancerId != null;
+            bool canReportClient     = orderCompleted && currentUserId == freelancerId;
+        }
+
+        @if (canReportFreelancer || canReportClient)
+        {
+            <div class="mt-3 pt-3" style="border-top: 1px solid var(--border);">
+                <h6 class="text-muted mb-2">Возникли проблемы?</h6>
+                <div class="d-flex gap-2 flex-wrap">
+                    @if (canReportFreelancer)
+                    {
+                        <a asp-controller="Report" asp-action="Create"
+                           asp-route-reportedId="@freelancerId"
+                           asp-route-orderId="@Model.Id"
+                           class="btn btn-outline-danger btn-sm">
+                            🚩 Пожаловаться на фрилансера
+                        </a>
+                    }
+                    @if (canReportClient)
+                    {
+                        <a asp-controller="Report" asp-action="Create"
+                           asp-route-reportedId="@clientId"
+                           asp-route-orderId="@Model.Id"
+                           class="btn btn-outline-danger btn-sm">
+                            🚩 Пожаловаться на клиента
+                        </a>
+                    }
+                </div>
+            </div>
+        }
     </div>
 
     <!-- ========== БЛОК ЗАДАЧ (с уменьшенным отступом) ========== -->
