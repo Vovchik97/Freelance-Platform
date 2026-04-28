@@ -2,11 +2,48 @@
 @inject UserManager<IdentityUser> UserManager
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>@ViewData["Title"] - FreelancePlatform</title>
+    
+    <title>
+        @(ViewData["Title"] != null 
+            ? ViewData["Title"] + " | FreelancePlatform" 
+            : "FreelancePlatform — биржа фриланса в России")
+    </title>
+    
+    <meta name="description" 
+          content="@(ViewData["MetaDescription"] ?? "FreelancePlatform — найдите лучших фрилансеров или разместите проект. Веб-разработка, дизайн, копирайтинг и многое другое.")" />
+    <meta name="keywords" 
+          content="@(ViewData["MetaKeywords"] ?? "фрилансер, биржа фриланса, заказать сайт, веб-разработка, дизайн, копирайтинг, удалённая работа")" />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="FreelancePlatform" />
+    <link rel="canonical" 
+          href="@(ViewData["CanonicalUrl"] ?? $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}")" />
+    
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="FreelancePlatform" />
+    <meta property="og:title" 
+          content="@(ViewData["OgTitle"] ?? ViewData["Title"] ?? "FreelancePlatform")" />
+    <meta property="og:description" 
+          content="@(ViewData["OgDescription"] ?? ViewData["MetaDescription"] ?? "Биржа фриланса — находите проекты и исполнителей")" />
+    <meta property="og:url" 
+          content="@($"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}")" />
+    <meta property="og:image" 
+          content="@(ViewData["OgImage"] ?? $"{Context.Request.Scheme}://{Context.Request.Host}/img/og-default.png")" />
+    <meta property="og:locale" content="ru_RU" />
+    
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" 
+          content="@(ViewData["OgTitle"] ?? ViewData["Title"] ?? "FreelancePlatform")" />
+    <meta name="twitter:description" 
+          content="@(ViewData["OgDescription"] ?? ViewData["MetaDescription"] ?? "Биржа фриланса")" />
+    <meta name="twitter:image" 
+          content="@(ViewData["OgImage"] ?? $"{Context.Request.Scheme}://{Context.Request.Host}/img/og-default.png")" />
+    
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="~/css/themes.css" asp-append-version="true"/>
     <link rel="stylesheet" href="~/css/base.css" asp-append-version="true"/>

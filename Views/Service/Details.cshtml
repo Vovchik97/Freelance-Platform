@@ -9,7 +9,19 @@
 @inject IBlacklistService _blacklistService
 
 @{
-    ViewData["Title"] = "Детали услуги";
+    ViewData["Title"] = Model.Title;
+    
+    var seoDesc = Model.Description?.Length > 155
+        ? Model.Description.Substring(0, 152) + "..."
+        : Model.Description ?? "";
+    var seoCats = string.Join(", ", Model.Categories?.Select(c => c.Name) ?? []);
+    
+    ViewData["MetaDescription"] = $"{Model.Title} — цена {Model.Price.ToString("N0")} ₽. {seoDesc}";
+    ViewData["MetaKeywords"] = $"заказать {Model.Title}, {seoCats}, фрилансер, {Model.Freelancer?.UserName}";
+    ViewData["OgTitle"] = $"{Model.Title} | FreelancePlatform";
+    ViewData["OgDescription"] = seoDesc;
+    ViewData["CanonicalUrl"] = $"{Context.Request.Scheme}://{Context.Request.Host}/Service/Details/{Model.Id}";
+    
     double avgRating       = ViewBag.AverageRating ?? 0.0;
     int    reviewsCount    = ViewBag.ReviewsCount ?? 0;
     double avgQuality      = ViewBag.AvgQuality ?? 0.0;
@@ -19,6 +31,40 @@
     bool   canReview       = ViewBag.CanReview ?? false;
     var    selectedRatings = (ViewBag.SelectedRatings as List<int>) ?? new List<int>();
 }
+
+<script type="application/ld+json">
+{
+    "@@context": "https://schema.org",
+    "@@type": "Service",
+    "name": "@Html.Raw(Model.Title?.Replace("\"", "\\\""))",
+    "description": "@Html.Raw(seoDesc.Replace("\"", "\\\""))",
+    "provider": {
+        "@@type": "Person",
+        "name": "@Model.Freelancer?.UserName"
+    },
+    "offers": {
+        "@@type": "Offer",
+        "price": "@Model.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)",
+        "priceCurrency": "RUB",
+        "availability": "@(Model.Status == ServiceStatus.Available 
+                             ? "https://schema.org/InStock" 
+                             : "https://schema.org/OutOfStock")"
+    },
+    "areaServed": {
+        "@@type": "Country",
+        "name": "Russia"
+    },
+    "aggregateRating": @if (reviewsCount > 0) {
+                           <text>{
+            "@@type": "AggregateRating",
+            "ratingValue": "@avgRating.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)",
+            "reviewCount": "@reviewsCount",
+            "bestRating": "5",
+            "worstRating": "1"
+        }</text>
+                       } else { <text>null</text> }
+}
+</script>
 
 @if (TempData["SuccessMessage"] != null)
 {

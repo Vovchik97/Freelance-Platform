@@ -5,8 +5,50 @@
 @model FreelancePlatform.Models.Project
 @inject IBlacklistService _blacklistService
 @{
-    ViewData["Title"] = "Детали проекта";
+    ViewData["Title"] = Model.Title;
+    
+    var seoDescription = Model.Description?.Length > 155
+        ? Model.Description.Substring(0, 152) + "..."
+        : Model.Description ?? "";
+    var seoCategories = string.Join(", ", Model.Categories?.Select(c => c.Name) ?? []);
+    
+    ViewData["MetaDescription"] = $"{Model.Title} — бюджет {Model.Budget.ToString("N0")} ₽. {seoDescription}";
+    ViewData["MetaKeywords"] = $"фриланс проект, {Model.Title}, {seoCategories}, удалённая работа, фрилансер";
+    ViewData["OgTitle"] = $"{Model.Title} | FreelancePlatform";
+    ViewData["OgDescription"] = seoDescription;
+    ViewData["CanonicalUrl"] = $"{Context.Request.Scheme}://{Context.Request.Host}/Project/Details/{Model.Id}";
 }
+
+<script type="application/ld+json">
+{
+    "@@context": "https://schema.org",
+    "@@type": "JobPosting",
+    "title": "@Html.Raw(Model.Title?.Replace("\"", "\\\""))",
+    "description": "@Html.Raw(seoDescription.Replace("\"", "\\\""))",
+    "datePosted": "@Model.CreatedAt.ToString("yyyy-MM-dd")",
+    "validThrough": "@Model.CreatedAt.AddMonths(1).ToString("yyyy-MM-dd")",
+    "hiringOrganization": {
+        "@@type": "Organization",
+        "name": "FreelancePlatform",
+        "sameAs": "@Context.Request.Scheme://@Context.Request.Host"
+    },
+    "jobLocationType": "TELECOMMUTE",
+    "applicantLocationRequirements": {
+        "@@type": "Country",
+        "name": "Russia"
+    },
+    "baseSalary": {
+        "@@type": "MonetaryAmount",
+        "currency": "RUB",
+        "value": {
+            "@@type": "QuantitativeValue",
+            "value": @Model.Budget.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            "unitText": "TOTAL"
+        }
+    },
+    "employmentType": "CONTRACTOR"
+}
+</script>
 
 @if (TempData["SuccessMessage"] != null)
 {

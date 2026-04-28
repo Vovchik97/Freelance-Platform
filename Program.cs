@@ -200,4 +200,9 @@ app.MapRazorPages();
 app.MapHub<ChatHub>("/chatHub");
 app.MapHub<GroupChatHub>("/groupChatHub");
 
+app.MapControllerRoute(
+    name: "sitemap",
+    pattern: "sitemap.xml",
+    defaults: new { controller = "Sitemap", action = "Index" });
+
 app.Run();

@@ -1,0 +1,18 @@
+﻿User-agent: *
+Allow: /
+Allow: /Project/
+Allow: /Service/
+Allow: /PublicProfile/
+
+Disallow: /Admin/
+Disallow: /api/
+Disallow: /Identity/
+Disallow: /Chat/
+Disallow: /Balance/
+Disallow: /Payment/
+Disallow: /Order/
+Disallow: /Bid/
+Disallow: /Report/
+Disallow: /Blacklist/
+
+Sitemap: https://ВАШ_ДОМЕН/sitemap.xml

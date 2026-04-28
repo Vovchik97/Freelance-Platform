@@ -3,6 +3,13 @@
 @model IEnumerable<FreelancePlatform.Models.Service>
 @{
     ViewData["Title"] = "Каталог услуг";
+    
+    ViewData["MetaDescription"] = "Каталог услуг фрилансеров. Закажите разработку сайта, мобильного приложения, дизайн, тексты, SEO-продвижение по выгодным ценам.";
+    ViewData["MetaKeywords"] = "услуги фрилансеров, заказать сайт, разработка приложений, дизайн на заказ, копирайтинг, SEO продвижение, фрилансер";
+    ViewData["OgTitle"] = "Каталог услуг фрилансеров | FreelancePlatform";
+    ViewData["OgDescription"] = "Найдите нужную услугу среди тысяч предложений от профессиональных фрилансеров.";
+    ViewData["CanonicalUrl"] = $"{Context.Request.Scheme}://{Context.Request.Host}/Service";
+    
     var allCategories = ViewBag.AllCategories as List<FreelancePlatform.Models.Category> ?? new List<FreelancePlatform.Models.Category>();
     var selectedCategories = ViewBag.SelectedCategories as List<int> ?? new List<int>();
 }

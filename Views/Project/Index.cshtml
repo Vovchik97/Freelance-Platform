@@ -3,6 +3,13 @@
 @model IEnumerable<FreelancePlatform.Models.Project>
 @{
     ViewData["Title"] = "Каталог проектов";
+    
+    ViewData["MetaDescription"] = "Каталог фриланс-проектов. Найдите интересный проект по веб-разработке, дизайну, маркетингу и другим направлениям. Удалённая работа по всей России.";
+    ViewData["MetaKeywords"] = "биржа фриланса, найти проект, фриланс вакансии, веб-разработка, дизайн проекты, удалённая работа, заказать разработку";
+    ViewData["OgTitle"] = "Каталог проектов | FreelancePlatform";
+    ViewData["OgDescription"] = "Тысячи фриланс-проектов. Откликайтесь и зарабатывайте удалённо.";
+    ViewData["CanonicalUrl"] = $"{Context.Request.Scheme}://{Context.Request.Host}/Project";
+    
     var allCategories = ViewBag.AllCategories as List<FreelancePlatform.Models.Category> 
                         ?? new List<FreelancePlatform.Models.Category>();
     var selectedCategories = ViewBag.SelectedCategories as List<int> ?? new List<int>();
