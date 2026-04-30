@@ -1,11 +1,13 @@
 ﻿@page
+@using System.Globalization
 @model FreelancePlatform.Areas.Identity.Pages.Admin.Analytics.IndexModel
 @{
-ViewData["Title"] = "Аналитика";
+    ViewData["Title"] = "Аналитика";
 }
 
 <h2 class="text-center my-4">Аналитика платформы</h2>
 
+<!-- =================== ОСНОВНЫЕ МЕТРИКИ =================== -->
 <div class="row text-center mb-4">
     <div class="col-md-3 mb-3">
         <div class="project-card">
@@ -62,35 +64,276 @@ ViewData["Title"] = "Аналитика";
         <div class="project-card">
             <div class="card-body">
                 <h5 class="card-title">Заказы</h5>
-                <p class="display-6 text-truncate">@Model.OrderCount</p>
+                <p class="display-6">@Model.OrderCount</p>
             </div>
         </div>
     </div>
 </div>
 
-
 <hr />
 
-<div class="row">
-    <div class="col-md-6">
-        <h4 class="text-center">Соотношение ролей</h4>
-        <canvas id="rolesChart"></canvas>
-    </div>
-    <div class="col-md-6">
-        <div class="mb-4">
-            <h4 class="text-center">Активность на платформе</h4>
-            <canvas id="activityChart"></canvas>
+<!-- =================== ИНДЕКС ЗДОРОВЬЯ ПЛАТФОРМЫ =================== -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="project-card">
+            <h4 class="filters-title mb-3">🏥 Индекс здоровья платформы</h4>
+            <div class="text-center mb-4">
+                <div style="font-size: 4rem; font-weight: 700; color: @Model.HealthIndex.StatusColor;">
+                    @Model.HealthIndex.Score
+                </div>
+                <div style="font-size: 1.5rem; color: @Model.HealthIndex.StatusColor; font-weight: 600;">
+                    @Model.HealthIndex.Status
+                </div>
+                <span style="color: var(--text-primary); font-size: 0.9rem;">
+                    Из 100 возможных баллов
+                </span>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span style="font-size: 0.875rem; color: var(--text-primary);">
+                            Конверсия проектов
+                        </span>
+                        <span style="font-size: 0.875rem; font-weight: 700; color: var(--text-primary);">
+                            @Model.HealthIndex.ConversionScore%
+                        </span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-success"
+                             style="width: @(Model.HealthIndex.ConversionScore.ToString(CultureInfo.InvariantCulture))%">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span style="font-size: 0.875rem; color: var(--text-primary);">
+                            Рост оборота
+                        </span>
+                        <span style="font-size: 0.875rem; font-weight: 700; color: var(--text-primary);">
+                            @Model.HealthIndex.RevenueGrowthScore%
+                        </span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-info"
+                             style="width: @(Model.HealthIndex.RevenueGrowthScore.ToString(CultureInfo.InvariantCulture))%">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span style="font-size: 0.875rem; color: var(--text-primary);">
+                            Активность пользователей
+                        </span>
+                        <span style="font-size: 0.875rem; font-weight: 700; color: var(--text-primary);">
+                            @Model.HealthIndex.ActivityScore%
+                        </span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-warning"
+                             style="width: @(Model.HealthIndex.ActivityScore.ToString(CultureInfo.InvariantCulture))%">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span style="font-size: 0.875rem; color: var(--text-primary);">
+                            Удержание пользователей
+                        </span>
+                        <span style="font-size: 0.875rem; font-weight: 700; color: var(--text-primary);">
+                            @Model.HealthIndex.RetentionScore%
+                        </span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-primary"
+                             style="width: @(Model.HealthIndex.RetentionScore.ToString(CultureInfo.InvariantCulture))%">
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div>
-            <h4 class="text-center">Оборот по месяцам</h4>
+    </div>
+</div>
+
+<!-- =================== ТРЕНД РОСТА ПОЛЬЗОВАТЕЛЕЙ =================== -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="project-card">
+            <h4 class="filters-title mb-3">📈 Тренд роста пользователей</h4>
+            <div class="row text-center align-items-stretch">
+                <div class="col-md-3 mb-3">
+                    <div class="project-card d-flex flex-column justify-content-center"
+                         style="background: var(--surface-light); height: 100%; min-height: 130px;">
+                        <span style="font-size: 0.8rem; color: var(--text-primary);">
+                            Направление
+                        </span>
+                        <div style="font-size: 2rem; margin: 4px 0;">
+                            @(Model.UserGrowthRegression.TrendDirection == "Растёт" ? "📈" :
+                              Model.UserGrowthRegression.TrendDirection == "Падает" ? "📉" : "➡️")
+                        </div>
+                        <div style="font-weight: 700; color: var(--text-primary);">
+                            @Model.UserGrowthRegression.TrendDirection
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="project-card d-flex flex-column justify-content-center"
+                         style="background: var(--surface-light); height: 100%; min-height: 130px;">
+                        <span style="font-size: 0.8rem; color: var(--text-primary);">
+                            Прирост в месяц
+                        </span>
+                        <div style="font-size: 2rem; margin: 4px 0;">👥</div>
+                        <div style="font-weight: 700; color: var(--text-primary);">
+                            +@Model.UserGrowthRegression.Slope чел.
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="project-card d-flex flex-column justify-content-center"
+                         style="background: var(--surface-light); height: 100%; min-height: 130px;">
+                        <span style="font-size: 0.8rem; color: var(--text-primary);">
+                            Точность модели (R²)
+                        </span>
+                        <div style="font-size: 2rem; margin: 4px 0;">🎯</div>
+                        <div style="font-weight: 700; color: var(--text-primary);">
+                            @Model.UserGrowthRegression.R2
+                        </div>
+                        <span style="font-size: 0.75rem; color: var(--text-primary);">
+                            @(Model.UserGrowthRegression.R2 > 0.8 ? "Высокая точность" :
+                              Model.UserGrowthRegression.R2 > 0.5 ? "Средняя точность" : "Низкая точность")
+                        </span>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="project-card d-flex flex-column justify-content-center"
+                         style="background: var(--surface-light); height: 100%; min-height: 130px;">
+                        <span style="font-size: 0.8rem; color: var(--text-primary);">
+                            До удвоения аудитории
+                        </span>
+                        <div style="font-size: 2rem; margin: 4px 0;">⏱️</div>
+                        <div style="font-weight: 700; color: var(--text-primary);">
+                            @(Model.UserGrowthRegression.MonthsToDouble > 0
+                                ? Model.UserGrowthRegression.MonthsToDouble + " мес."
+                                : "—")
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =================== ГРАФИКИ =================== -->
+<div class="row mb-4 align-items-stretch">
+    <div class="col-md-6 mb-3">
+        <div class="project-card h-100">
+            <h4 class="filters-title mb-3">Соотношение ролей</h4>
+            <div style="position: relative; height: 300px;">
+                <canvas id="rolesChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="project-card h-100">
+            <h4 class="filters-title mb-3">Активность на платформе</h4>
+            <div style="position: relative; height: 300px;">
+                <canvas id="activityChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =================== ОБОРОТ + АНОМАЛИИ =================== -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="project-card">
+            <h4 class="filters-title mb-1">Оборот по месяцам</h4>
+            <p style="color: var(--text-primary); font-size: 0.85rem; margin-bottom: 1rem;">
+                — пунктир: прогноз на 3 месяца (ETS сглаживание)
+            </p>
             <canvas id="revenueChart"></canvas>
         </div>
     </div>
 </div>
 
+@if (Model.RevenueAnomalies.Any())
+{
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="project-card" style="border-color: #dc3545;">
+                <h4 class="filters-title mb-3">⚠️ Аномалии в обороте</h4>
+                <p style="color: var(--text-primary); font-size: 0.875rem; text-align: center; margin-bottom: 1rem;">
+                    Периоды со значительным отклонением от нормы (Z-score &gt; 2σ)
+                </p>
+                <div class="table-responsive">
+                    <table class="table custom-table">
+                        <thead>
+                            <tr>
+                                <th>Период</th>
+                                <th>Значение</th>
+                                <th>Z-score</th>
+                                <th>Тип</th>
+                                <th>Серьёзность</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var anomaly in Model.RevenueAnomalies)
+                            {
+                                <tr>
+                                    <td>@anomaly.Label</td>
+                                    <td>@anomaly.Value.ToString("N0") ₽</td>
+                                    <td>
+                                        <span class="badge @(anomaly.ZScore > 3 ? "bg-danger" : "bg-warning text-dark")">
+                                            @anomaly.ZScore σ
+                                        </span>
+                                    </td>
+                                    <td>@(anomaly.IsSpike ? "📈 Всплеск" : "📉 Просадка")</td>
+                                    <td>
+                                        <span class="badge @(anomaly.Severity == "Критическая" ? "bg-danger" : "bg-warning text-dark")">
+                                            @anomaly.Severity
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="project-card" style="border-color: #28a745;">
+                <div class="text-center py-2">
+                    <span style="font-size: 1.5rem;">✅</span>
+                    <span class="ms-2 fw-bold" style="color: #28a745;">
+                        Аномалий в обороте не обнаружено
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- =================== RETENTION =================== -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="project-card">
+            <h4 class="filters-title mb-1">Удержание и отток пользователей</h4>
+            <p style="color: var(--text-primary); font-size: 0.85rem; margin-bottom: 1rem;">
+                — средний retention: @Model.Retention.AverageRetention%
+            </p>
+            <canvas id="retentionChart"></canvas>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
-    <script>
-    const rolesChart = new Chart(document.getElementById("rolesChart"), {
+<script>
+    // =================== РОЛИ ===================
+    new Chart(document.getElementById("rolesChart"), {
         type: "doughnut",
         data: {
             labels: ["Фрилансеры", "Клиенты"],
@@ -99,76 +342,155 @@ ViewData["Title"] = "Аналитика";
                 data: [@Model.FreelancerCount, @Model.ClientCount],
                 backgroundColor: ["#28a745", "#17a2b8"]
             }]
-        }
-    });
-
-    const activityChart = new Chart(document.getElementById("activityChart"), {
-        type: "bar",
-        data: {
-            labels: ["Проекты", "Услуги", "Заявки", "Заказы"],
-            datasets: [{
-                label: "Количество",
-                data: [@Model.ProjectCount, @Model.ServiceCount, @Model.ApplicationCount, @Model.OrderCount],
-                backgroundColor: ["#ffc107", "#dc3545", "#6c757d", "#343a40"]
-            }]
         },
         options: {
             responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
             }
         }
     });
 
-    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-
-    const months = @Html.Raw(Json.Serialize(Model.Months));
-    const revenue = @Html.Raw(Json.Serialize(Model.RevenueByMonth));
-
-    const revenueChart = new Chart(document.getElementById('revenueChart'), {
-        type: 'line',
+    // =================== АКТИВНОСТЬ ===================
+    new Chart(document.getElementById("activityChart"), {
+        type: "bar",
         data: {
-            labels: months,
+            labels: ["Проекты", "Услуги", "Заявки", "Заказы"],
             datasets: [{
-                label: 'Оборот (₽)',
-                data: revenue,
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 2,
-                tension: 0.3,
-                fill: true,
-                pointRadius: 5
+                data: [@Model.ProjectCount, @Model.ServiceCount,
+                       @Model.ApplicationCount, @Model.OrderCount],
+                backgroundColor: ["#ffc107", "#dc3545", "#6c757d", "#6c63ff"]
             }]
         },
         options: {
             responsive: true,
-            interaction: {
-                mode: 'index',
-                intersect: false
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => `${ctx.label}: ${ctx.raw}`
+                    }
+                }
             },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    // =================== ОБОРОТ + ПРОГНОЗ ===================
+    const historicalMonths = @Html.Raw(Json.Serialize(Model.Months));
+    const forecastMonths   = @Html.Raw(Json.Serialize(Model.ForecastMonths));
+    const allMonths        = [...historicalMonths, ...forecastMonths];
+
+    const historicalRevenue = @Html.Raw(Json.Serialize(Model.RevenueByMonth));
+    const forecastRevenue   = @Html.Raw(Json.Serialize(Model.RevenueForecast));
+
+    const realData = [...historicalRevenue, null, null, null];
+    const forecastData = [
+        ...Array(@Model.Months.Length - 1).fill(null),
+        historicalRevenue[historicalRevenue.length - 1],
+        ...forecastRevenue
+    ];
+
+    new Chart(document.getElementById('revenueChart'), {
+        type: 'line',
+        data: {
+            labels: allMonths,
+            datasets: [
+                {
+                    label: 'Оборот (₽)',
+                    data: realData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 5
+                },
+                {
+                    label: 'Прогноз ETS (₽)',
+                    data: forecastData,
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    backgroundColor: 'rgba(255, 159, 64, 0.1)',
+                    borderWidth: 2,
+                    borderDash: [8, 4],
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 5,
+                    pointStyle: 'triangle'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
             plugins: {
                 tooltip: {
                     callbacks: {
-                        label: context => `${context.dataset.label}: ${context.raw.toLocaleString()} ₽`
+                        label: ctx => ctx.raw != null
+                            ? `${ctx.dataset.label}: ${ctx.raw.toLocaleString()} ₽`
+                            : null
                     }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    type: 'linear',
-                    title: {
-                        display: true,
-                        text: 'Сумма (₽)'
-                    }
+                    title: { display: true, text: 'Сумма (₽)' }
                 },
                 x: {
-                    type: 'category',
-                    title: {
-                        display: true,
-                        text: 'Месяц'
+                    title: { display: true, text: 'Месяц' }
+                }
+            }
+        }
+    });
+
+    // =================== RETENTION ===================
+    const retentionRates = @Html.Raw(Json.Serialize(Model.Retention.RetentionRates));
+    const churnRates     = @Html.Raw(Json.Serialize(Model.Retention.ChurnRates));
+
+    new Chart(document.getElementById('retentionChart'), {
+        type: 'bar',
+        data: {
+            labels: historicalMonths,
+            datasets: [
+                {
+                    label: 'Retention — удержание (%)',
+                    data: retentionRates,
+                    backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                    borderColor: '#28a745',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Churn — отток (%)',
+                    data: churnRates,
+                    backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                    borderColor: '#dc3545',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: 'Процент (%)' }
+                },
+                x: {
+                    title: { display: true, text: 'Месяц' }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: ctx => `${ctx.dataset.label}: ${ctx.raw}%`
                     }
                 }
             }

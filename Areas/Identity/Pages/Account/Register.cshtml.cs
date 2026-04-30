@@ -10,6 +10,8 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
+using FreelancePlatform.Context;
+using FreelancePlatform.Models;
 using Humanizer;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -31,13 +33,15 @@ namespace FreelancePlatform.Areas.Identity.Pages.Account
         private readonly IUserEmailStore<IdentityUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
+        private readonly AppDbContext _context;
 
         public RegisterModel(
             UserManager<IdentityUser> userManager,
             IUserStore<IdentityUser> userStore,
             SignInManager<IdentityUser> signInManager,
             ILogger<RegisterModel> logger,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            AppDbContext context)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -45,6 +49,7 @@ namespace FreelancePlatform.Areas.Identity.Pages.Account
             _signInManager = signInManager;
             _logger = logger;
             _emailSender = emailSender;
+            _context = context;
         }
 
         /// <summary>
@@ -131,6 +136,16 @@ namespace FreelancePlatform.Areas.Identity.Pages.Account
                         await _userManager.AddToRoleAsync(user, Input.Role);
                         
                         var userId = await _userManager.GetUserIdAsync(user);
+
+                        _context.UserMetadata.Add(new UserMetadata
+                        {
+                            UserId = userId,
+                            RegisteredAt = DateTime.UtcNow,
+                            LastActivityAt = DateTime.UtcNow
+                        });
+
+                        await _context.SaveChangesAsync();
+                        
                         var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
                         var callbackUrl = Url.Page(

@@ -33,6 +33,7 @@ public class AppDbContext : IdentityDbContext
     public DbSet<Report> Reports { get; set; }
     public DbSet<ReputationEvent> ReputationEvents { get; set; }
     public DbSet<UserReputation> UserReputations { get; set; }
+    public DbSet<UserMetadata> UserMetadata { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) 
     {
