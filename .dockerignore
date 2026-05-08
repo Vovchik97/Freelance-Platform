@@ -7,3 +7,9 @@ bin/
 obj/
 LICENSE
 README.md
+
+# Исключаем тестовый проект
+FreelancePlatform.Tests/
+
+# Исключаем solution файл (чтобы dotnet не собирал всё)
+*.sln

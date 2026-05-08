@@ -4,13 +4,13 @@ WORKDIR /app
 
 # Копируем .csproj и восстанавливаем зависимости
 COPY FreelancePlatform.csproj .
-RUN dotnet restore
+RUN dotnet restore FreelancePlatform.csproj
 
 # Копируем весь код
 COPY . .
 
-# Публикуем в папку out
-RUN dotnet publish -c Release -o out
+# Публикуем конкретный проект, а не solution
+RUN dotnet publish FreelancePlatform.csproj -c Release -o out
 
 # === Запуск ===
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
