@@ -844,4 +844,169 @@ public static class DbSeeder
             await context.SaveChangesAsync();
         }
     }
+    
+    public static async Task SeedAnalyticsDataAsync(AppDbContext context)
+    {
+        // Удаляем только исторические записи если они уже есть
+        var historicalBidsToDelete = context.Bids
+            .Where(b => b.Comment.StartsWith("Принятая заявка"));
+        context.Bids.RemoveRange(historicalBidsToDelete);
+
+        var historicalOrdersToDelete = context.Orders
+            .Where(o => o.Comment.StartsWith("Исторический заказ"));
+        context.Orders.RemoveRange(historicalOrdersToDelete);
+
+        var historicalMetaToDelete = context.UserMetadata
+            .Where(um => um.UserId.StartsWith("historical_user_"));
+        context.UserMetadata.RemoveRange(historicalMetaToDelete);
+
+        await context.SaveChangesAsync();
+
+        var now = DateTime.UtcNow;
+
+        var monthlyRevenueTargets = new[]
+        {
+            new { MonthOffset = -5, OrderRevenue = 3200m, BidRevenue = 1800m },
+            new { MonthOffset = -4, OrderRevenue = 4100m, BidRevenue = 2200m },
+            new { MonthOffset = -3, OrderRevenue = 3600m, BidRevenue = 1900m },
+            new { MonthOffset = -2, OrderRevenue = 5200m, BidRevenue = 2800m },
+            new { MonthOffset = -1, OrderRevenue = 6300m, BidRevenue = 3100m },
+            new { MonthOffset =  0, OrderRevenue = 7100m, BidRevenue = 3600m },
+        };
+
+        var servicePrices = new Dictionary<int, decimal>
+        {
+            { 1, 1000m }, { 2, 1200m }, { 3, 1500m }, { 4, 2000m }, { 5, 2500m },
+            { 6, 800m  }, { 7, 700m  }, { 8, 1100m }, { 9, 1300m }, { 10, 1600m }
+        };
+
+        string[] clientIds2     = { "client1", "client2", "client3", "client4", "client5" };
+        string[] freelancerIds2 = { "freelancer1", "freelancer2", "freelancer3", "freelancer4", "freelancer5" };
+
+        int clientIdx     = 0;
+        int freelancerIdx = 0;
+        int serviceIdx    = 1;
+        int projectIdx    = 1;
+
+        var newOrders = new List<Order>();
+        var newBids   = new List<Bid>();
+
+        foreach (var target in monthlyRevenueTargets)
+        {
+            // ← ИСПРАВЛЕНИЕ: создаём UTC дату
+            var monthDate = DateTime.SpecifyKind(
+                new DateTime(now.Year, now.Month, 1), 
+                DateTimeKind.Utc
+            ).AddMonths(target.MonthOffset);
+
+            // ---- Completed Orders ----
+            decimal orderSum  = 0m;
+            int     dayOffset = 1;
+
+            while (orderSum < target.OrderRevenue)
+            {
+                var svcId    = serviceIdx;
+                var svcPrice = servicePrices[svcId];
+
+                if (orderSum + svcPrice > target.OrderRevenue + 2500m)
+                    svcPrice = servicePrices[1];
+
+                var createdAt = monthDate.AddDays((dayOffset % 27) + 1)
+                                         .AddHours(dayOffset % 12);
+
+                newOrders.Add(new Order
+                {
+                    ClientId       = clientIds2[clientIdx % clientIds2.Length],
+                    ServiceId      = svcId,
+                    Comment        = $"Исторический заказ {monthDate:MM/yyyy}",
+                    DurationInDays = 7,
+                    CreatedAt      = createdAt,
+                    Status         = OrderStatus.Completed
+                });
+
+                orderSum   += svcPrice;
+                dayOffset++;
+                clientIdx++;
+                serviceIdx = (serviceIdx % 10) + 1;
+            }
+
+            // ---- Accepted Bids ----
+            decimal bidSum = 0m;
+            dayOffset = 1;
+
+            while (bidSum < target.BidRevenue)
+            {
+                decimal bidAmount = 500m + (freelancerIdx % 7) * 200m;
+
+                if (bidSum + bidAmount > target.BidRevenue + 1700m)
+                    bidAmount = 500m;
+
+                var createdAt = monthDate.AddDays((dayOffset % 27) + 1)
+                                         .AddHours((dayOffset + 3) % 12);
+
+                newBids.Add(new Bid
+                {
+                    FreelancerId   = freelancerIds2[freelancerIdx % freelancerIds2.Length],
+                    ProjectId      = (projectIdx % 10) + 1,
+                    Amount         = bidAmount,
+                    Comment        = $"Принятая заявка {monthDate:MM/yyyy}",
+                    DurationInDays = 10,
+                    CreatedAt      = createdAt,
+                    Status         = BidStatus.Accepted
+                });
+
+                bidSum += bidAmount;
+                dayOffset++;
+                freelancerIdx++;
+                projectIdx++;
+            }
+        }
+
+        await context.Orders.AddRangeAsync(newOrders);
+        await context.Bids.AddRangeAsync(newBids);
+        await context.SaveChangesAsync();
+
+        // ---- UserMetadata ----
+        var existingMeta = await context.UserMetadata
+            .Select(um => um.UserId)
+            .ToListAsync();
+
+        var newMeta = new List<UserMetadata>();
+
+        var registrationsByMonth = new[]
+        {
+            new { MonthOffset = -5, Count = 3  },
+            new { MonthOffset = -4, Count = 5  },
+            new { MonthOffset = -3, Count = 4  },
+            new { MonthOffset = -2, Count = 8  },
+            new { MonthOffset = -1, Count = 11 },
+            new { MonthOffset =  0, Count = 14 },
+        };
+
+        foreach (var item in registrationsByMonth)
+        {
+            // ← ИСПРАВЛЕНИЕ: создаём UTC дату
+            var monthDate = DateTime.SpecifyKind(
+                new DateTime(now.Year, now.Month, 1),
+                DateTimeKind.Utc
+            ).AddMonths(item.MonthOffset);
+
+            for (int i = 0; i < item.Count; i++)
+            {
+                var fakeUserId = $"historical_user_{item.MonthOffset}_{i}";
+
+                if (existingMeta.Contains(fakeUserId))
+                    continue;
+
+                newMeta.Add(new UserMetadata
+                {
+                    UserId       = fakeUserId,
+                    RegisteredAt = monthDate.AddDays(i % 28).AddHours(i % 12)
+                });
+            }
+        }
+
+        await context.UserMetadata.AddRangeAsync(newMeta);
+        await context.SaveChangesAsync();
+    }
 }

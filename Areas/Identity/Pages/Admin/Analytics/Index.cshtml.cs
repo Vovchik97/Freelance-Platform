@@ -39,16 +39,18 @@ public class IndexModel : PageModel
     public int OrderCount { get; set; }
     
     public string[] Months { get; set; } = new string[6];
-    public int[] ProjectsByMonth { get; set; } = new int[6];
     public decimal[] RevenueByMonth { get; set; } = new decimal[6];
+    public int[] UsersByMonth { get; set; } = new int[6];
     
     public decimal[] RevenueForecast { get; set; } = new decimal[3];
     public string[] ForecastMonths { get; set; } = new string[3];
     public List<AnomalyPoint> RevenueAnomalies { get; set; } = new();
-    public RegressionResult UserGrowthRegression { get; set; } = new();
+    public GaussianGrowthAnalysis UserGrowthAnalysis { get; set; } = new();
     public RetentionData Retention { get; set; } = new();
     public PlatformHealthIndex HealthIndex { get; set; } = new();
-    public int[] UsersByMonth { get; set; } = new int[6];
+
+    public string[] MonthNames { get; set; } = new string[5];
+    public string[] ForecastMonthNames { get; set; } = new string[3];
 
     public async Task OnGetAsync()
     {
@@ -86,6 +88,18 @@ public class IndexModel : PageModel
                                 && um.RegisteredAt.Month == month.Month);
         }
 
+        for (int i = 1; i < 6; i++)
+        {
+            var month = new DateTime(now.Year, now.Month, 1).AddMonths(-(5 - i));
+            MonthNames[i - 1] = month.ToString("MMMM yyyy", CultureInfo.GetCultureInfo("ru-RU"));
+        }
+
+        for (int i = 0; i < 3; i++)
+        {
+            var forecastMonth = new DateTime(now.Year, now.Month, 1).AddMonths(i + 1);
+            ForecastMonthNames[i] = forecastMonth.ToString("MMMM", CultureInfo.GetCultureInfo("ru-RU"));
+        }
+
         // ====== 1. ПРОГНОЗ ОБОРОТА (ETS) ======
         RevenueForecast = _analyticsService.ExponentialSmoothing(RevenueByMonth, 3, alpha: 0.3);
         
@@ -98,9 +112,10 @@ public class IndexModel : PageModel
         // ====== 2. АНОМАЛИИ В ОБОРОТЕ ======
         RevenueAnomalies = _analyticsService.DetectAnomalies(RevenueByMonth, Months, threshold: 2.0);
 
-        // ====== 3. РЕГРЕССИЯ РОСТА ПОЛЬЗОВАТЕЛЕЙ ======
-        UserGrowthRegression = _analyticsService.LinearRegression(
-            UsersByMonth.Select(x => (double)x).ToArray()
+        // ====== 3. ГАУССОВ АНАЛИЗ РОСТА ПОЛЬЗОВАТЕЛЕЙ ======
+        UserGrowthAnalysis = _analyticsService.AnalyzeUserGrowthWithGaussian(
+            UsersByMonth,
+            targetUsers: 500
         );
 
         // ====== 4. RETENTION ======

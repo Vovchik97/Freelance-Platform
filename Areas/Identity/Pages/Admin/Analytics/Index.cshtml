@@ -2,7 +2,7 @@
 @using System.Globalization
 @model FreelancePlatform.Areas.Identity.Pages.Admin.Analytics.IndexModel
 @{
-    ViewData["Title"] = "Аналитика";
+ViewData["Title"] = "Аналитика";
 }
 
 <h2 class="text-center my-4">Аналитика платформы</h2>
@@ -154,70 +154,225 @@
     </div>
 </div>
 
-<!-- =================== ТРЕНД РОСТА ПОЛЬЗОВАТЕЛЕЙ =================== -->
+<!-- =================== АНАЛИЗ РОСТА ПОЛЬЗОВАТЕЛЕЙ =================== -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="project-card">
-            <h4 class="filters-title mb-3">📈 Тренд роста пользователей</h4>
-            <div class="row text-center align-items-stretch">
-                <div class="col-md-3 mb-3">
+            <h4 class="filters-title mb-3">📊 Анализ роста пользователей</h4>
+
+            <!-- Основные карточки — ровно 3, каждая по 4 колонки -->
+            <div class="row text-center align-items-stretch mb-4">
+
+                <!-- Текущие пользователи -->
+                <div class="col-md-4 mb-3">
                     <div class="project-card d-flex flex-column justify-content-center"
-                         style="background: var(--surface-light); height: 100%; min-height: 130px;">
+                         style="background: var(--surface-light); height: 100%; min-height: 140px;">
                         <span style="font-size: 0.8rem; color: var(--text-primary);">
-                            Направление
+                            Всего пользователей
                         </span>
-                        <div style="font-size: 2rem; margin: 4px 0;">
-                            @(Model.UserGrowthRegression.TrendDirection == "Растёт" ? "📈" :
-                              Model.UserGrowthRegression.TrendDirection == "Падает" ? "📉" : "➡️")
+                        <div style="font-size: 2.5rem; font-weight: 700; color: #6c63ff; margin: 6px 0;">
+                            @Model.UserGrowthAnalysis.CurrentUsers
                         </div>
-                        <div style="font-weight: 700; color: var(--text-primary);">
-                            @Model.UserGrowthRegression.TrendDirection
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="project-card d-flex flex-column justify-content-center"
-                         style="background: var(--surface-light); height: 100%; min-height: 130px;">
                         <span style="font-size: 0.8rem; color: var(--text-primary);">
-                            Прирост в месяц
-                        </span>
-                        <div style="font-size: 2rem; margin: 4px 0;">👥</div>
-                        <div style="font-weight: 700; color: var(--text-primary);">
-                            +@Model.UserGrowthRegression.Slope чел.
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="project-card d-flex flex-column justify-content-center"
-                         style="background: var(--surface-light); height: 100%; min-height: 130px;">
-                        <span style="font-size: 0.8rem; color: var(--text-primary);">
-                            Точность модели (R²)
-                        </span>
-                        <div style="font-size: 2rem; margin: 4px 0;">🎯</div>
-                        <div style="font-weight: 700; color: var(--text-primary);">
-                            @Model.UserGrowthRegression.R2
-                        </div>
-                        <span style="font-size: 0.75rem; color: var(--text-primary);">
-                            @(Model.UserGrowthRegression.R2 > 0.8 ? "Высокая точность" :
-                              Model.UserGrowthRegression.R2 > 0.5 ? "Средняя точность" : "Низкая точность")
+                            Прирост этого месяца:
+                            <strong style="color: @(Model.UserGrowthAnalysis.CurrentMonthGrowth >= 0 ? "#28a745" : "#dc3545");">
+                                @(Model.UserGrowthAnalysis.CurrentMonthGrowth > 0 ? "+" : "")@Model.UserGrowthAnalysis.CurrentMonthGrowth чел.
+                            </strong>
                         </span>
                     </div>
                 </div>
-                <div class="col-md-3 mb-3">
+                
+                <!-- Средний прирост -->
+                <div class="col-md-4 mb-3">
                     <div class="project-card d-flex flex-column justify-content-center"
-                         style="background: var(--surface-light); height: 100%; min-height: 130px;">
+                         style="background: var(--surface-light); height: 100%; min-height: 140px;">
                         <span style="font-size: 0.8rem; color: var(--text-primary);">
-                            До удвоения аудитории
+                            Средний прирост в месяц
                         </span>
-                        <div style="font-size: 2rem; margin: 4px 0;">⏱️</div>
+                        <div style="margin: 8px 0;">
+                            <div style="font-size: 1.2rem; font-weight: 700; color: #6c63ff;">
+                                @(Model.UserGrowthAnalysis.MeanGrowth > 0 ? "+" : "")@Model.UserGrowthAnalysis.MeanGrowth чел.
+                            </div>
+                            <div style="font-size: 1rem; color: var(--text-primary); margin-top: 4px;">
+                                Колебания: ±@Model.UserGrowthAnalysis.SigmaGrowth чел.
+                            </div>
+                        </div>
+                        <span style="font-size: 0.75rem; color: #999;">
+                            Разброс: от @Model.UserGrowthAnalysis.Lower1Sigma до @Model.UserGrowthAnalysis.Upper1Sigma чел./мес
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Тренд -->
+                <div class="col-md-4 mb-3">
+                    <div class="project-card d-flex flex-column justify-content-center"
+                         style="background: var(--surface-light); height: 100%; min-height: 140px;">
+                        <span style="font-size: 0.8rem; color: var(--text-primary);">
+                            Тренд роста
+                        </span>
+                        <div style="font-size: 2rem; margin: 6px 0;">
+                            @Model.UserGrowthAnalysis.TrendDirection
+                        </div>
                         <div style="font-weight: 700; color: var(--text-primary);">
-                            @(Model.UserGrowthRegression.MonthsToDouble > 0
-                                ? Model.UserGrowthRegression.MonthsToDouble + " мес."
-                                : "—")
+                            @Model.UserGrowthAnalysis.AccelerationText
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Приросты по месяцам -->
+            @if (Model.UserGrowthAnalysis.MonthAssessments.Any())
+            {
+                <div style="margin-bottom: 2rem; padding: 1rem;
+                background: var(--surface-light); border-radius: 8px;">
+                    <h6 style="color: var(--text-primary); margin-bottom: 0.75rem;">
+                        📋 Приросты по месяцам
+                    </h6>
+                    <div class="row justify-content-center">
+                        @foreach (var assessment in Model.UserGrowthAnalysis.MonthAssessments)
+                        {
+                            var color = assessment.IsAnomaly ? "#dc3545" :
+                                Math.Abs(assessment.ZScore) <= 1 ? "#28a745" : "#ffc107";
+                            var cleanZone = assessment.Zone.Replace("(σ)", "").Replace("(2σ)", "").Trim();
+                
+                            <div class="col-md-2 col-4 mb-2 text-center">
+                                <div style="padding: 0.5rem; border-radius: 6px;
+                                border: 2px solid @color; background: @(color)18;">
+                                    <div style="font-size: 0.7rem; color: var(--text-primary); font-weight: 600;">
+                                        @Model.MonthNames[assessment.MonthIndex - 1]
+                                    </div>
+                                    <div style="font-weight: 700; color: @color; font-size: 1rem;">
+                                        @(assessment.Change > 0 ? "+" : "")@assessment.Change
+                                    </div>
+                                    <div style="font-size: 0.65rem; color: #999;">
+                                        @cleanZone
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Прогноз на 3 месяца -->
+            <div style="padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                <h5 style="color: var(--text-primary); margin-bottom: 0.5rem;">
+                    📈 Прогноз на 3 месяца
+                </h5>
+
+                <div class="row">
+                    @for (int i = 0; i < Model.UserGrowthAnalysis.ForecastBase.Length; i++)
+                    {
+                        <div class="col-md-4 mb-3">
+                            <div style="padding: 1rem; border-radius: 8px;
+                            background: rgba(108, 99, 255, 0.05);
+                            border-left: 4px solid #6c63ff;">
+                                <div style="font-weight: 700; color: #6c63ff; margin-bottom: 0.5rem;">
+                                    @Model.ForecastMonthNames[i]
+                                </div>
+                                <!-- Базовый прогноз -->
+                                <div style="font-size: 1.8rem; font-weight: 700;
+                                color: var(--text-primary); margin-bottom: 0.25rem;">
+                                    @Model.UserGrowthAnalysis.ForecastBase[i] чел.
+                                </div>
+                                <!-- Интервал 68% -->
+                                <div style="font-size: 0.8rem; color: #28a745; margin-bottom: 0.2rem;">
+                                    Обычно: @Model.UserGrowthAnalysis.ForecastPessimist[i] – @Model.UserGrowthAnalysis.ForecastOptimist[i]
+                                </div>
+                                <!-- Интервал 95% -->
+                                <div style="font-size: 0.8rem; color: #999;">
+                                    В крайнем случае: @Model.UserGrowthAnalysis.ForecastLow95[i] – @Model.UserGrowthAnalysis.ForecastHigh95[i]
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Сценарии достижения цели -->
+            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                <h5 style="color: var(--text-primary); margin-bottom: 0.5rem;">
+                    🎯 Сценарии достижения @Model.UserGrowthAnalysis.TargetUsers пользователей
+                </h5>
+                <p style="font-size: 0.8rem; color: #999; margin-bottom: 1rem;">
+                    Осталось привлечь: <strong>@Model.UserGrowthAnalysis.NeededGrowth чел.</strong>
+                </p>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div style="padding: 1rem; border-radius: 8px;
+                                    background: rgba(40, 167, 69, 0.1);
+                                    border-left: 4px solid #28a745;">
+                            <div style="font-weight: 700; color: #28a745; margin-bottom: 0.5rem;">
+                                ✅ Оптимистичный
+                            </div>
+                            <div style="font-size: 1.4rem; font-weight: 700; color: var(--text-primary);">
+                                @(Model.UserGrowthAnalysis.MonthsToTargetOptimistic > 0
+                                    ? Model.UserGrowthAnalysis.MonthsToTargetOptimistic + " мес."
+                                    : "—")
+                            </div>
+                            <span style="font-size: 0.75rem; color: #999;">
+                                прирост ≥ @Model.UserGrowthAnalysis.Upper1Sigma чел./мес
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <div style="padding: 1rem; border-radius: 8px;
+                                    background: rgba(108, 99, 255, 0.1);
+                                    border-left: 4px solid #6c63ff;">
+                            <div style="font-weight: 700; color: #6c63ff; margin-bottom: 0.5rem;">
+                                📊 Базовый
+                            </div>
+                            <div style="font-size: 1.4rem; font-weight: 700; color: var(--text-primary);">
+                                @(Model.UserGrowthAnalysis.MonthsToTargetBase > 0
+                                    ? Model.UserGrowthAnalysis.MonthsToTargetBase + " мес."
+                                    : "—")
+                            </div>
+                            <span style="font-size: 0.75rem; color: #999;">
+                                прирост ≈ @Model.UserGrowthAnalysis.MeanGrowth чел./мес
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <div style="padding: 1rem; border-radius: 8px;
+                                    background: rgba(220, 53, 69, 0.1);
+                                    border-left: 4px solid #dc3545;">
+                            <div style="font-weight: 700; color: #dc3545; margin-bottom: 0.5rem;">
+                                ⚠️ Пессимистичный
+                            </div>
+                            <div style="font-size: 1.4rem; font-weight: 700; color: var(--text-primary);">
+                                @(Model.UserGrowthAnalysis.MonthsToTargetPessimistic > 0
+                                    ? Model.UserGrowthAnalysis.MonthsToTargetPessimistic + " мес."
+                                    : "—")
+                            </div>
+                            <span style="font-size: 0.75rem; color: #999;">
+                                прирост ≈ @Model.UserGrowthAnalysis.Lower1Sigma чел./мес
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Удвоение аудитории — по центру -->
+            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                <div class="row justify-content-center">
+                    <div class="col-md-6 mb-3">
+                        <div style="padding: 1rem; background: rgba(108, 99, 255, 0.1); border-radius: 8px; text-align: center;">
+                            <span style="color: var(--text-primary); font-size: 0.9rem;">
+                                ⏱️ До удвоения аудитории (до @Model.UserGrowthAnalysis.DoubleTarget чел.):
+                            </span>
+                            <div style="font-weight: 700; font-size: 1.5rem; color: #6c63ff; margin: 4px 0;">
+                                @(Model.UserGrowthAnalysis.MonthsToDouble > 0
+                                    ? Model.UserGrowthAnalysis.MonthsToDouble + " месяцев"
+                                    : "—")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -257,64 +412,64 @@
 
 @if (Model.RevenueAnomalies.Any())
 {
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="project-card" style="border-color: #dc3545;">
-                <h4 class="filters-title mb-3">⚠️ Аномалии в обороте</h4>
-                <p style="color: var(--text-primary); font-size: 0.875rem; text-align: center; margin-bottom: 1rem;">
-                    Периоды со значительным отклонением от нормы (Z-score &gt; 2σ)
-                </p>
-                <div class="table-responsive">
-                    <table class="table custom-table">
-                        <thead>
-                            <tr>
-                                <th>Период</th>
-                                <th>Значение</th>
-                                <th>Z-score</th>
-                                <th>Тип</th>
-                                <th>Серьёзность</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var anomaly in Model.RevenueAnomalies)
-                            {
-                                <tr>
-                                    <td>@anomaly.Label</td>
-                                    <td>@anomaly.Value.ToString("N0") ₽</td>
-                                    <td>
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="project-card" style="border-color: #dc3545;">
+            <h4 class="filters-title mb-3">⚠️ Аномалии в обороте</h4>
+            <p style="color: var(--text-primary); font-size: 0.875rem; text-align: center; margin-bottom: 1rem;">
+                Периоды со значительным отклонением от нормы (Z-score > 2σ)
+            </p>
+            <div class="table-responsive">
+                <table class="table custom-table">
+                    <thead>
+                    <tr>
+                        <th>Период</th>
+                        <th>Значение</th>
+                        <th>Z-score</th>
+                        <th>Тип</th>
+                        <th>Серьёзность</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var anomaly in Model.RevenueAnomalies)
+                    {
+                    <tr>
+                        <td>@anomaly.Label</td>
+                        <td>@anomaly.Value.ToString("N0") ₽</td>
+                        <td>
                                         <span class="badge @(anomaly.ZScore > 3 ? "bg-danger" : "bg-warning text-dark")">
                                             @anomaly.ZScore σ
                                         </span>
-                                    </td>
-                                    <td>@(anomaly.IsSpike ? "📈 Всплеск" : "📉 Просадка")</td>
-                                    <td>
+                        </td>
+                        <td>@(anomaly.IsSpike ? "📈 Всплеск" : "📉 Просадка")</td>
+                        <td>
                                         <span class="badge @(anomaly.Severity == "Критическая" ? "bg-danger" : "bg-warning text-dark")">
                                             @anomaly.Severity
                                         </span>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                        </td>
+                    </tr>
+                    }
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+</div>
 }
 else
 {
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="project-card" style="border-color: #28a745;">
-                <div class="text-center py-2">
-                    <span style="font-size: 1.5rem;">✅</span>
-                    <span class="ms-2 fw-bold" style="color: #28a745;">
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="project-card" style="border-color: #28a745;">
+            <div class="text-center py-2">
+                <span style="font-size: 1.5rem;">✅</span>
+                <span class="ms-2 fw-bold" style="color: #28a745;">
                         Аномалий в обороте не обнаружено
                     </span>
-                </div>
             </div>
         </div>
     </div>
+</div>
 }
 
 <!-- =================== RETENTION =================== -->
@@ -331,6 +486,7 @@ else
 </div>
 
 @section Scripts {
+
 <script>
     // =================== РОЛИ ===================
     new Chart(document.getElementById("rolesChart"), {
@@ -359,7 +515,7 @@ else
             labels: ["Проекты", "Услуги", "Заявки", "Заказы"],
             datasets: [{
                 data: [@Model.ProjectCount, @Model.ServiceCount,
-                       @Model.ApplicationCount, @Model.OrderCount],
+                    @Model.ApplicationCount, @Model.OrderCount],
                 backgroundColor: ["#ffc107", "#dc3545", "#6c757d", "#6c63ff"]
             }]
         },
