@@ -203,22 +203,21 @@
     border: 1px solid #d97706;
 }
 
-/* Стили для среднего рейтинга звезд */
 .star-rating {
     display: inline-block;
-    font-size: 1rem; /* размер звезд */
+    font-size: 1rem;
     line-height: 1;
     position: relative;
 }
 
 .back-stars {
-    color: #ddd; /* фоновые (пустые) звезды */
+    color: #ddd; 
     position: relative;
     display: inline-block;
 }
 
 .front-stars {
-    color: #f5c518; /* заполненные звезды */
+    color: #f5c518; 
     position: absolute;
     top: 0;
     left: 0;
@@ -226,9 +225,6 @@
     white-space: nowrap;
 }
 
-/* =============================================
-   ДРОБНЫЕ ЗВЁЗДЫ (частичная закраска)
-   ============================================= */
 .star-rating-display {
     display: inline-flex;
     gap: 2px;
@@ -244,12 +240,10 @@
     line-height: 1;
 }
 
-/* Пустая звезда — фон */
 .star-wrap .star-empty {
     color: #ddd;
 }
 
-/* Заполненная часть — через clip-path */
 .star-wrap .star-filled {
     position: absolute;
     top: 0;
@@ -259,9 +253,6 @@
     white-space: nowrap;
 }
 
-/* =============================================
-   БАР-ЧАРТ КРИТЕРИЕВ
-   ============================================= */
 .criteria-chart {
     width: 100%;
 }
@@ -301,9 +292,6 @@
     color: var(--text-primary);
 }
 
-/* =============================================
-   МИНИ-БАРЫ ВНУТРИ КАРТОЧКИ ОТЗЫВА
-   ============================================= */
 .review-mini-criteria {
     padding: 8px 0;
     border-top: 1px solid var(--border);
@@ -342,9 +330,6 @@
     color: var(--text-secondary);
 }
 
-/* =============================================
-   КАРТОЧКА ОТЗЫВА
-   ============================================= */
 .review-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -365,9 +350,6 @@
     margin-bottom: 10px;
 }
 
-/* =============================================
-   ФОРМА ВЫБОРА ЗВЁЗД
-   ============================================= */
 .star-input-group {
     display: flex;
     gap: 6px;
@@ -416,11 +398,6 @@
     margin-bottom: 16px;
 }
 
-/* =============================================
-   ШАБЛОНЫ ЗАДАЧ - АДАПТИВНЫЕ СТИЛИ С ТЕМАМИ
-   ============================================= */
-
-/* Контейнер карточек шаблонов */
 #templateCards {
     display: flex;
     flex-wrap: wrap;
@@ -428,7 +405,6 @@
     margin-top: 8px;
 }
 
-/* Базовая карточка шаблона */
 .template-card {
     cursor: pointer;
     display: flex;
@@ -447,7 +423,7 @@
     text-align: left;
     font-family: inherit;
     font-size: inherit;
-    min-height: 100px;  /* ← Одинаковая высота */
+    min-height: 100px; 
 }
 
 .template-card-description {
@@ -459,10 +435,9 @@
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-    flex-grow: 1;  /* ← Занимает оставшееся пространство */
+    flex-grow: 1; 
 }
 
-/* Градиентный эффект при наведении */
 .template-card::before {
     content: '';
     position: absolute;
@@ -486,7 +461,6 @@
     opacity: 0.05;
 }
 
-/* Выбранная карточка */
 .template-card.selected {
     border-color: var(--primary);
     background: var(--surface);
@@ -496,7 +470,6 @@
     opacity: 0.08;
 }
 
-/* Содержимое карточки */
 .template-card-content {
     position: relative;
     z-index: 1;
@@ -527,7 +500,6 @@
     margin-top: 2px;
 }
 
-/* Блок превью шаблона */
 .template-preview-box {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -559,7 +531,6 @@
     font-size: 16px;
 }
 
-/* Список задач в превью */
 #templateTasksList {
     font-size: 13px;
     color: var(--text-secondary);
@@ -572,7 +543,7 @@
     background: var(--background);
     border: 1px solid var(--border);
     border-radius: 8px;
-    display: block; /* Изменить на block для многострочности */
+    display: block;
     transition: all 0.2s ease;
 }
 
@@ -614,7 +585,6 @@
     font-weight: 500;
 }
 
-/* Hint для отсутствия шаблонов */
 #noTemplatesHint {
     padding: 16px;
     border-radius: 8px;
@@ -634,7 +604,6 @@
     margin-bottom: 8px;
 }
 
-/* Адаптивность для мобильных устройств */
 @media (max-width: 768px) {
     #templateCards {
         flex-direction: column;
@@ -645,11 +614,6 @@
     }
 }
 
-/* =============================================
-   РАБОТА С ЗАДАЧАМИ (WORKITEMS)
-   ============================================= */
-
-/* Контейнер задач */
 .work-items-container {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -675,7 +639,6 @@
     font-size: 1.2rem;
 }
 
-/* Прогресс бар */
 .progress-container {
     margin-bottom: 2rem;
     padding: 1rem;
@@ -735,7 +698,6 @@
     100% { transform: translateX(100%); }
 }
 
-/* Список задач */
 .work-items-list {
     list-style: none;
     padding: 0;
@@ -786,7 +748,6 @@
     background: var(--success);
 }
 
-/* Чекбокс задачи */
 .work-item-checkbox {
     width: 20px;
     height: 20px;
@@ -815,7 +776,6 @@
     font-size: 12px;
 }
 
-/* Номер задачи */
 .work-item-number {
     width: 28px;
     height: 28px;
@@ -834,7 +794,6 @@
     background: var(--success);
 }
 
-/* Заголовок задачи */
 .work-item-title {
     flex: 1;
     font-weight: 500;
@@ -848,7 +807,6 @@
     color: var(--text-secondary);
 }
 
-/* Действия с задачей */
 .work-item-actions {
     display: flex;
     gap: 0.5rem;
@@ -885,7 +843,6 @@
     background: var(--danger);
 }
 
-/* Форма добавления задачи */
 .add-work-item-container {
     margin-top: 1.5rem;
     padding: 1.5rem;
@@ -943,7 +900,6 @@
     box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
 }
 
-/* Кнопка переключения формы */
 .toggle-add-form-btn {
     width: 100%;
     padding: 1rem;
@@ -966,25 +922,6 @@
     border-style: solid;
 }
 
-/* Пустое состояние */
-.empty-work-items {
-    text-align: center;
-    padding: 3rem 2rem;
-    color: var(--text-secondary);
-}
-
-.empty-work-items-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
-}
-
-.empty-work-items-text {
-    font-size: 1.1rem;
-    margin-bottom: 1.5rem;
-}
-
-/* Шаблоны для пустого состояния */
 .template-suggestions {
     margin-top: 1.5rem;
 }
@@ -1032,7 +969,6 @@
     margin: 0;
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
     .work-items-container {
         padding: 1.5rem;
@@ -1051,9 +987,6 @@
     }
 }
 
-/* Дополнения к предыдущим стилям WorkItems */
-
-/* Drag handle для перетаскивания */
 .work-item-drag-handle {
     cursor: grab;
     padding: 0.5rem;
@@ -1074,7 +1007,6 @@
     cursor: grabbing;
 }
 
-/* Состояния при перетаскивании */
 .work-item-ghost {
     opacity: 0.5;
     background: var(--primary-light) !important;
@@ -1089,7 +1021,6 @@
     transform: rotate(2deg);
 }
 
-/* Улучшенная форма добавления */
 .add-form-grid {
     display: grid;
     gap: 1rem;
@@ -1115,7 +1046,6 @@
     flex-wrap: wrap;
 }
 
-/* Быстрый выбор шаблонов */
 .template-quick-actions {
     padding: 1rem;
     background: var(--background);
@@ -1127,24 +1057,6 @@
     display: flex;
     gap: 0.75rem;
     flex-wrap: wrap;
-}
-
-.template-quick-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-align: left;
-    min-width: 140px;
-    flex: 1;
-}
-
-.template-quick-card:hover {
-    border-color: var(--primary);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.15);
 }
 
 .template-quick-title {
@@ -1159,7 +1071,6 @@
     color: var(--text-secondary);
 }
 
-/* Улучшение внешнего вида полей */
 .add-work-item-input {
     transition: all 0.3s ease;
     resize: vertical;
@@ -1169,7 +1080,6 @@
     border-color: var(--primary-light);
 }
 
-/* Описание задачи */
 .work-item-description {
     font-size: 0.85rem;
     color: var(--text-secondary);
@@ -1186,7 +1096,6 @@
     opacity: 0.8;
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
     .template-cards-row {
         flex-direction: column;
@@ -1209,20 +1118,17 @@
     }
 }
 
-/* Фиксированные стили для controls */
 .work-items-controls {
     margin-top: 1.5rem;
     border-top: 1px solid var(--border);
     padding-top: 1.5rem;
 }
 
-/* Убираем z-index проблемы */
 .work-items-container {
     position: relative;
     z-index: 1;
 }
 
-/* Сетка для всех шаблонов */
 .template-cards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -1287,7 +1193,6 @@
     color: var(--primary);
 }
 
-/* Адаптивность для мобильных */
 @media (max-width: 768px) {
     .template-cards-grid {
         grid-template-columns: 1fr;
@@ -1303,7 +1208,6 @@
     }
 }
 
-/* Улучшенные стили для пустого состояния */
 .empty-work-items {
     text-align: center;
     padding: 2rem;

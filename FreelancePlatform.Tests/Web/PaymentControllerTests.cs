@@ -15,9 +15,20 @@ using Service = FreelancePlatform.Models.Service;
 
 namespace FreelancePlatform.FreelancePlatform.Tests.Web;
 
+/// <summary>
+/// Набор модульных тестов для проверки работы PaymentController.
+/// Проверяет создание платежей, обработку успешных и отмененных платежей,
+/// проверку доступа пользователей и получение истории платежей.
+/// </summary>
 public class PaymentControllerTests
 {
-    private AppDbContext GetDbContext()
+    /// <summary>
+    /// Создает новый экземпляр контекста базы данных
+    /// с использованием InMemory провайдера Entity Framework Core.
+    /// Используется для изоляции тестов друг от друга.
+    /// </summary>
+    /// <returns>Новый экземпляр AppDbContext.</returns>
+    private static AppDbContext GetDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -25,7 +36,12 @@ public class PaymentControllerTests
         return new AppDbContext(options);
     }
 
-    private Mock<UserManager<IdentityUser>> GetUserManagerMock()
+    /// <summary>
+    /// Создает тестовую реализацию UserManager,
+    /// настроенную для работы с тестовыми пользователями и ClaimsPrincipal.
+    /// </summary>
+    /// <returns>Настроенный Mock<UserManager<IdentityUser>>.</returns>
+    private static Mock<UserManager<IdentityUser>> GetUserManagerMock()
     {
         var store = new Mock<IUserStore<IdentityUser>>();
         var mgr = new Mock<UserManager<IdentityUser>>(store.Object, null!, null!, null!, null!, null!, null!, null!,
@@ -43,6 +59,13 @@ public class PaymentControllerTests
         return mgr;
     }
     
+    /// <summary>
+    /// Устанавливает текущего пользователя для контроллера
+    /// через ClaimsPrincipal для имитации авторизованного запроса.
+    /// </summary>
+    /// <param name="controller">Экземпляр контроллера, которому устанавливается пользовательский контекст.</param>
+    /// <param name="userId">Идентификатор пользователя.</param>
+    /// <param name="userName">Имя пользователя.</param>
     private void SetUser(Controller controller, string userId, string userName = "testUser")
     {
         var claims = new List<Claim>

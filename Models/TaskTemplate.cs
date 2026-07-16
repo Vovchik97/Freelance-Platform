@@ -2,6 +2,9 @@
 
 namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет шаблон задач для проектов и заказов.
+/// </summary>
 public class TaskTemplate
 {
     public int Id { get; set; }

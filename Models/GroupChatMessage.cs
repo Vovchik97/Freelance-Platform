@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет сообщение группового чата проекта.
+/// </summary>
 public class GroupChatMessage
 {
     public int Id { get; set; }

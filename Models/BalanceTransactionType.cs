@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Определяет тип операции изменения пользовательского баланса.
+/// </summary>
 public enum BalanceTransactionType
 {
     Deposit = 0,

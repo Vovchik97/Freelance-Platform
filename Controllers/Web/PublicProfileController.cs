@@ -3,13 +3,18 @@ using FreelancePlatform.Dto.Profiles;
 using FreelancePlatform.Models;
 using FreelancePlatform.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Controllers.Web;
 
+/// <summary>
+/// Контроллер управления публичными профилями пользователей.
+/// Отвечает за отображение профилей клиентов и исполнителей,
+/// просмотр информации о деятельности пользователей,
+/// редактирование собственного профиля и работу с репутацией.
+/// </summary>
 public class PublicProfileController : Controller
 {
     private readonly AppDbContext _context;
@@ -29,34 +34,46 @@ public class PublicProfileController : Controller
         _blacklistService = blacklistService;
     }
 
+    /// <summary>
+    /// Отображает публичный профиль пользователя.
+    /// Определяет тип пользователя по роли и загружает соответствующий профиль исполнителя или клиента.
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя, чей профиль необходимо открыть.</param>
+    /// <returns> Представление публичного профиля пользователя
+    /// или результат с ошибкой, если пользователь не найден или его роль не поддерживается.
+    /// </returns>
     [AllowAnonymous]
     public async Task<IActionResult> Public(string userId)
     {
         if (string.IsNullOrEmpty(userId))
             return NotFound();
-
-        // всегда тянем пользователя
+        
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
             return NotFound();
 
-        var userRoles = await _userManager.GetRolesAsync(user);
-
-        if (userRoles.Contains("Freelancer"))
+        if (await _userManager.IsInRoleAsync(user, "Freelancer"))
         {
-            return await FreelancerProfile(userId);
+            return await GetFreelancerProfileAsync(user);
         }
-        else if (userRoles.Contains("Client"))
+        
+        if (await _userManager.IsInRoleAsync(user, "Client"))
         {
-            return await ClientProfile(userId);
+            return await GetClientProfileAsync(user);
         }
 
         return NotFound();
     }
     
-    private async Task<IActionResult> FreelancerProfile(string userId)
+    /// <summary>
+    /// Формирует публичный профиль исполнителя.
+    /// Загружает список услуг, отзывы, рейтинг, историю репутации и информацию о блокировке пользователя.
+    /// </summary>
+    /// <param name="user">Пользователь, для которого формируется профиль исполнителя.</param>
+    /// <returns>Представление с данными публичного профиля исполнителя.</returns>
+    private async Task<IActionResult> GetFreelancerProfileAsync(IdentityUser user)
     {
-        var user = await _userManager.FindByIdAsync(userId);
+        var userId = user.Id;
         var profile = await _context.UserProfiles
             .FirstOrDefaultAsync(p => p.UserId == userId);
 
@@ -85,6 +102,8 @@ public class PublicProfileController : Controller
         
         var currentUserId = _userManager.GetUserId(User);
         var isBlockedByMe = currentUserId != null && await _blacklistService.IsBlockedAsync(currentUserId, userId);
+
+        var hasReviews = allReviews.Any();
         
         var dto = new PublicProfileDto
         {
@@ -92,12 +111,12 @@ public class PublicProfileController : Controller
             UserName = user.UserName ?? "(Без имени)",
             AboutMe = profile?.AboutMe ?? string.Empty,
             Services = serviceDtos,
-            AverageRating    = allReviews.Any() ? allReviews.Average(r => r.Rating) : null,
+            AverageRating    = hasReviews ? allReviews.Average(r => r.Rating) : null,
             ReviewsCount     = allReviews.Count,
-            AvgQuality       = allReviews.Any() ? allReviews.Average(r => r.QualityRating)       : null,
-            AvgCommunication = allReviews.Any() ? allReviews.Average(r => r.CommunicationRating) : null,
-            AvgDeadline      = allReviews.Any() ? allReviews.Average(r => r.DeadlineRating)      : null,
-            AvgPrice         = allReviews.Any() ? allReviews.Average(r => r.PriceRating)         : null,
+            AvgQuality       = hasReviews ? allReviews.Average(r => r.QualityRating)       : null,
+            AvgCommunication = hasReviews ? allReviews.Average(r => r.CommunicationRating) : null,
+            AvgDeadline      = hasReviews ? allReviews.Average(r => r.DeadlineRating)      : null,
+            AvgPrice         = hasReviews ? allReviews.Average(r => r.PriceRating)         : null,
             ReputationScore = reputation.Score,
             ReputationHistory = reputationHistory.Take(5).ToList(),
             IsBlockedByMe = isBlockedByMe,
@@ -107,9 +126,15 @@ public class PublicProfileController : Controller
         return View(dto);
     }
 
-    private async Task<IActionResult> ClientProfile(string userId)
+    /// <summary>
+    /// Формирует публичный профиль клиента.
+    /// Загружает опубликованные проекты клиента,информацию о репутации и статус блокировки пользователя.
+    /// </summary>
+    /// <param name="user">Пользователь, для которого формируется профиль клиента.</param>
+    /// <returns>Представление с данными публичного профиля клиента.</returns>
+    private async Task<IActionResult> GetClientProfileAsync(IdentityUser user)
     {
-        var user = await _userManager.FindByIdAsync(userId);
+        var userId = user.Id;
         var profile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
 
         var projects = await _context.Projects
@@ -150,13 +175,23 @@ public class PublicProfileController : Controller
         return View(dto);
     }
     
+    /// <summary>
+    /// Открывает профиль текущего пользователя.
+    /// Если профиль ещё не создан, создаёт пустой профиль пользователя.
+    /// </summary>
+    /// <returns>Перенаправление на страницу публичного профиля пользователя.</returns>
     [Authorize(Roles = "Freelancer, Client")]
     public async Task<IActionResult> My()
     {
         var user = await _userManager.GetUserAsync(User);
+
+        if (user == null)
+        {
+            return Unauthorized();
+        }
+        
         var profile = await _context.UserProfiles
-            .Include(p => p.User)
-            .FirstOrDefaultAsync(p => p.UserId == user!.Id);
+            .FirstOrDefaultAsync(p => p.UserId == user.Id);
 
         if (profile == null)
         {
@@ -173,6 +208,10 @@ public class PublicProfileController : Controller
         return RedirectToAction("Public", new { userId = user!.Id });
     }
 
+    /// <summary>
+    /// Отображает форму редактирования информации профиля текущего пользователя.
+    /// </summary>
+    /// <returns>Представление формы редактирования профиля или ошибку авторизации, если пользователь не найден.</returns>
     [HttpGet]
     public async Task<IActionResult> Edit()
     {
@@ -188,6 +227,12 @@ public class PublicProfileController : Controller
         return View(profile ?? new UserProfile { UserId = user.Id });
     }
 
+    /// <summary>
+    /// Сохраняет изменения информации профиля пользователя.
+    /// Создаёт профиль автоматически, если он отсутствует.
+    /// </summary>
+    /// <param name="model">Модель профиля с обновлёнными данными пользователя.</param>
+    /// <returns>Перенаправление на публичный профиль пользователя после успешного сохранения.</returns>
     [HttpPost]
     public async Task<IActionResult> Edit(UserProfile model)
     {
@@ -197,7 +242,6 @@ public class PublicProfileController : Controller
             return Unauthorized();
         }
         
-        // подчищаем null → в пустую строку
         var aboutMe = model.AboutMe ?? string.Empty;
         
         var profile = await _context.UserProfiles
@@ -215,7 +259,6 @@ public class PublicProfileController : Controller
         else
         {
             profile.AboutMe = aboutMe;
-            _context.UserProfiles.Update(profile);
         }
         
         await _context.SaveChangesAsync();

@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Определяет тип события, влияющего на репутацию пользователя.
+/// </summary>
 public enum ReputationEventType
 {
     EarlyDelivery = 0,

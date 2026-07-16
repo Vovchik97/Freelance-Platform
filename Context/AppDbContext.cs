@@ -5,6 +5,11 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace FreelancePlatform.Context;
 
+/// <summary>
+/// Контекст базы данных приложения.
+/// Содержит настройки доступа к сущностям платформы,
+/// а также интеграцию с ASP.NET Core Identity.
+/// </summary>
 public class AppDbContext : IdentityDbContext
 {
     public DbSet<Project> Projects { get; set; }

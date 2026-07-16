@@ -7,6 +7,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Areas.Identity.Pages.Admin.TaskTemplates;
 
+/// <summary>
+/// Модель страницы управления шаблонами задач.
+/// Позволяет администраторам просматривать и удалять
+/// шаблоны задач с их элементами.
+/// </summary>
 [Authorize(Roles = "Admin")]
 public class IndexModel : PageModel
 {
@@ -17,8 +22,12 @@ public class IndexModel : PageModel
         _context = context;
     }
     
-    public List<TaskTemplate> Templates { get; set; } = [];
+    public List<TaskTemplate> Templates { get; set; } = new();
 
+    /// <summary>
+    /// Загружает список шаблонов задач
+    /// вместе с элементами и категориями.
+    /// </summary>
     public async Task OnGetAsync()
     {
         Templates = await _context.TaskTemplates
@@ -28,6 +37,11 @@ public class IndexModel : PageModel
             .ToListAsync();
     }
 
+    /// <summary>
+    /// Удаляет шаблон задачи и связанные с ним элементы.
+    /// </summary>
+    /// <param name="id">Идентификатор удаляемого шаблона.</param>
+    /// <returns>Перенаправление на текущую страницу или 404 если шаблон не найден.</returns>
     public async Task<IActionResult> OnPostDelete(int id)
     {
         var template = await _context.TaskTemplates

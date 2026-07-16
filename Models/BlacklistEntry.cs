@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет запись о пользователе, добавленном в черный список.
+/// </summary>
 public class BlacklistEntry
 {
     public int Id { get; set; }

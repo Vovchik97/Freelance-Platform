@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using Newtonsoft.Json;
 
 namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет отклик фрилансера на проект.
+/// </summary>
 public class Bid
 {
     public int Id { get; set; }

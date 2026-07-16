@@ -2,6 +2,9 @@
 
 namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Определяет текущее состояние этапа выполнения работы.
+/// </summary>
 public enum WorkItemStatus
 {
     [Display(Name = "Не начата")]

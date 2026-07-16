@@ -1,243 +1,294 @@
-﻿    using System.Security.Claims;
-    using FreelancePlatform.Context;
-    using FreelancePlatform.Dto.Bids;
-    using FreelancePlatform.Models;
-    using FreelancePlatform.Services;
-    using Microsoft.AspNetCore.Authorization;
-    using Microsoft.AspNetCore.Identity.UI.Services;
-    using Microsoft.AspNetCore.Mvc;
-    using Microsoft.EntityFrameworkCore;
+﻿using System.Security.Claims;
+using FreelancePlatform.Context;
+using FreelancePlatform.Dto.Bids;
+using FreelancePlatform.Models;
+using FreelancePlatform.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
-    namespace FreelancePlatform.Controllers.Web;
+namespace FreelancePlatform.Controllers.Web;
 
-    public class BidController : Controller
-    {
-        private readonly AppDbContext _context;
-        private readonly IEmailSender _emailSender;
-        private readonly IBlacklistService _blacklistService;
+/// <summary>
+/// Контроллер управления заявками исполнителей на проекты.
+/// Позволяет создавать, редактировать, удалять заявки,
+/// а также просматривать заявки и связанные проекты пользователя.
+/// </summary>
+public class BidController : Controller 
+{ 
+    private readonly AppDbContext _context; 
+    private readonly IEmailSender _emailSender; 
+    private readonly IBlacklistService _blacklistService;
+    
+    public BidController(AppDbContext context, IEmailSender emailSender, IBlacklistService blacklistService) 
+    { 
+        _context = context; 
+        _emailSender = emailSender; 
+        _blacklistService = blacklistService;
+    }
+    
+    /// <summary>
+    /// Отображает информацию о заявке вместе с исполнителем и связанным проектом.
+    /// </summary>
+    /// <param name="id">Идентификатор заявки.</param>
+    /// <returns> Представление с информацией о заявке или ошибку 404, если заявка не найдена. </returns>
+    [AllowAnonymous] 
+    public async Task<IActionResult> Details(int id) 
+    { 
+        var bid = await _context.Bids
+            .Include(b => b.Freelancer)
+            .Include(b => b.Project)
+                .ThenInclude(p => p!.Client)
+            .FirstOrDefaultAsync(b => b.Id == id);
+            
 
-        public BidController(AppDbContext context, IEmailSender emailSender, IBlacklistService blacklistService)
-        {
-            _context = context;
-            _emailSender = emailSender;
-            _blacklistService = blacklistService;
+        if (bid == null) 
+        { 
+            return NotFound();
         }
 
-        [AllowAnonymous]
-        public async Task<IActionResult> Details(int id)
+        return View(bid);
+    }
+    
+    /// <summary>
+    /// Отображает форму создания новой заявки для выбранного проекта.
+    /// </summary>
+    /// <param name="projectId">Идентификатор проекта, на который создаётся заявка.</param>
+    /// <returns>Представление с формой создания заявки.</returns>
+    [Authorize(Roles = "Freelancer")] 
+    public IActionResult Create(int projectId) 
+    { 
+        var dto = new CreateBidDto 
+        { 
+            ProjectId = projectId
+        }; 
+        ViewBag.ProjectId = projectId; 
+        return View(dto);
+    }
+    
+    /// <summary>
+    /// Создаёт новую заявку исполнителя на проект.
+    /// Выполняет проверки:
+    /// наличие пользователя,
+    /// отсутствие дубликата заявки,
+    /// наличие блокировки между пользователями.
+    /// После создания отправляет уведомление клиенту.
+    /// </summary>
+    /// <param name="dto">Данные создаваемой заявки.</param>
+    /// <returns>Перенаправление к списку заявок пользователя или возврат формы при ошибке валидации.</returns>
+    [HttpPost] 
+    [Authorize(Roles = "Freelancer")] 
+    [ValidateAntiForgeryToken] 
+    public async Task<IActionResult> Create(CreateBidDto dto) 
+    { 
+        if (!ModelState.IsValid) 
+        { 
+            return View(dto);
+        }
+        
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); 
+        if (userId == null) 
+        { 
+            return Unauthorized();
+        }
+        
+        var alreadyExists = await _context.Bids.AnyAsync(b => b.ProjectId == dto.ProjectId && b.FreelancerId == userId);
+        
+        if (alreadyExists) 
+        { 
+            ModelState.AddModelError(string.Empty, "Вы уже отправили заявку на этот проект."); 
+            ViewBag.ProjectId = dto.ProjectId; 
+            return View(dto);
+        }
+        
+        var project = await _context.Projects
+            .Include(p => p.Client)
+            .Include(p => p.Bids)
+                .ThenInclude(b => b.Freelancer)
+            .FirstOrDefaultAsync(p => p.Id == dto.ProjectId);
+
+        if (project == null)
         {
-            var bid = await _context.Bids
-                .Include(b => b.Freelancer)
-                .Include(b => b.Project)
-                    .ThenInclude(p => p!.Client)
-                .FirstOrDefaultAsync(b => b.Id == id);
-            
-
-            if (bid == null)
-            {
-                return NotFound();
-            }
-
-            return View(bid);
+            return NotFound();
+        }
+        
+        var isBlocked = await _blacklistService.IsBlockedEitherWayAsync(
+            userId, project.ClientId);
+        
+        if (isBlocked) 
+        { 
+            TempData["ErrorMessage"] = "Вы не можете откликнуться на этот проект — один из вас заблокировал другого."; 
+            return RedirectToAction("Details", "Project", new { id = dto.ProjectId });
+        }
+        
+        var bid = new Bid 
+        { 
+            Amount = dto.Amount, 
+            Comment = dto.Comment, 
+            DurationInDays = dto.DurationInDays, 
+            CreatedAt = DateTime.UtcNow, 
+            FreelancerId = userId, 
+            ProjectId = dto.ProjectId
+        };
+        
+        await _context.Bids.AddAsync(bid); 
+        await _context.SaveChangesAsync();
+        
+        await _context.Entry(bid).Reference(b => b.Project).LoadAsync(); 
+        if (bid.Project != null) 
+        {
+            await _context.Entry(bid.Project).Reference(p => p.Client).LoadAsync(); 
         }
 
-        [Authorize(Roles = "Freelancer")]
-        public IActionResult Create(int projectId)
-        {
-            var dto = new CreateBidDto
-            {
-                ProjectId = projectId
-            };
-            ViewBag.ProjectId = projectId;
-            return View();
+        await _context.Entry(bid).Reference(b => b.Freelancer).LoadAsync();
+        
+        var clientEmail = bid.Project?.Client?.Email;
+        
+        if (!string.IsNullOrWhiteSpace(clientEmail)) 
+        { 
+            await _emailSender.SendEmailAsync(
+                email: clientEmail, 
+                subject: "Новая заявка на проект", 
+                htmlMessage: $"Пользователь {bid.Freelancer?.UserName} оставил заявку на проект {bid.Project?.Title ?? "Без названия"}."
+            );
         }
 
-        [HttpPost]
-        [Authorize(Roles = "Freelancer")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(CreateBidDto dto)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(dto);
-            }
-
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
-            {
-                return Unauthorized();
-            }
-
-            var alreadyExists = await _context.Bids.AnyAsync(b => b.ProjectId == dto.ProjectId && b.FreelancerId == userId);
-
-            if (alreadyExists)
-            {
-                ModelState.AddModelError(string.Empty, "Вы уже отправили заявку на этот проект.");
-                ViewBag.ProjectId = dto.ProjectId;
-                return View(dto);
-            }
-            
-            var project = await _context.Projects
-                .Include(p => p.Client)
-                .Include(p => p.Bids)
-                    .ThenInclude(b => b.Freelancer)
-                .FirstOrDefaultAsync(p => p.Id == dto.ProjectId);
-            
-            var isBlocked = await _blacklistService.IsBlockedEitherWayAsync(
-                userId, project.ClientId);
-
-            if (isBlocked)
-            {
-                TempData["ErrorMessage"] = "Вы не можете откликнуться на этот проект — один из вас заблокировал другого.";
-                return RedirectToAction("Details", "Project", new { id = dto.ProjectId });
-            }
-            
-            var bid = new Bid
-            {
-                Amount = dto.Amount,
-                Comment = dto.Comment,
-                DurationInDays = dto.DurationInDays,
-                CreatedAt = DateTime.UtcNow,
-                FreelancerId = userId,
-                ProjectId = dto.ProjectId
-            };
-
-            await _context.Bids.AddAsync(bid);
-            await _context.SaveChangesAsync();
-            
-            await _context.Entry(bid).Reference(b => b.Project).LoadAsync();
-            if (bid.Project != null)
-            {
-                await _context.Entry(bid.Project).Reference(p => p.Client).LoadAsync();
-            }
-
-            await _context.Entry(bid).Reference(b => b.Freelancer).LoadAsync();
-
-            var clientEmail = bid.Project?.Client?.Email;
-
-            if (!string.IsNullOrWhiteSpace(clientEmail))
-            {
-                await _emailSender.SendEmailAsync(
-                    email: clientEmail,
-                    subject: "Новая заявка на проект",
-                    htmlMessage: $"Пользователь {bid.Freelancer?.UserName} оставил заявку на проект {bid.Project?.Title ?? "Без названия"}."
-                );
-            }
-
-            
-            return RedirectToAction(nameof(MyBids));
+        return RedirectToAction(nameof(MyBids));
+    }
+    
+    /// <summary>
+    /// Открывает форму редактирования заявки исполнителя.
+    /// </summary>
+    /// <param name="id">Идентификатор редактируемой заявки.</param>
+    /// <returns>Представление с данными заявки или ошибку 404, если заявка не найдена.</returns>
+    [Authorize(Roles = "Freelancer")] 
+    public async Task<IActionResult> Edit(int id) 
+    { 
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); 
+        var bid = await _context.Bids.FirstOrDefaultAsync(b => b.Id == id && b.FreelancerId == userId);
+        
+        if (bid == null) 
+        { 
+            return NotFound();
         }
 
-        [Authorize(Roles = "Freelancer")]
-        public async Task<IActionResult> Edit(int id)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var bid = await _context.Bids.FirstOrDefaultAsync(b => b.Id == id && b.FreelancerId == userId);
-
-            if (bid == null)
-            {
-                return NotFound();
-            }
-
-            var dto = new UpdateBidDto
-            {
-                Amount = bid.Amount,
-                Comment = bid.Comment,
-                DurationInDays = bid.DurationInDays
-            };
-
+        var dto = new UpdateBidDto 
+        { 
+            Amount = bid.Amount, 
+            Comment = bid.Comment, 
+            DurationInDays = bid.DurationInDays
+        };
+        
+        return View(dto);
+    }
+    
+    /// <summary>
+    /// Сохраняет изменения заявки исполнителя.
+    /// </summary>
+    /// <param name="id">Идентификатор изменяемой заявки.</param>
+    /// <param name="dto">Обновлённые данные заявки.</param>
+    /// <returns>Перенаправление к списку заявок или возврат формы при ошибке валидации.</returns>
+    [HttpPost] 
+    [Authorize(Roles = "Freelancer")] 
+    [ValidateAntiForgeryToken] 
+    public async Task<IActionResult> Edit(int id, UpdateBidDto dto) 
+    { 
+        if (!ModelState.IsValid) 
+        { 
             return View(dto);
         }
 
-        [HttpPost]
-        [Authorize(Roles = "Freelancer")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, UpdateBidDto dto)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(dto);
-            }
-
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var bid = await _context.Bids.FirstOrDefaultAsync(b => b.Id == id && b.FreelancerId == userId);
-
-            if (bid == null)
-            {
-                return NotFound();
-            }
-
-            bid.Amount = dto.Amount;
-            bid.Comment = dto.Comment;
-            bid.DurationInDays = dto.DurationInDays;
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(MyBids));
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); 
+        var bid = await _context.Bids.FirstOrDefaultAsync(b => b.Id == id && b.FreelancerId == userId);
+        
+        if (bid == null) 
+        { 
+            return NotFound();
         }
-
-        [HttpPost]
-        [Authorize(Roles = "Freelancer")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var bid = await _context.Bids.FirstOrDefaultAsync(b => b.Id == id && b.FreelancerId == userId);
-
-            if (bid == null)
-            {
-                return NotFound();
-            }
-
-            _context.Bids.Remove(bid);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(MyBids));
-        }
-
-        [Authorize(Roles = "Freelancer")]
-        public async Task<IActionResult> MyBids()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var myBids = await _context.Bids
-                .Include(b => b.Project)
-                .Where(b => b.FreelancerId == userId)
-                .OrderByDescending(b => b.CreatedAt)
-                .ToListAsync();
-
-            var memberProjectIds = await _context.ProjectMembers
-                .Where(m => m.UserId == userId && m.Status == ProjectMemberStatus.Accepted)
-                .Select(m => m.ProjectId)
-                .ToListAsync();
-
-            var teamProjects = await _context.Projects
-                .Include(p => p.Client)
-                .Include(p => p.Members)
-                .Include(p => p.Categories)
-                .Where(p => memberProjectIds.Contains(p.Id) && p.IsTeamProject)
-                .OrderByDescending(p => p.CreatedAt)
-                .ToListAsync();
-
-            var invites = await _context.ProjectMembers
-                .Include(m => m.Project)
-                .Where(m => m.UserId == userId)
-                .OrderByDescending(m => m.JoinedAt)
-                .ToListAsync();
-
-            var unreadByProject = new Dictionary<int, int>();
-            foreach (var project in teamProjects)
-            {
-                var count = await _context.GroupChatMessages
-                    .Where(m => m.ProjectId == project.Id && m.SenderId != userId && m.ParentMessageId == null &&
-                                !m.ReadBy.Any(r => r.UserId == userId))
-                    .CountAsync();
-
-                unreadByProject[project.Id] = count;
-            }
-            
-            ViewBag.TeamProjects = teamProjects;
-            ViewBag.Invites = invites;
-            ViewBag.UnreadByProject = unreadByProject;
-
-            return View(myBids);
-        }
+        
+        bid.Amount = dto.Amount; 
+        bid.Comment = dto.Comment; 
+        bid.DurationInDays = dto.DurationInDays;
+        
+        await _context.SaveChangesAsync(); 
+        return RedirectToAction(nameof(MyBids));
     }
+    
+    /// <summary>
+    /// Удаляет заявку исполнителя.
+    /// </summary>
+    /// <param name="id">Идентификатор удаляемой заявки.</param>
+    /// <returns>Перенаправление к списку заявок или ошибку 404, если заявка не найдена.</returns>
+    [HttpPost] 
+    [Authorize(Roles = "Freelancer")] 
+    [ValidateAntiForgeryToken] 
+    public async Task<IActionResult> Delete(int id) 
+    { 
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); 
+        var bid = await _context.Bids.FirstOrDefaultAsync(b => b.Id == id && b.FreelancerId == userId);
+        
+        if (bid == null) 
+        { 
+            return NotFound();
+        }
+
+        _context.Bids.Remove(bid); 
+        await _context.SaveChangesAsync();
+        
+        return RedirectToAction(nameof(MyBids));
+    }
+    
+    /// <summary>
+    /// Загружает заявки текущего исполнителя,
+    /// его командные проекты, приглашения и количество
+    /// непрочитанных сообщений в групповых чатах.
+    /// </summary>
+    /// <returns>Представление со списком заявок пользователя.</returns>
+    [Authorize(Roles = "Freelancer")] 
+    public async Task<IActionResult> MyBids() 
+    { 
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); 
+        var myBids = await _context.Bids
+            .Include(b => b.Project)
+            .Where(b => b.FreelancerId == userId)
+            .OrderByDescending(b => b.CreatedAt)
+            .ToListAsync();
+
+        var memberProjectIds = await _context.ProjectMembers
+            .Where(m => m.UserId == userId && m.Status == ProjectMemberStatus.Accepted)
+            .Select(m => m.ProjectId)
+            .ToListAsync();
+        
+        var teamProjects = await _context.Projects
+            .Include(p => p.Client)
+            .Include(p => p.Members)
+            .Include(p => p.Categories)
+            .Where(p => memberProjectIds.Contains(p.Id) && p.IsTeamProject)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+
+        var invites = await _context.ProjectMembers
+            .Include(m => m.Project)
+            .Where(m => m.UserId == userId)
+            .OrderByDescending(m => m.JoinedAt)
+            .ToListAsync();
+
+        var unreadByProject = new Dictionary<int, int>(); 
+        foreach (var project in teamProjects) 
+        { 
+            var count = await _context.GroupChatMessages
+                .Where(m => m.ProjectId == project.Id && m.SenderId != userId && m.ParentMessageId == null && 
+                            !m.ReadBy.Any(r => r.UserId == userId))
+                .CountAsync();
+
+            unreadByProject[project.Id] = count;
+        }
+        
+        ViewBag.TeamProjects = teamProjects; 
+        ViewBag.Invites = invites; 
+        ViewBag.UnreadByProject = unreadByProject;
+        
+        return View(myBids);
+    }
+}

@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет информацию о прочтении сообщения пользователем.
+/// </summary>
 public class GroupChatMessageRead
 {
     public int Id { get; set; }

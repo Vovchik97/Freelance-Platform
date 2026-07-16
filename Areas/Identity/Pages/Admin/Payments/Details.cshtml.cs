@@ -9,6 +9,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Areas.Identity.Pages.Admin.Payments;
 
+/// <summary>
+/// Модель страницы просмотра деталей платежа.
+/// Позволяет администраторам просматривать информацию о платеже
+/// и выполнять возврат средств при соблюдении условий.
+/// </summary>
 [Authorize(Roles = "Admin")]
 public class DetailsModel : PageModel
 {
@@ -32,6 +37,12 @@ public class DetailsModel : PageModel
     [TempData]
     public string? SuccessMessage { get; set; }
 
+    /// <summary>
+    /// Загружает информацию о платеже вместе со связанными данными
+    /// и email пользователя, совершившего оплату.
+    /// </summary>
+    /// <param name="id">Идентификатор платежа.</param>
+    /// <returns>Страница с деталями платежа или 404 если платёж не найден.</returns>
     public async Task<IActionResult> OnGetAsync(int id)
     {
         var payment = await _context.Payments
@@ -50,6 +61,13 @@ public class DetailsModel : PageModel
         return Page();
     }
 
+    /// <summary>
+    /// Выполняет возврат средств по платежу.
+    /// Проверяет возможность возврата и вызывает соответствующую
+    /// операцию балансного сервиса в зависимости от типа платежа.
+    /// </summary>
+    /// <param name="id">Идентификатор платежа.</param>
+    /// <returns>Перенаправление на страницу деталей платежа или 404 если платёж не найден.</returns>
     public async Task<IActionResult> OnPostRefundAsync(int id)
     {
         var payment = await _context.Payments

@@ -13,9 +13,19 @@ using Xunit;
 
 namespace FreelancePlatform.FreelancePlatform.Tests.Web;
 
+/// <summary>
+/// Набор модульных тестов для проверки работы контроллера публичных профилей пользователей.
+/// Проверяет получение публичного профиля, создание и изменение профиля текущего пользователя,
+/// а также обработку различных ошибочных сценариев.
+/// </summary>
 public class PublicProfileControllerTests
 {
-    private AppDbContext GetDbContext()
+    /// <summary>
+    /// Создает экземпляр контекста базы данных с использованием InMemory-провайдера.
+    /// Используется для изоляции данных между тестовыми сценариями.
+    /// </summary>
+    /// <returns>Новый экземпляр <see cref="AppDbContext"/> с уникальной тестовой базой данных.</returns>
+    private static AppDbContext GetDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
@@ -23,22 +33,43 @@ public class PublicProfileControllerTests
         return new AppDbContext(options);
     }
 
+    /// <summary>
+    /// Создает mock-объект менеджера пользователей Identity.
+    /// Используется для имитации работы с пользователями без обращения к реальному хранилищу.
+    /// </summary>
+    /// <returns>Настроенный mock-объект <see cref="UserManager{TUser}"/>.</returns>
     private Mock<UserManager<IdentityUser>> GetUserManagerMock()
     {
         var store = new Mock<IUserStore<IdentityUser>>();
         return new Mock<UserManager<IdentityUser>>(store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
     }
     
+    /// <summary>
+    /// Создает mock-объект сервиса проверки пользователей в черном списке.
+    /// </summary>
+    /// <returns>Настроенный mock-объект <see cref="IBlacklistService"/>.</returns>
     private Mock<IBlacklistService> GetBlacklistServiceMock()
     {
         return new Mock<IBlacklistService>();
     }
     
+    /// <summary>
+    /// Создает mock-объект сервиса управления репутацией пользователей.
+    /// Используется для проверки получения рейтинга и истории изменений репутации.
+    /// </summary>
+    /// <returns>Настроенный mock-объект <see cref="IReputationService"/>.</returns>
     private Mock<IReputationService> GetReputationServiceMock()
     {
         return new Mock<IReputationService>();
     }
 
+    /// <summary>
+    /// Настраивает авторизованного пользователя в контексте контроллера.
+    /// Используется для имитации выполнения запросов от имени конкретного пользователя.
+    /// </summary>
+    /// <param name="controller">Контроллер, для которого необходимо установить пользователя.</param>
+    /// <param name="userId">Идентификатор пользователя.</param>
+    /// <param name="userName">Имя пользователя, добавляемое в claims.</param>
     private void SetUser(PublicProfileController controller, string userId, string userName = "testUser")
     {
         var claims = new List<Claim>

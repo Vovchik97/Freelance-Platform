@@ -12,6 +12,12 @@ using Moq;
 
 namespace FreelancePlatform.FreelancePlatform.Tests.Web;
 
+/// <summary>
+/// Содержит модульные тесты для проверки работы <see cref="TeamProjectController"/>.
+/// Проверяет функциональность командных проектов:
+/// просмотр проектов, управление участниками команды,
+/// приглашение и обработку заявок, создание и изменение задач, завершение и отмену проектов.
+/// </summary>
 public class TeamProjectControllerTests
 {
     private readonly AppDbContext _context;
@@ -45,6 +51,11 @@ public class TeamProjectControllerTests
         _controller.TempData = tempData.Object;
     }
 
+    /// <summary>
+    /// Создаёт Mock-объект UserManager для имитации работы ASP.NET Identity
+    /// во время выполнения модульных тестов контроллера.
+    /// </summary>
+    /// <returns>Настроенный экземпляр Mock<UserManager<IdentityUser>>.</returns>
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()
     {
         var store = new Mock<IUserStore<IdentityUser>>();
@@ -57,6 +68,14 @@ public class TeamProjectControllerTests
         return mock;
     }
 
+    /// <summary>
+    /// Устанавливает тестового пользователя в контекст контроллера
+    /// с указанным идентификатором и ролью.
+    /// Используется для имитации авторизованных запросов
+    /// при выполнении тестов контроллера.
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя, добавляемый в ClaimsPrincipal.</param>
+    /// <param name="role">Роль пользователя в системе. По умолчанию используется роль Client.</param>
     private void SetUser(string userId, string role = "Client")
     {
         var claims = new List<Claim>

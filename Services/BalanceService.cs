@@ -1,18 +1,28 @@
 ﻿using FreelancePlatform.Context;
 using FreelancePlatform.Models;
-using Stripe.V2;
 
 namespace FreelancePlatform.Services;
 
+/// <summary>
+/// Предоставляет методы управления балансом пользователей,
+/// включая пополнение, заморозку, возврат, вывод средств и выплаты.
+/// </summary>
 public class BalanceService : IBalanceService
 {
      private readonly AppDbContext _context;
+     private const decimal commissionPercent = 0.1m;
 
      public BalanceService(AppDbContext context)
      {
           _context = context;
      }
 
+     /// <summary>
+     /// Возвращает баланс пользователя. Если запись отсутствует,
+     /// создаёт её с нулевыми значениями.
+     /// </summary>
+     /// <param name="userId">Идентификатор пользователя.</param>
+     /// <returns>Объект баланса пользователя.</returns>
      public async Task<UserBalance> GetAsync(string userId)
      {
           var balance = await _context.UserBalances.FindAsync(userId);
@@ -31,6 +41,12 @@ public class BalanceService : IBalanceService
           return balance;
      }
 
+     /// <summary>
+     /// Пополняет баланс пользователя и сохраняет информацию о транзакции.
+     /// </summary>
+     /// <param name="userId">Идентификатор пользователя.</param>
+     /// <param name="amount">Сумма пополнения.</param>
+     /// <param name="paymentId">Идентификатор платежа.</param>
      public async Task DepositAsync(string userId, decimal amount, int paymentId)
      {
           var balance = await GetAsync(userId);
@@ -48,6 +64,12 @@ public class BalanceService : IBalanceService
           await _context.SaveChangesAsync();
      }
      
+     /// <summary>
+     /// Замораживает средства пользователя для оплаты заказа.
+     /// </summary>
+     /// <param name="userId">Идентификатор пользователя.</param>
+     /// <param name="amount">Сумма заморозки.</param>
+     /// <param name="orderId">Идентификатор заказа.</param>
      public async Task FreezeForOrderAsync(string userId, decimal amount, int orderId)
      {
           var balance = await GetAsync(userId);
@@ -71,6 +93,12 @@ public class BalanceService : IBalanceService
           await _context.SaveChangesAsync();
      }
      
+     /// <summary>
+     /// Замораживает средства пользователя для оплаты проекта.
+     /// </summary>
+     /// <param name="userId">Идентификатор пользователя.</param>
+     /// <param name="amount">Сумма заморозки.</param>
+     /// <param name="projectId">Идентификатор проекта.</param>
      public async Task FreezeForProjectAsync(string userId, decimal amount, int projectId)
      {
           var balance = await GetAsync(userId);
@@ -94,6 +122,12 @@ public class BalanceService : IBalanceService
           await _context.SaveChangesAsync();
      }
      
+     /// <summary>
+     /// Возвращает пользователю ранее замороженные средства по заказу.
+     /// </summary>
+     /// <param name="userId">Идентификатор пользователя.</param>
+     /// <param name="amount">Возвращаемая сумма.</param>
+     /// <param name="orderId">Идентификатор заказа.</param>
      public async Task RefundForOrderAsync(string userId, decimal amount, int orderId)
      {
           var balance = await GetAsync(userId);
@@ -118,6 +152,12 @@ public class BalanceService : IBalanceService
           await _context.SaveChangesAsync();
      }
      
+     /// <summary>
+     /// Возвращает пользователю ранее замороженные средства по проекту.
+     /// </summary>
+     /// <param name="userId">Идентификатор пользователя.</param>
+     /// <param name="amount">Возвращаемая сумма.</param>
+     /// <param name="projectId">Идентификатор проекта.</param>
      public async Task RefundForProjectAsync(string userId, decimal amount, int projectId)
      {
           var balance = await GetAsync(userId);
@@ -142,6 +182,12 @@ public class BalanceService : IBalanceService
           await _context.SaveChangesAsync();
      }
 
+     /// <summary>
+     /// Возвращает пользователю средства после отмены пополнения.
+     /// </summary>
+     /// <param name="userId">Идентификатор пользователя.</param>
+     /// <param name="amount">Возвращаемая сумма.</param>
+     /// <param name="paymentId">Идентификатор платежа.</param>
      public async Task RefundDepositAsync(string userId, decimal amount, int paymentId)
      {
           var balance = await GetAsync(userId);
@@ -165,6 +211,14 @@ public class BalanceService : IBalanceService
           await _context.SaveChangesAsync();
      }
      
+     /// <summary>
+     /// Переводит замороженные средства клиента исполнителю по заказу,
+     /// удерживая комиссию платформы.
+     /// </summary>
+     /// <param name="clientId">Идентификатор клиента.</param>
+     /// <param name="freelancerId">Идентификатор исполнителя.</param>
+     /// <param name="amount">Сумма выплаты.</param>
+     /// <param name="orderId">Идентификатор заказа.</param>
      public async Task ReleaseForOrderAsync(string clientId, string freelancerId, decimal amount, int orderId)
      {
           var client = await GetAsync(clientId);
@@ -175,8 +229,7 @@ public class BalanceService : IBalanceService
                throw new InvalidOperationException("Недостаточно замороженных средств");
           }
 
-          const decimal commissonPercent = 0.1m;
-          var commission = amount * commissonPercent;
+          var commission = amount * commissionPercent;
           var payout = amount - commission;
           
           client.Frozen -= amount;
@@ -202,6 +255,14 @@ public class BalanceService : IBalanceService
           await _context.SaveChangesAsync();
      }
      
+     /// <summary>
+     /// Переводит замороженные средства клиента исполнителю по проекту,
+     /// удерживая комиссию платформы.
+     /// </summary>
+     /// <param name="clientId">Идентификатор клиента.</param>
+     /// <param name="freelancerId">Идентификатор исполнителя.</param>
+     /// <param name="amount">Сумма выплаты.</param>
+     /// <param name="projectId">Идентификатор проекта.</param>
      public async Task ReleaseForProjectAsync(string clientId, string freelancerId, decimal amount, int projectId)
      {
           var client = await GetAsync(clientId);
@@ -212,8 +273,7 @@ public class BalanceService : IBalanceService
                throw new InvalidOperationException("Недостаточно замороженных средств");
           }
 
-          const decimal commissonPercent = 0.1m;
-          var commission = amount * commissonPercent;
+          var commission = amount * commissionPercent;
           var payout = amount - commission;
           
           client.Frozen -= amount;
@@ -239,6 +299,13 @@ public class BalanceService : IBalanceService
           await _context.SaveChangesAsync();
      }
 
+     /// <summary>
+     /// Распределяет оплату между участниками командного проекта
+     /// с удержанием комиссии платформы.
+     /// </summary>
+     /// <param name="clientId">Идентификатор клиента.</param>
+     /// <param name="payouts">Список выплат участникам проекта.</param>
+     /// <param name="projectId">Идентификатор проекта.</param>
      public async Task ReleaseForTeamProjectAsync(string clientId,
           List<(string UserId, string UserName, decimal Amount)> payouts, int projectId)
      {
@@ -251,12 +318,10 @@ public class BalanceService : IBalanceService
           }
 
           client.Frozen -= totalAmount;
-          
-          const decimal commissonPercent = 0.1m;
 
-          foreach (var (freelancerId, userName, amount) in payouts)
+          foreach (var (freelancerId, _, amount) in payouts)
           {
-               var commission = Math.Round(amount * commissonPercent, 2);
+               var commission = Math.Round(amount * commissionPercent, 2);
                var payout = amount - commission;
 
                var freelancer = await GetAsync(freelancerId);
@@ -283,6 +348,12 @@ public class BalanceService : IBalanceService
           await _context.SaveChangesAsync();
      }
 
+     /// <summary>
+     /// Выполняет вывод средств с баланса пользователя.
+     /// </summary>
+     /// <param name="userId">Идентификатор пользователя.</param>
+     /// <param name="amount">Сумма вывода.</param>
+     /// <param name="paymentId">Идентификатор платежа.</param>
      public async Task WithdrawAsync(string userId, decimal amount, int paymentId)
      {
           var balance = await GetAsync(userId);

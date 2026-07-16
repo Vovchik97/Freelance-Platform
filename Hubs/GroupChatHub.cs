@@ -9,6 +9,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Hubs;
 
+/// <summary>
+/// SignalR-хаб, обеспечивающий обмен сообщениями в групповых чатах проектов,
+/// обработку упоминаний пользователей, обновление статусов задач
+/// и уведомление участников проекта о новых событиях.
+/// </summary>
 public class GroupChatHub : Hub
 {
     private readonly AppDbContext _context;
@@ -23,16 +28,33 @@ public class GroupChatHub : Hub
         _logService = logService;
     }
 
+    /// <summary>
+    /// Подключает текущего пользователя к группе SignalR,
+    /// соответствующей указанному проекту.
+    /// </summary>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <returns>Асинхронная задача.</returns>
     public async Task JoinProjectGroup(string projectId)
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, $"project_{projectId}");
     }
     
+    /// <summary>
+    /// Удаляет текущего пользователя из группы SignalR проекта.
+    /// </summary>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <returns>Асинхронная задача.</returns>
     public async Task LeaveProjectGroup(string projectId)
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"project_{projectId}");
     }
 
+    /// <summary>
+    /// Помечает все непрочитанные сообщения проекта как прочитанные
+    /// для текущего пользователя.
+    /// </summary>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <returns>Асинхронная задача.</returns>
     public async Task MarkAllAsRead(int projectId)
     {
         var user = await _userManager.GetUserAsync(Context.User!);
@@ -65,6 +87,15 @@ public class GroupChatHub : Hub
         await Clients.Caller.SendAsync("UnreadCountUpdated", projectId, 0);
     }
 
+    /// <summary>
+    /// Отправляет сообщение в групповой чат проекта,
+    /// обрабатывает вложения и упоминания пользователей,
+    /// а также уведомляет участников проекта о новых сообщениях.
+    /// </summary>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <param name="message">Текст сообщения.</param>
+    /// <param name="attachments">Массив прикреплённых файлов.</param>
+    /// <returns>Асинхронная задача.</returns>
     public async Task SendGroupMessage(int projectId, string message, AttachmentDto[] attachments)
     {
         var user = await _userManager.GetUserAsync(Context.User!);
@@ -187,6 +218,11 @@ public class GroupChatHub : Hub
         }
     }
 
+    /// <summary>
+    /// Подключает текущего пользователя к персональной группе SignalR
+    /// для получения индивидуальных уведомлений.
+    /// </summary>
+    /// <returns>Асинхронная задача.</returns>
     public async Task JoinUserGroup()
     {
         var user = await _userManager.GetUserAsync(Context.User!);
@@ -198,6 +234,14 @@ public class GroupChatHub : Hub
         await Groups.AddToGroupAsync(Context.ConnectionId, $"user_{user.Id}");
     }
 
+    /// <summary>
+    /// Изменяет статус задачи проекта,
+    /// сохраняет изменения и уведомляет участников проекта.
+    /// </summary>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <param name="taskId">Идентификатор задачи.</param>
+    /// <param name="newStatus">Новый статус задачи.</param>
+    /// <returns>Асинхронная задача.</returns>
     public async Task UpdateTaskStatus(int projectId, int taskId, ProjectTaskStatus newStatus)
     {
         var user = await _userManager.GetUserAsync(Context.User!);
@@ -247,6 +291,11 @@ public class GroupChatHub : Hub
             .SendAsync("TaskStatusUpdated", taskId, (int)newStatus, GetTaskStatusText(newStatus));
     }
 
+    /// <summary>
+    /// Возвращает текстовое представление статуса задачи.
+    /// </summary>
+    /// <param name="status">Статус задачи.</param>
+    /// <returns>Строковое описание статуса.</returns>
     private static string GetTaskStatusText(ProjectTaskStatus status) => status switch
     {
         ProjectTaskStatus.Todo => "К выполнению",

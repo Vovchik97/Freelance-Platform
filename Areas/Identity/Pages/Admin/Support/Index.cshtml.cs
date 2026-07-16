@@ -6,6 +6,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Areas.Identity.Pages.Admin.Support;
 
+/// <summary>
+/// Модель страницы управления обращениями в службу поддержки.
+/// Отображает чаты пользователей, переданные от бота администраторам.
+/// </summary>
 [Authorize(Roles = "Admin")]
 public class IndexModel : PageModel
 {
@@ -20,6 +24,10 @@ public class IndexModel : PageModel
         _userManager = userManager;
     }
 
+    /// <summary>
+    /// Загружает список обращений пользователей в поддержку
+    /// и формирует данные для отображения в административной панели.
+    /// </summary>
     public async Task OnGetAsync()
     {
         SupportChats = await _context.Chats
@@ -41,6 +49,15 @@ public class IndexModel : PageModel
             })
             .ToListAsync();
 
+        await LoadUserNamesAsync();
+    }
+
+    /// <summary>
+    /// Загружает имена пользователей по их идентификаторам.
+    /// Заменяет временные ID на реальные имена пользователей.
+    /// </summary>
+    private async Task LoadUserNamesAsync()
+    {
         foreach (var chat in SupportChats)
         {
             var user = await _userManager.FindByIdAsync(chat.UserName);
@@ -51,6 +68,10 @@ public class IndexModel : PageModel
         }
     }
     
+    /// <summary>
+    /// Модель данных для отображения обращения пользователя
+    /// в административном разделе поддержки.
+    /// </summary>
     public class SupportChatViewModel
     {
         public int Id { get; set; }

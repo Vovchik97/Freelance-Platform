@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Определяет тип платежной операции.
+/// </summary>
 public enum PaymentType
 {
     Order = 0,

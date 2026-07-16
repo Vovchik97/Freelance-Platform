@@ -3,11 +3,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using Stripe;
 using BalanceTransaction = FreelancePlatform.Models.BalanceTransaction;
 
 namespace FreelancePlatform.Areas.Identity.Pages.Admin.Transactions;
 
+/// <summary>
+/// Модель страницы списка финансовых операций пользователей.
+/// Загружает транзакции и отображает email владельцев операций.
+/// </summary>
 [Authorize(Roles = "Admin")]
 public class IndexModel : PageModel
 {
@@ -22,6 +25,10 @@ public class IndexModel : PageModel
 
     public List<(BalanceTransaction Transaction, string? UserEmail)> Transactions { get; set; } = new();
 
+    /// <summary>
+    /// Загружает список транзакций
+    /// и связывает их с пользователями.
+    /// </summary>
     public async Task OnGetAsync()
     {
         var transactions = await _context.BalanceTransactions

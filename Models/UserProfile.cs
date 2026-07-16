@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Identity;
 
 namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет дополнительную информацию профиля пользователя.
+/// </summary>
 public class UserProfile
 {
     [Key]

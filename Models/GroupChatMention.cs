@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет упоминание пользователя в сообщении группового чата проекта.
+/// </summary>
 public class GroupChatMention
 {
     public int Id { get; set; }

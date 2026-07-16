@@ -4,6 +4,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Services;
 
+/// <summary>
+/// Сервис управления системой репутации пользователей.
+/// Отвечает за начисление и списание репутационных баллов,
+/// получение текущего рейтинга и истории изменений.
+/// </summary>
 public class ReputationService : IReputationService
 {
     private readonly AppDbContext _context;
@@ -24,6 +29,12 @@ public class ReputationService : IReputationService
         _context = context;
     }
 
+    /// <summary>
+    /// Получает текущую репутацию пользователя.
+    /// Если запись отсутствует, создаёт новую с нулевым рейтингом.
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя.</param>
+    /// <returns>Объект текущей репутации пользователя.</returns>
     public async Task<UserReputation> GetAsync(string userId)
     {
         var rep = await _context.UserReputations.FindAsync(userId);
@@ -37,6 +48,14 @@ public class ReputationService : IReputationService
         return rep;
     }
 
+    /// <summary>
+    /// Добавляет событие репутации и изменяет рейтинг пользователя.
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя, которому изменяется репутация.</param>
+    /// <param name="type">Тип события, определяющий количество начисляемых баллов.</param>
+    /// <param name="orderId">Идентификатор связанного заказа, если событие относится к заказу.</param>
+    /// <param name="projectId">Идентификатор связанного проекта, если событие относится к проекту.</param>
+    /// <param name="reason">Дополнительное описание причины изменения рейтинга.</param>
     public async Task AddEventAsync(string userId, ReputationEventType type, 
         int? orderId = null, int? projectId = null, string? reason = null)
     {
@@ -58,6 +77,11 @@ public class ReputationService : IReputationService
         await _context.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Получает историю всех изменений репутации пользователя.
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя.</param>
+    /// <returns>Список событий репутации, отсортированный от новых к старым.</returns>
     public async Task<List<ReputationEvent>> GetHistoryAsync(string userId)
     {
         return await _context.ReputationEvents

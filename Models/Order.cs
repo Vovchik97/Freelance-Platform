@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using Newtonsoft.Json;
 
 namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет заказ услуги, созданный клиентом.
+/// </summary>
 public class Order
 {
     public int Id { get; set; }

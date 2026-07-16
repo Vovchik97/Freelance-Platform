@@ -56,7 +56,7 @@ ViewData["Title"] = "Аналитика";
         <div class="project-card">
             <div class="card-body">
                 <h5 class="card-title">Заявки</h5>
-                <p class="display-6 text-secondary">@Model.ApplicationCount</p>
+                <p class="display-6 text-secondary">@Model.BidCount</p>
             </div>
         </div>
     </div>
@@ -515,7 +515,7 @@ else
             labels: ["Проекты", "Услуги", "Заявки", "Заказы"],
             datasets: [{
                 data: [@Model.ProjectCount, @Model.ServiceCount,
-                    @Model.ApplicationCount, @Model.OrderCount],
+                    @Model.BidCount, @Model.OrderCount],
                 backgroundColor: ["#ffc107", "#dc3545", "#6c757d", "#6c63ff"]
             }]
         },

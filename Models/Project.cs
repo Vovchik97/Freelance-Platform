@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
-using Newtonsoft.Json;
 
 namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет проект, опубликованный клиентом на платформе.
+/// </summary>
 public class Project
 {
     public int Id { get; set; }

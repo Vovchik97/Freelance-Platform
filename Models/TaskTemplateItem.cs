@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет отдельный элемент шаблона задач.
+/// </summary>
 public class TaskTemplateItem
 {
     public int Id { get; set; }

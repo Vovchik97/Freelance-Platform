@@ -13,6 +13,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Controllers.Web;
 
+/// <summary>
+/// Контроллер управления заказами пользователей.
+/// Позволяет создавать, редактировать, удалять и просматривать заказы,
+/// управляет выполнением заказов, связанными задачами,
+/// финансовыми операциями и изменением репутации исполнителей.
+/// </summary>
 public class OrderController : Controller
 {
     private readonly AppDbContext _context;
@@ -40,6 +46,13 @@ public class OrderController : Controller
         _blacklistService = blacklistService;
     }
 
+    /// <summary>
+    /// Отображает информацию о заказе,
+    /// включая исполнителя, категории услуги,
+    /// рабочие элементы и прогресс выполнения.
+    /// </summary>
+    /// <param name="id">Идентификатор заказа.</param>
+    /// <returns>Представление страницы заказа или 404, если заказ не найден.</returns>
     [AllowAnonymous]
     public async Task<IActionResult> Details(int id)
     {
@@ -62,14 +75,17 @@ public class OrderController : Controller
 
         ViewBag.Progress = progress;
         ViewBag.WorkItems = order.WorkItems.OrderBy(w => w.OrderIndex).ToList();
-        ViewBag.TaskTemplates = await _context.TaskTemplates
-            .Include(t => t.Items)
-            .Include(t => t.Categories)
-            .ToListAsync();
+        await LoadTaskTemplatesAsync();
 
         return View(order);
     }
 
+    /// <summary>
+    /// Отображает форму создания заказа по выбранной услуге.
+    /// Загружает доступные шаблоны задач и категории услуги.
+    /// </summary>
+    /// <param name="serviceId">Идентификатор услуги, для которой создаётся заказ.</param>
+    /// <returns>Форма создания заказа.</returns>
     [Authorize(Roles = "Client")]
     public async Task<IActionResult> Create(int serviceId)
     {
@@ -78,10 +94,7 @@ public class OrderController : Controller
             ServiceId = serviceId
         };
         ViewBag.ServiceId = serviceId;
-        ViewBag.TaskTemplates = _context.TaskTemplates
-            .Include(t => t.Items)
-            .Include(t => t.Categories)
-            .ToList();
+        await LoadTaskTemplatesAsync();
 
         var service = await _context.Services
             .Include(s => s.Categories)
@@ -91,6 +104,15 @@ public class OrderController : Controller
         return View();
     }
 
+    /// <summary>
+    /// Создаёт новый заказ от клиента исполнителю.
+    /// Выполняет проверки существующих заказов,
+    /// блокировок пользователей, отправляет уведомление
+    /// и создаёт задачи из шаблона при необходимости.
+    /// </summary>
+    /// <param name="dto">Данные создаваемого заказа.</param>
+    /// <param name="templateId">Идентификатор шаблона задач. — необязательный параметр.</param>
+    /// <returns>Перенаправление на список заказов или возврат формы при ошибке валидации.</returns>
     [HttpPost]
     [Authorize(Roles = "Client")]
     [ValidateAntiForgeryToken]
@@ -98,10 +120,7 @@ public class OrderController : Controller
     {
         if (!ModelState.IsValid)
         {
-            ViewBag.TaskTemplates = await _context.TaskTemplates
-                .Include(t => t.Items)
-                .Include(t => t.Categories)
-                .ToListAsync();
+            await LoadTaskTemplatesAsync();
             ViewBag.ServiceId = dto.ServiceId;
             return View(dto);
         }
@@ -171,6 +190,9 @@ public class OrderController : Controller
             ServiceId = dto.ServiceId
         };
         
+        await _context.Orders.AddAsync(order);
+        await _context.SaveChangesAsync();
+        
         var freelancerEmail = service.Freelancer?.Email;
 
         if (!string.IsNullOrWhiteSpace(freelancerEmail))
@@ -181,9 +203,6 @@ public class OrderController : Controller
                 htmlMessage: $"Пользователь {client.UserName} сделал заказ на услугу {service.Title}."
             );
         }
-
-        await _context.Orders.AddAsync(order);
-        await _context.SaveChangesAsync();
         
         if (templateId.HasValue && templateId > 0)
         {
@@ -193,6 +212,11 @@ public class OrderController : Controller
         return RedirectToAction(nameof(MyOrders));
     }
 
+    /// <summary>
+    /// Отображает форму редактирования заказа клиентом.
+    /// </summary>
+    /// <param name="id">Идентификатор редактируемого заказа.</param>
+    /// <returns>Форма редактирования заказа или 404 если заказ не найден.</returns>
     [Authorize(Roles = "Client")]
     public async Task<IActionResult> Edit(int id)
     {
@@ -213,6 +237,12 @@ public class OrderController : Controller
         return View(dto);
     }
 
+    /// <summary>
+    /// Изменяет данные существующего заказа.
+    /// </summary>
+    /// <param name="id">Идентификатор заказа.</param>
+    /// <param name="dto">Новые данные заказа.</param>
+    /// <returns>Перенаправление после сохранения или отображение формы при ошибке.</returns>
     [HttpPost]
     [Authorize(Roles = "Client")]
     [ValidateAntiForgeryToken]
@@ -238,6 +268,11 @@ public class OrderController : Controller
         return RedirectToAction(nameof(MyOrders));
     }
 
+    /// <summary>
+    /// Удаляет заказ клиента вместе со связанными рабочими элементами.
+    /// </summary>
+    /// <param name="id">Идентификатор удаляемого заказа.</param>
+    /// <returns>Перенаправление на список заказов или 404 если заказ не найден.</returns>
     [HttpPost]
     [Authorize(Roles = "Client")]
     [ValidateAntiForgeryToken]
@@ -264,6 +299,10 @@ public class OrderController : Controller
         return RedirectToAction(nameof(MyOrders));
     }
 
+    /// <summary>
+    /// Отображает список заказов текущего клиента.
+    /// </summary>
+    /// <returns>Список заказов текущего клиента.</returns>
     [Authorize(Roles = "Client")]
     public async Task<IActionResult> MyOrders()
     {
@@ -277,6 +316,13 @@ public class OrderController : Controller
         return View(myOrders);
     }
     
+    /// <summary>
+    /// Завершает заказ,
+    /// освобождает средства исполнителю
+    /// и начисляет репутацию за выполнение работы.
+    /// </summary>
+    /// <param name="id">Идентификатор завершаемого заказа.</param>
+    /// <returns>Перенаправление на страницу заказа.</returns>
     [HttpPost]
     [Authorize(Roles = "Client")]
     public async Task<IActionResult> CompleteOrder(int id)
@@ -296,7 +342,12 @@ public class OrderController : Controller
             return Forbid();
         }
 
-        var freelancerId = order.Service!.FreelancerId!;
+        if (order.Service == null)
+        {
+            return BadRequest();
+        }
+
+        var freelancerId = order.Service.FreelancerId;
         await _balanceService.ReleaseForOrderAsync(
             order.ClientId,
             freelancerId,
@@ -313,6 +364,15 @@ public class OrderController : Controller
         return RedirectToAction(nameof(Details), new { id = order.Id });
     }
 
+    /// <summary>
+    /// Рассчитывает и добавляет событие репутации исполнителю
+    /// в зависимости от соблюдения срока выполнения заказа.
+    /// </summary>
+    /// <param name="freelancerId">Идентификатор исполнителя.</param>
+    /// <param name="startedAt">Дата создания заказа.</param>
+    /// <param name="durationInDays">Срок выполнения заказа в днях.</param>
+    /// <param name="orderId">Идентификатор заказа.</param>
+    /// <param name="projectId">Идентификатор проекта.</param>
     private async Task ApplyDeliveryReputationAsync(string freelancerId, DateTime startedAt, int durationInDays, int? orderId = null, int? projectId = null)
     {
         var now = DateTime.UtcNow;
@@ -354,5 +414,16 @@ public class OrderController : Controller
             projectId,
             reason
         );
+    }
+
+    /// <summary>
+    /// Загружает шаблоны задач для создания заказа.
+    /// </summary>
+    private async Task LoadTaskTemplatesAsync()
+    {
+        ViewBag.TaskTemplates = await _context.TaskTemplates
+            .Include(t => t.Items)
+            .Include(t => t.Categories)
+            .ToListAsync();
     }
 }

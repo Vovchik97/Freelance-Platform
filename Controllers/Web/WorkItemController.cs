@@ -10,20 +10,30 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Controllers.Web;
 
+/// <summary>
+/// Контроллер для управления задачами проектов и заказов.
+/// Позволяет создавать, изменять, удалять задачи и применять шаблоны задач.
+/// </summary>
 public class WorkItemController : Controller
 {
     private readonly WorkItemService _workItemService;
     private readonly AppDbContext _context;
-    private readonly UserManager<IdentityUser> _userManager;
 
-    public WorkItemController(WorkItemService workItemService, AppDbContext context,
-        UserManager<IdentityUser> userManager)
+    public WorkItemController(WorkItemService workItemService, AppDbContext context)
     {
         _workItemService = workItemService;
         _context = context;
-        _userManager = userManager;
     }
 
+    /// <summary>
+    /// Добавляет новую задачу в проект.
+    /// </summary>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <param name="dto">Данные создаваемой задачи.</param>
+    /// <returns>
+    /// Результат перенаправления на страницу проекта либо ответ <see cref="ForbidResult"/>,
+    /// если пользователь не является владельцем проекта.
+    /// </returns>
     [HttpPost]
     [Authorize(Roles = "Client")]
     [ValidateAntiForgeryToken]
@@ -42,13 +52,22 @@ public class WorkItemController : Controller
         return RedirectToAction("Details", "Project", new { id = projectId });
     }
 
+    /// <summary>
+    /// Добавляет новую задачу в заказ.
+    /// </summary>
+    /// <param name="orderId">Идентификатор заказа.</param>
+    /// <param name="dto">Данные создаваемой задачи.</param>
+    /// <returns>
+    /// Результат перенаправления на страницу заказа либо ответ <see cref="ForbidResult"/>,
+    /// если пользователь не имеет прав на изменение заказа.
+    /// </returns>
     [HttpPost]
     [Authorize(Roles = "Client")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddToOrder(int orderId, CreateWorkItemDto dto)
     {
         var order = await _context.Orders.FindAsync(orderId);
-        if (order == null || (order.ClientId != User.FindFirstValue(ClaimTypes.NameIdentifier) && order.Service!.FreelancerId != User.FindFirstValue(ClaimTypes.NameIdentifier)));
+        if (order == null || (order.ClientId != User.FindFirstValue(ClaimTypes.NameIdentifier) && order.Service!.FreelancerId != User.FindFirstValue(ClaimTypes.NameIdentifier)))
         {
             return Forbid();
         }
@@ -60,6 +79,16 @@ public class WorkItemController : Controller
         return RedirectToAction("Details", "Order", new { id = orderId });
     }
 
+    /// <summary>
+    /// Обновляет статус задачи.
+    /// </summary>
+    /// <param name="workItemId">Идентификатор задачи.</param>
+    /// <param name="status">Новый статус задачи.</param>
+    /// <param name="returnUrl">URL для возврата после выполнения операции.</param>
+    /// <returns>
+    /// Перенаправление на указанную страницу, либо результат <see cref="NotFoundResult"/> или
+    /// <see cref="ForbidResult"/> при отсутствии задачи или недостатке прав.
+    /// </returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateStatus(int workItemId, WorkItemStatus status, string returnUrl)
@@ -100,6 +129,14 @@ public class WorkItemController : Controller
         return Redirect(returnUrl ?? "/");
     }
 
+    /// <summary>
+    /// Обновляет порядок отображения задач.
+    /// </summary>
+    /// <param name="request">Данные с новым порядком задач.</param>
+    /// <returns>
+    /// Ответ с результатом выполнения операции либо сообщение об ошибке,
+    /// если пользователь не имеет необходимых прав или запрос некорректен.
+    /// </returns>
     [HttpPost]
     [Authorize(Roles = "Client")]
     public async Task<IActionResult> UpdateOrder([FromBody] UpdateOrderRequest request)
@@ -145,6 +182,15 @@ public class WorkItemController : Controller
         return Ok(new { success = true, message = "Порядок обновлён" });
     }
 
+    /// <summary>
+    /// Удаляет задачу.
+    /// </summary>
+    /// <param name="workItemId">Идентификатор задачи.</param>
+    /// <param name="returnUrl">URL для возврата после удаления.</param>
+    /// <returns>
+    /// Перенаправление на предыдущую страницу либо результат
+    /// <see cref="NotFoundResult"/> или <see cref="ForbidResult"/>.
+    /// </returns>
     [HttpPost]
     [Authorize(Roles = "Client")]
     [ValidateAntiForgeryToken]
@@ -183,6 +229,15 @@ public class WorkItemController : Controller
         return Redirect(returnUrl ?? "/");
     }
     
+    /// <summary>
+    /// Применяет шаблон задач к проекту.
+    /// </summary>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <param name="templateId">Идентификатор шаблона.</param>
+    /// <returns>
+    /// Перенаправление на страницу проекта после применения шаблона либо ответ
+    /// <see cref="ForbidResult"/>, если пользователь не имеет необходимых прав.
+    /// </returns>
     [HttpPost]
     [Authorize(Roles = "Client")]
     [ValidateAntiForgeryToken]
@@ -211,6 +266,15 @@ public class WorkItemController : Controller
         return RedirectToAction("Details", "Project", new { id = projectId });
     }
 
+    /// <summary>
+    /// Применяет шаблон задач к заказу.
+    /// </summary>
+    /// <param name="orderId">Идентификатор заказа.</param>
+    /// <param name="templateId">Идентификатор шаблона.</param>
+    /// <returns>
+    /// Перенаправление на страницу заказа после применения шаблона либо ответ
+    /// <see cref="ForbidResult"/>, если пользователь не имеет необходимых прав.
+    /// </returns>
     [HttpPost]
     [Authorize(Roles = "Client")]
     [ValidateAntiForgeryToken]

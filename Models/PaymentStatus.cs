@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Определяет текущее состояние платежной операции.
+/// </summary>
 public enum PaymentStatus
 {
     Pending = 0,

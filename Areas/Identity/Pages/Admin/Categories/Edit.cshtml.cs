@@ -6,6 +6,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Areas.Identity.Pages.Admin.Categories;
 
+/// <summary>
+/// Модель страницы редактирования категории.
+/// Позволяет администраторам изменять данные существующей категории.
+/// </summary>
 [Authorize(Roles = "Admin")]
 public class EditModel : PageModel
 {
@@ -28,6 +32,12 @@ public class EditModel : PageModel
     [BindProperty]
     public bool IsActive { get; set; }
 
+    /// <summary>
+    /// Загружает данные категории по идентификатору
+    /// для заполнения формы редактирования.
+    /// </summary>
+    /// <param name="id">Идентификатор категории.</param>
+    /// <returns>Страница редактирования или 404 если категория не найдена.</returns>
     public async Task<IActionResult> OnGetAsync(int id)
     {
         var category = await _context.Categories.FindAsync(id);
@@ -44,6 +54,11 @@ public class EditModel : PageModel
         return Page();
     }
     
+    /// <summary>
+    /// Обновляет данные категории после проверки корректности
+    /// и отсутствия дубликатов названий.
+    /// </summary>
+    /// <returns>Страница со списком категорий при успехе или текущая страница с ошибками.</returns>
     public async Task<IActionResult> OnPostAsync()
     {
         if (string.IsNullOrWhiteSpace(Name))
@@ -58,8 +73,10 @@ public class EditModel : PageModel
             return NotFound();
         }
 
+        var normalizedName = Name.Trim().ToLower();
+        
         var duplicate = await _context.Categories
-            .AnyAsync(c => c.Name.ToLower() == Name.ToLower() && c.Id != Id);
+            .AnyAsync(c => c.Name.ToLower() == normalizedName && c.Id != Id);
 
         if (duplicate)
         {
@@ -67,7 +84,7 @@ public class EditModel : PageModel
             return Page();
         }
         
-        category.Name = Name;
+        category.Name = Name.Trim();
         category.Description = Description;
         category.IsActive = IsActive;
         

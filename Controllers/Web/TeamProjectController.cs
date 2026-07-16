@@ -11,6 +11,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Controllers.Web;
 
+/// <summary>
+/// Контроллер для управления командными проектами,
+/// участниками, задачами, откликами и распределением выплат.
+/// </summary>
 [Authorize]
 public class TeamProjectController : Controller
 {
@@ -30,6 +34,12 @@ public class TeamProjectController : Controller
         _blacklistService = blacklistService;
     }
 
+    /// <summary>
+    /// Отображает страницу командного проекта.
+    /// </summary>
+    /// <param name="id">Идентификатор проекта.</param>
+    /// <param name="tab">Активная вкладка интерфейса.</param>
+    /// <returns>Страница командного проекта.</returns>
     public async Task<IActionResult> Details(int id, string tab = "overview")
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -111,6 +121,11 @@ public class TeamProjectController : Controller
         return View(project);
     }
 
+    /// <summary>
+    /// Приглашает пользователя в команду проекта.
+    /// </summary>
+    /// <param name="dto">Данные приглашения.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> InviteMember(InviteMemberDto dto)
@@ -184,6 +199,11 @@ public class TeamProjectController : Controller
         return RedirectToAction(nameof(Details), new { id = dto.ProjectId, tab = "team" });
     }
 
+    /// <summary>
+    /// Подтверждает приглашение пользователя в проект.
+    /// </summary>
+    /// <param name="memberId">Идентификатор приглашения.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AcceptInvite(int memberId)
@@ -222,6 +242,11 @@ public class TeamProjectController : Controller
         return RedirectToAction("MyBids", "Bid", new { tab = "invites" });
     }
 
+    /// <summary>
+    /// Отклоняет приглашение в проект.
+    /// </summary>
+    /// <param name="memberId">Идентификатор приглашения.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeclineInvite(int memberId)
@@ -243,6 +268,11 @@ public class TeamProjectController : Controller
         return RedirectToAction("MyBids", "Bid", new { tab = "invites" });
     }
 
+    /// <summary>
+    /// Удаляет участника из команды проекта.
+    /// </summary>
+    /// <param name="memberId">Идентификатор участника.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RemoveMember(int memberId)
@@ -285,6 +315,11 @@ public class TeamProjectController : Controller
         return RedirectToAction(nameof(Details), new { id = project.Id, tab = "team" });
     }
 
+    /// <summary>
+    /// Назначает участника лидером проекта.
+    /// </summary>
+    /// <param name="memberId">Идентификатор участника.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SetLead(int memberId)
@@ -331,6 +366,11 @@ public class TeamProjectController : Controller
         return RedirectToAction(nameof(Details), new { id = member.ProjectId, tab = "team" });
     }
 
+    /// <summary>
+    /// Создает новую задачу проекта.
+    /// </summary>
+    /// <param name="dto">Данные создаваемой задачи.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateTask(CreateTaskDto dto)
@@ -396,6 +436,12 @@ public class TeamProjectController : Controller
         return RedirectToAction(nameof(Details), new { id = dto.ProjectId, tab = "tasks" });
     }
 
+    /// <summary>
+    /// Изменяет статус задачи.
+    /// </summary>
+    /// <param name="taskId">Идентификатор задачи.</param>
+    /// <param name="status">Новый статус задачи.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateTaskStatus(int taskId, int status)
@@ -486,6 +532,11 @@ public class TeamProjectController : Controller
         return RedirectToAction(nameof(Details), new { id = task.ProjectId, tab = "tasks" });
     }
 
+    /// <summary>
+    /// Удаляет задачу проекта.
+    /// </summary>
+    /// <param name="taskId">Идентификатор задачи.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteTask(int taskId)
@@ -525,6 +576,10 @@ public class TeamProjectController : Controller
         return RedirectToAction(nameof(Details), new { id = projectId, tab = "tasks" });
     }
 
+    /// <summary>
+    /// Возвращает количество ожидающих приглашений текущего пользователя.
+    /// </summary>
+    /// <returns>Количество ожидающих приглашений в формате JSON.</returns>
     [HttpGet]
     public async Task<IActionResult> GetInviteCount()
     {
@@ -540,6 +595,11 @@ public class TeamProjectController : Controller
         return Content(json, "application/json");
     }
 
+    /// <summary>
+    /// Отображает форму редактирования проекта.
+    /// </summary>
+    /// <param name="id">Идентификатор проекта.</param>
+    /// <returns>Страница редактирования проекта.</returns>
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
@@ -578,6 +638,12 @@ public class TeamProjectController : Controller
         return View(dto);
     }
 
+    /// <summary>
+    /// Сохраняет изменения проекта.
+    /// </summary>
+    /// <param name="id">Идентификатор проекта.</param>
+    /// <param name="dto">Новые данные проекта.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, UpdateProjectDto dto)
@@ -633,6 +699,11 @@ public class TeamProjectController : Controller
         return RedirectToAction(nameof(Details), new { id });
     }
 
+    /// <summary>
+    /// Замораживает бюджет проекта и переводит проект в оплаченный статус.
+    /// </summary>
+    /// <param name="id">Идентификатор проекта.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> PayProject(int id)
@@ -687,6 +758,11 @@ public class TeamProjectController : Controller
         return RedirectToAction(nameof(Details), new { id });
     }
 
+    /// <summary>
+    /// Начинает выполнение проекта.
+    /// </summary>
+    /// <param name="id">Идентификатор проекта.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> StartProject(int id)
@@ -716,6 +792,11 @@ public class TeamProjectController : Controller
         return RedirectToAction(nameof(Details), new { id });
     }
 
+    /// <summary>
+    /// Отменяет проект.
+    /// </summary>
+    /// <param name="id">Идентификатор проекта.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CancelProject(int id)
@@ -769,6 +850,11 @@ public class TeamProjectController : Controller
         return RedirectToAction(nameof(Details), new { id });
     }
 
+    /// <summary>
+    /// Возобновляет отмененный проект.
+    /// </summary>
+    /// <param name="id">Идентификатор проекта.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ResumeProject(int id)
@@ -796,6 +882,11 @@ public class TeamProjectController : Controller
         return RedirectToAction(nameof(Details), new { id });
     }
 
+    /// <summary>
+    /// Удаляет проект.
+    /// </summary>
+    /// <param name="id">Идентификатор проекта.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteProject(int id)
@@ -816,6 +907,11 @@ public class TeamProjectController : Controller
         return RedirectToAction("MyProjects", "Project", new { tab = "team" });
     }
 
+    /// <summary>
+    /// Отображает страницу завершения проекта и распределения выплат.
+    /// </summary>
+    /// <param name="id">Идентификатор проекта.</param>
+    /// <returns>Страница распределения выплат.</returns>
     [HttpGet]
     public async Task<IActionResult> CompleteProject(int id)
     {
@@ -844,6 +940,13 @@ public class TeamProjectController : Controller
         return View(shares);
     }
 
+    /// <summary>
+    /// Завершает проект и распределяет выплаты между участниками.
+    /// </summary>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <param name="userIds">Идентификаторы участников.</param>
+    /// <param name="finalSharesRaw">Размеры выплат участникам.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ConfirmCompletion(int projectId, List<string> userIds, List<string> finalSharesRaw)
@@ -966,6 +1069,11 @@ public class TeamProjectController : Controller
         return RedirectToAction(nameof(Details), new { id = projectId });
     }
     
+    /// <summary>
+    /// Рассчитывает рекомендуемое распределение бюджета между участниками проекта.
+    /// </summary>
+    /// <param name="project">Командный проект.</param>
+    /// <returns>Список рассчитанных долей участников.</returns>
     private List<PaymentShare> CalculateShares(Project project)
     {
         var acceptedMembers = project.Members
@@ -1025,6 +1133,14 @@ public class TeamProjectController : Controller
         return shares;
     }
 
+    /// <summary>
+    /// Создает отклик на командный проект.
+    /// </summary>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <param name="amount">Предлагаемая стоимость выполнения.</param>
+    /// <param name="durationInDays">Предполагаемая длительность выполнения.</param>
+    /// <param name="comment">Комментарий к отклику.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Freelancer")]
@@ -1083,6 +1199,12 @@ public class TeamProjectController : Controller
         return RedirectToAction(nameof(Details), new { id = projectId, tab = "overview" });
     }
 
+    /// <summary>
+    /// Принимает отклик на проект.
+    /// </summary>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <param name="bidId">Идентификатор отклика.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AcceptBid(int projectId, int bidId)
@@ -1148,6 +1270,12 @@ public class TeamProjectController : Controller
         return RedirectToAction(nameof(Details), new { id = projectId, tab = "overview" });
     }
 
+    /// <summary>
+    /// Отклоняет отклик на проект.
+    /// </summary>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <param name="bidId">Идентификатор отклика.</param>
+    /// <returns>Результат выполнения операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RejectBid(int projectId, int bidId)
@@ -1186,6 +1314,10 @@ public class TeamProjectController : Controller
         return RedirectToAction(nameof(Details), new { id = projectId, tab = "overview" });
     }
 
+    /// <summary>
+    /// Возвращает количество непрочитанных сообщений групповых чатов.
+    /// </summary>
+    /// <returns>Информация о количестве непрочитанных сообщений в формате JSON.</returns>
     [HttpGet]
     public async Task<IActionResult> GetGroupUnreadCount()
     {

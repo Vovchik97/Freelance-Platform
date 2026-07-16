@@ -1,8 +1,6 @@
 ﻿using System.Security.Claims;
 using FreelancePlatform.Context;
-using FreelancePlatform.Controllers.Api;
 using FreelancePlatform.Dto.Categories;
-using FreelancePlatform.Dto.Projects;
 using FreelancePlatform.Dto.Reviews;
 using FreelancePlatform.Dto.Services;
 using FreelancePlatform.Models;
@@ -14,6 +12,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Controllers.Web;
 
+/// <summary>
+/// Контроллер управления услугами исполнителей.
+/// Предоставляет функциональность просмотра, создания,
+/// редактирования и удаления услуг, обработки заказов,
+/// отзывов и рекомендаций.
+/// </summary>
 public class ServiceController : Controller
 {
     private readonly AppDbContext _context;
@@ -39,6 +43,17 @@ public class ServiceController : Controller
         _blacklistService = blacklistService;
     }
     
+    /// <summary>
+    /// Отображает каталог услуг с возможностью поиска,
+    /// фильтрации, сортировки и получения рекомендаций.
+    /// </summary>
+    /// <param name="search">Строка поиска по названию или описанию услуги.</param>
+    /// <param name="status">Статус услуги.</param>
+    /// <param name="minPrice">Минимальная стоимость.</param>
+    /// <param name="maxPrice">Максимальная стоимость.</param>
+    /// <param name="sort">Способ сортировки списка.</param>
+    /// <param name="categories">Список идентификаторов выбранных категорий.</param>
+    /// <returns>Страница со списком услуг.</returns>
     [AllowAnonymous]
     public async Task<IActionResult> Index(
         string? search, 
@@ -73,8 +88,7 @@ public class ServiceController : Controller
         {
             query = query.Where(s => s.Price <= maxPrice);
         }
-
-        // Фильтр по категориям
+        
         if (categories != null && categories.Any())
         {
             query = query.Where(s => s.Categories.Any(c => categories.Contains(c.Id)));
@@ -102,12 +116,8 @@ public class ServiceController : Controller
                 .Where(s => !blockedUserIds.Contains(s.FreelancerId))
                 .ToList();
         }
-
-        // Все активные категории для фильтра
-        ViewBag.AllCategories = await _context.Categories
-            .Where(c => c.IsActive)
-            .OrderBy(c => c.Name)
-            .ToListAsync();
+        
+        await LoadAllCategoriesAsync();
         ViewBag.SelectedCategories = categories ?? new List<int>();
 
         ViewBag.Search = search;
@@ -126,6 +136,14 @@ public class ServiceController : Controller
         return View(services);
     }
     
+    /// <summary>
+    /// Отображает подробную информацию об услуге,
+    /// включая отзывы, статистику оценок и возможность
+    /// оставить отзыв после завершённого заказа.
+    /// </summary>
+    /// <param name="id">Идентификатор услуги.</param>
+    /// <param name="ratings">Фильтр отзывов по оценкам.</param>
+    /// <returns>Страница выбранной услуги.</returns>
     [AllowAnonymous]
     public async Task<IActionResult> Details(int id, [FromQuery] List<int>? ratings)
     {
@@ -164,11 +182,13 @@ public class ServiceController : Controller
                 : allReviews)
             .OrderByDescending(r => r.CreatedAt)
             .ToList();
+        
+        var hasReviews = allReviews.Any();
 
-        ViewBag.AvgQuality = allReviews.Any() ? allReviews.Average(r => r.QualityRating) : 0.0;
-        ViewBag.AvgCommunication = allReviews.Any() ? allReviews.Average(r => r.CommunicationRating) : 0.0;
-        ViewBag.AvgDeadline = allReviews.Any() ? allReviews.Average(r => r.DeadlineRating) : 0.0;
-        ViewBag.AvgPrice = allReviews.Any() ? allReviews.Average(r => r.PriceRating) : 0.0;
+        ViewBag.AvgQuality = hasReviews ? allReviews.Average(r => r.QualityRating) : 0.0;
+        ViewBag.AvgCommunication = hasReviews ? allReviews.Average(r => r.CommunicationRating) : 0.0;
+        ViewBag.AvgDeadline = hasReviews ? allReviews.Average(r => r.DeadlineRating) : 0.0;
+        ViewBag.AvgPrice = hasReviews ? allReviews.Average(r => r.PriceRating) : 0.0;
         
         ViewBag.CanReview = canReview;
         ViewBag.AverageRating = allReviews.Any() ? allReviews.Average(r => r.Rating) : 0.0;
@@ -181,17 +201,24 @@ public class ServiceController : Controller
         return View(service);
     }
 
+    /// <summary>
+    /// Отображает форму создания новой услуги.
+    /// </summary>
+    /// <returns>Страница создания услуги.</returns>
     [Authorize(Roles = "Freelancer")]
     public async Task<IActionResult> Create()
     {
-        ViewBag.AllCategories = await _context.Categories
-            .Where(c => c.IsActive)
-            .OrderBy(c => c.Name)
-            .ToListAsync();
+        await LoadAllCategoriesAsync();
         ViewBag.SelectedCategoryIds = new List<int>();
         return View();
     }
     
+    /// <summary>
+    /// Создаёт новую услугу исполнителя.
+    /// При отсутствии выбранных категорий автоматически определяет наиболее подходящие.
+    /// </summary>
+    /// <param name="dto">Данные создаваемой услуги.</param>
+    /// <returns>Перенаправление к списку услуг либо повторное отображение формы.</returns>
     [HttpPost]
     [Authorize(Roles = "Freelancer")]
     [ValidateAntiForgeryToken]
@@ -199,10 +226,7 @@ public class ServiceController : Controller
     {
         if (!ModelState.IsValid)
         {
-            ViewBag.AllCategories = await _context.Categories
-                .Where(c => c.IsActive)
-                .OrderBy(c => c.Name)
-                .ToListAsync();
+            await LoadAllCategoriesAsync();
             ViewBag.SelectedCategoryIds = dto.CategoryIds;
             return View(dto);
         }
@@ -239,6 +263,11 @@ public class ServiceController : Controller
         return RedirectToAction(nameof(MyServices));
     }
     
+    /// <summary>
+    /// Отображает форму редактирования услуги.
+    /// </summary>
+    /// <param name="id">Идентификатор услуги.</param>
+    /// <returns>Страница редактирования услуги.</returns>
     [Authorize(Roles = "Freelancer")]
     public async Task<IActionResult> Edit(int id)
     {
@@ -261,16 +290,20 @@ public class ServiceController : Controller
             CategoryIds = service.Categories.Select(c => c.Id).ToList()
         };
         
-        ViewBag.AllCategories = await _context.Categories
-            .Where(c => c.IsActive)
-            .OrderBy(c => c.Name)
-            .ToListAsync();
+        await LoadAllCategoriesAsync();
         
         ViewBag.SelectedCategoryIds = dto.CategoryIds;
         
         return View(dto);
     }
 
+    /// <summary>
+    /// Сохраняет изменения информации об услуге.
+    /// При отсутствии категорий автоматически подбирает наиболее подходящие.
+    /// </summary>
+    /// <param name="id">Идентификатор услуги.</param>
+    /// <param name="dto">Обновлённые данные услуги.</param>
+    /// <returns>Перенаправление к списку услуг либо повторное отображение формы.</returns>
     [HttpPost]
     [Authorize(Roles = "Freelancer")]
     [ValidateAntiForgeryToken]
@@ -278,10 +311,7 @@ public class ServiceController : Controller
     {
         if (!ModelState.IsValid)
         {
-            ViewBag.AllCategories = await _context.Categories
-                .Where(c => c.IsActive)
-                .OrderBy(c => c.Name)
-                .ToListAsync();
+            await LoadAllCategoriesAsync();
             return View(dto);
         }
         
@@ -304,8 +334,7 @@ public class ServiceController : Controller
         {
             dto.CategoryIds = await _categorySuggestionService.SuggestCategoryIdsAsync(dto.Title, dto.Description);
         }
-
-        // Обновление категорий
+        
         service.Categories.Clear();
         var selectedCategories = await _context.Categories
             .Where(c => dto.CategoryIds.Contains(c.Id) && c.IsActive)
@@ -320,6 +349,11 @@ public class ServiceController : Controller
         return RedirectToAction(nameof(MyServices));
     }
 
+    /// <summary>
+    /// Удаляет услугу текущего исполнителя.
+    /// </summary>
+    /// <param name="id">Идентификатор услуги.</param>
+    /// <returns>Перенаправление к списку услуг пользователя.</returns>
     [HttpPost]
     [Authorize(Roles = "Freelancer")]
     [ValidateAntiForgeryToken]
@@ -339,6 +373,10 @@ public class ServiceController : Controller
         return RedirectToAction(nameof(MyServices));
     }
 
+    /// <summary>
+    /// Отображает список услуг текущего исполнителя.
+    /// </summary>
+    /// <returns>Страница со списком собственных услуг.</returns>
     [Authorize(Roles = "Freelancer")]
     public async Task<IActionResult> MyServices()
     {
@@ -353,6 +391,13 @@ public class ServiceController : Controller
         return View(myServices);
     }
 
+    /// <summary>
+    /// Принимает выбранный заказ, отклоняет остальные активные заказы
+    /// и при необходимости создаёт чат между сторонами.
+    /// </summary>
+    /// <param name="serviceId">Идентификатор услуги.</param>
+    /// <param name="orderId">Идентификатор заказа.</param>
+    /// <returns>Перенаправление на страницу услуги.</returns>
     [HttpPost]
     [Authorize(Roles = "Freelancer")]
     [ValidateAntiForgeryToken]
@@ -419,6 +464,11 @@ public class ServiceController : Controller
         return RedirectToAction(nameof(Details), new { id = order.ServiceId });
     }
 
+    /// <summary>
+    /// Отклоняет выбранный заказ.
+    /// </summary>
+    /// <param name="orderId">Идентификатор заказа.</param>
+    /// <returns>Перенаправление на страницу услуги.</returns>
     [HttpPost]
     [Authorize(Roles = "Freelancer")]
     [ValidateAntiForgeryToken]
@@ -445,6 +495,11 @@ public class ServiceController : Controller
         return RedirectToAction(nameof(Details), new { id = order.ServiceId });
     }
 
+    /// <summary>
+    /// Переводит услугу в статус недоступной и отклоняет все связанные заказы.
+    /// </summary>
+    /// <param name="id">Идентификатор услуги.</param>
+    /// <returns>Перенаправление на предыдущую страницу либо к списку услуг.</returns>
     [HttpPost]
     [Authorize(Roles = "Freelancer")]
     public async Task<IActionResult> CancelService(int id)
@@ -472,6 +527,11 @@ public class ServiceController : Controller
         return !string.IsNullOrEmpty(referer) ? Redirect(referer) : RedirectToAction("MyServices");
     }
 
+    /// <summary>
+    /// Возобновляет ранее отключённую услугу.
+    /// </summary>
+    /// <param name="id">Идентификатор услуги.</param>
+    /// <returns>Перенаправление на предыдущую страницу либо к списку услуг.</returns>
     [HttpPost]
     [Authorize(Roles = "Freelancer")]
     public async Task<IActionResult> ResumeService(int id)
@@ -499,6 +559,12 @@ public class ServiceController : Controller
         return !string.IsNullOrEmpty(referer) ? Redirect(referer) : RedirectToAction("MyServices");
     }
 
+    /// <summary>
+    /// Добавляет новый отзыв либо обновляет существующий,
+    /// а также пересчитывает репутацию исполнителя.
+    /// </summary>
+    /// <param name="dto">Данные отзыва.</param>
+    /// <returns>Перенаправление на страницу услуги.</returns>
     [HttpPost]
     [Authorize(Roles = "Client")]
     [ValidateAntiForgeryToken]
@@ -598,6 +664,12 @@ public class ServiceController : Controller
         return RedirectToAction("Details", new { id = dto.ServiceId });
     }
 
+    /// <summary>
+    /// Возвращает список рекомендуемых категорий
+    /// на основании названия и описания услуги.
+    /// </summary>
+    /// <param name="request">Данные для определения категорий.</param>
+    /// <returns>JSON со списком идентификаторов категорий.</returns>
     [HttpPost]
     [Authorize(Roles = "Freelancer")]
     [IgnoreAntiforgeryToken]
@@ -610,5 +682,13 @@ public class ServiceController : Controller
 
         var suggestedIds = await _categorySuggestionService.SuggestCategoryIdsAsync(request.Title, request.Description);
         return Json(suggestedIds);
+    }
+
+    private async Task LoadAllCategoriesAsync()
+    {
+        ViewBag.AllCategories = await _context.Categories
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
     }
 }

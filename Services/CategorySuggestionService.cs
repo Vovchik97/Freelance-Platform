@@ -1,13 +1,15 @@
 ﻿using FreelancePlatform.Context;
-using FreelancePlatform.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Services;
 
+/// <summary>
+/// Выполняет автоматический подбор категорий проектов и услуг
+/// на основе ключевых слов в названии и описании.
+/// </summary>
 public class CategorySuggestionService
 {
     private readonly AppDbContext _context;
-
     
     private static readonly Dictionary<string, string[]> CategoryKeywords = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -77,6 +79,13 @@ public class CategorySuggestionService
         _context = context;
     }
     
+    /// <summary>
+    /// Определяет наиболее подходящие категории на основе текста
+    /// названия и описания.
+    /// </summary>
+    /// <param name="title">Название проекта или услуги.</param>
+    /// <param name="description">Описание проекта или услуги.</param>
+    /// <returns>Список идентификаторов подходящих категорий.</returns>
     public async Task<List<int>> SuggestCategoryIdsAsync(string? title, string? description)
     {
         var text = $"{title} {description}".ToLowerInvariant();

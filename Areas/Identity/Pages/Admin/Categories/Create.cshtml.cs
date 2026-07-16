@@ -7,6 +7,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Areas.Identity.Pages.Admin.Categories;
 
+/// <summary>
+/// Модель страницы создания новой категории.
+/// Позволяет администраторам добавлять категории
+/// для классификации проектов и услуг платформы.
+/// </summary>
 [Authorize(Roles = "Admin")]
 public class CreateModel : PageModel
 {
@@ -26,11 +31,11 @@ public class CreateModel : PageModel
     [BindProperty]
     public bool IsActive { get; set; } = true;
 
-    public void OnGet()
-    {
-        
-    }
-
+    /// <summary>
+    /// Создаёт новую категорию после проверки корректности данных
+    /// и отсутствия категории с таким же названием.
+    /// </summary>
+    /// <returns>Страница со списком категорий при успехе или текущая страница с ошибками.</returns>
     public async Task<IActionResult> OnPostAsync()
     {
         if (string.IsNullOrWhiteSpace(Name))
@@ -38,9 +43,11 @@ public class CreateModel : PageModel
             ModelState.AddModelError("Name", "Название обязательно");
             return Page();
         }
+
+        var normalizedName = Name.Trim().ToLower();
         
         var exists = await _context.Categories
-            .AnyAsync(c => c.Name.ToLower() == Name.ToLower());
+            .AnyAsync(c => c.Name.ToLower() == normalizedName);
 
         if (exists)
         {

@@ -7,6 +7,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Areas.Identity.Pages.Admin.Projects;
 
+/// <summary>
+/// Модель страницы просмотра деталей проекта.
+/// Позволяет администраторам просматривать информацию о проекте,
+/// клиенте и участниках проекта.
+/// </summary>
 [Authorize(Roles = "Admin")]
 public class DetailsModel : PageModel
 {
@@ -16,6 +21,12 @@ public class DetailsModel : PageModel
 
     public Project? Project { get; set; }
 
+    /// <summary>
+    /// Загружает проект по идентификатору вместе со связанными данными:
+    /// клиентом и участниками проекта.
+    /// </summary>
+    /// <param name="id">Идентификатор проекта.</param>
+    /// <returns>Страница с деталями проекта или 404 если проект не найден.</returns>
     public async Task<IActionResult> OnGetAsync(int id)
     {
         Project = await _context.Projects

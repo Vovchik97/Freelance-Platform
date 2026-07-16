@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет задачу, назначенную участнику командного проекта.
+/// </summary>
 public class ProjectTask
 {
     public int Id { get; set; }

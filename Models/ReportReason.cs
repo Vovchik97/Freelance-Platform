@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Определяет причину подачи жалобы.
+/// </summary>
 public enum ReportReason
 {
     Fraud = 0,

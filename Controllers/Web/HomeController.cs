@@ -8,49 +8,72 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Controllers.Web;
 
+/// <summary>
+/// Контроллер главной страницы платформы.
+/// Отвечает за отображение проектов,
+/// персональных рекомендаций и системных страниц.
+/// </summary>
 public class HomeController : Controller
 {
-    private readonly ILogger<HomeController> _logger;
     private readonly AppDbContext _context;
     private readonly RecommendationService _recommendationService;
-
-    public HomeController(ILogger<HomeController> logger, AppDbContext context, RecommendationService recommendationService)
+    
+    public HomeController(AppDbContext context, RecommendationService recommendationService)
     {
-        _logger = logger;
         _context = context;
         _recommendationService = recommendationService;
     }
 
+    /// <summary>
+    /// Отображает главную страницу платформы.
+    /// Загружает список доступных проектов и персональные рекомендации
+    /// для авторизованных клиентов и исполнителей.
+    /// </summary>
+    /// <returns>Представление главной страницы с данными проектов.</returns>
     public async Task<IActionResult> Index()
     {
         var projects = await _context.Projects
             .Include(p => p.Client)
             .ToListAsync();
 
-        if (User.Identity != null && User.Identity.IsAuthenticated)
+        if (User.Identity?.IsAuthenticated == true)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
 
             if (User.IsInRole("Freelancer"))
             {
                 ViewBag.Recommendations = await _recommendationService
-                    .GetRecommendedProjectsForFreelancerAsync(userId!);
+                    .GetRecommendedProjectsForFreelancerAsync(userId);
             }
             else if (User.IsInRole("Client"))
             {
                 ViewBag.Recommendations = await _recommendationService
-                    .GetRecommendedServicesForClientAsync(userId!);
+                    .GetRecommendedServicesForClientAsync(userId);
             }
         }
         
         return View(projects);
     }
 
+    /// <summary>
+    /// Отображает страницу политики конфиденциальности.
+    /// </summary>
+    /// <returns>Представление страницы политики конфиденциальности.</returns>
     public IActionResult Privacy()
     {
         return View();
     }
 
+    /// <summary>
+    /// Отображает страницу ошибки приложения.
+    /// Используется системой обработки ошибок ASP.NET Core.
+    /// </summary>
+    /// <returns>Представление страницы ошибки с идентификатором запроса.</returns>
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {

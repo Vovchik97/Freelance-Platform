@@ -9,6 +9,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Controllers.Web;
 
+/// <summary>
+/// Контроллер управления платежами и балансом пользователей.
+/// Отвечает за создание оплат заказов и проектов,
+/// пополнение и вывод средств, обработку статусов платежей
+/// и отображение истории финансовых операций.
+/// </summary>
 [Authorize(Roles = "Client, Freelancer")]
 public class PaymentController : Controller
 {
@@ -25,7 +31,14 @@ public class PaymentController : Controller
         _balanceService = balanceService;
     }
     
-    // страница подтверждения оплаты
+    /// <summary>
+    /// Отображает форму создания платежа для заказа или проекта.
+    /// Проверяет принадлежность сущности пользователю,
+    /// её текущий статус и формирует данные для оплаты.
+    /// </summary>
+    /// <param name="orderId">Идентификатор заказа.</param>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <returns>Страница оплаты или ошибка доступа.</returns>
     [HttpGet]
     public async Task<IActionResult> Create(int? orderId, int? projectId)
     {
@@ -64,7 +77,7 @@ public class PaymentController : Controller
             return View(dto);
         }
 
-        else if (projectId.HasValue)
+        if (projectId.HasValue)
         {
             var project = await _context.Projects
                 .Include(p => p.Bids)
@@ -88,6 +101,11 @@ public class PaymentController : Controller
                 return BadRequest();
             }
 
+            if (acceptBid == null)
+            {
+                return BadRequest("Для проекта не найдена принятая заявка.");
+            }
+
             var dto = new PaymentCreateDto
             {
                 ProjectId = project.Id,
@@ -100,13 +118,16 @@ public class PaymentController : Controller
             return View(dto);
         }
 
-        else
-        {
-            return BadRequest("Не указан ни orderId, ни projectId");
-        }
+        return BadRequest("Не указан ни orderId, ни projectId");
     }
     
-    
+    /// <summary>
+    /// Запускает оплату заказа или проекта.
+    /// Проверяет доступ пользователя, замораживает средства на балансе и создаёт запись успешного платежа.
+    /// </summary>
+    /// <param name="orderId">Идентификатор заказа.</param>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <returns>Перенаправление после оплаты или ошибка операции.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Start(int? orderId, int? projectId)
@@ -189,6 +210,11 @@ public class PaymentController : Controller
             {
                 return BadRequest();
             }
+
+            if (acceptBid == null)
+            {
+                return BadRequest("Не найдена принятая заявка.");
+            }
         
             try
             {
@@ -226,7 +252,13 @@ public class PaymentController : Controller
         return BadRequest("Не указан ни orderId, ни projectId");
     }
     
-    // success URL - подтверждаем у провайдера статус и проставляем в БД
+    /// <summary>
+    /// Обрабатывает успешное завершение оплаты.
+    /// Получает статус платежа у провайдера,
+    /// обновляет данные платежа и изменяет баланс пользователя.
+    /// </summary>
+    /// <param name="session_id">Идентификатор платёжной сессии.</param>
+    /// <returns>Страница результата оплаты.</returns>
     [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> Success(string session_id)
@@ -313,7 +345,13 @@ public class PaymentController : Controller
         return View("Success", payment);
     }
     
-    // cancel URL - покупатель вернулся с отменой
+    /// <summary>
+    /// Обрабатывает отмену оплаты пользователем.
+    /// Изменяет статус незавершённого платежа.
+    /// </summary>
+    /// <param name="orderId">Идентификатор заказа.</param>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <returns>Страница результата отмены.</returns>
     [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> Cancel(int? orderId, int? projectId)
@@ -350,11 +388,23 @@ public class PaymentController : Controller
         return View("Cancel", payment);
     }
 
+    /// <summary>
+    /// Отображает историю платежей текущего пользователя.
+    /// Для исполнителей также показывает командные выплаты.
+    /// </summary>
+    /// <returns>Страница истории платежей.</returns>
     [HttpGet]
     public async Task<IActionResult> My()
     {
         var userId = _userManager.GetUserId(User);
-        var userRoles = await _userManager.GetRolesAsync(await _userManager.GetUserAsync(User));
+        var user = await _userManager.GetUserAsync(User);
+        
+        if (user == null)
+        {
+            return Unauthorized();
+        }
+        
+        var userRoles = await _userManager.GetRolesAsync(user);
         var isFreelancer = userRoles.Contains("Freelancer");
 
         var query = _context.Payments
@@ -395,12 +445,21 @@ public class PaymentController : Controller
         }
     }
 
+    /// <summary>
+    /// Отображает страницу пополнения внутреннего баланса пользователя.
+    /// </summary>
+    /// <returns>Представление страницы пополнения.</returns>
     [HttpGet]
     public async Task<IActionResult> Deposit()
     {
         return View();
     }
 
+    /// <summary>
+    /// Создаёт платеж для пополнения внутреннего баланса пользователя.
+    /// </summary>
+    /// <param name="amount">Сумма пополнения.</param>
+    /// <returns>Перенаправление на страницу платежного провайдера или возврат формы при ошибке валидации.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Deposit(decimal amount)
@@ -415,11 +474,16 @@ public class PaymentController : Controller
         var user = await _userManager.GetUserAsync(User);
         var balance = await _balanceService.GetAsync(userId); 
         
+        if (user == null)
+        {
+            return Unauthorized();
+        }
+        
         long amountMinor = (long)(amount * 100m);
 
         var payment = new Payment
         {
-            PayerId = user!.Id,
+            PayerId = user.Id,
             AmountMinor = amountMinor,
             Currency = "RUB",
             Provider = "Stripe",
@@ -450,6 +514,11 @@ public class PaymentController : Controller
         return Redirect(session.SessionUrl);
     }
     
+    /// <summary>
+    /// Отображает страницу создания заявки на вывод средств.
+    /// Загружает текущий баланс пользователя.
+    /// </summary>
+    /// <returns>Представление страницы вывода средств.</returns>
     [HttpGet]
     public async Task<IActionResult> Withdraw()
     {
@@ -458,6 +527,13 @@ public class PaymentController : Controller
         return View(balance);
     }
 
+    /// <summary>
+    /// Создаёт заявку на вывод средств.
+    /// Проверяет наличие достаточного баланса,
+    /// создаёт платеж и отправляет пользователя на страницу подтверждения операции.
+    /// </summary>
+    /// <param name="amount">Сумма выводимых средств.</param>
+    /// <returns>Перенаправление на страницу платежного провайдера или возврат формы при ошибке валидации.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Withdraw(decimal amount)
@@ -500,7 +576,7 @@ public class PaymentController : Controller
             Description = $"Вывод средств на сумму {amount:C} RUB",
             CustomerEmail = user.Email ?? "",
             SuccessUrl = Url.Action(nameof(Success), "Payment", null, Request.Scheme)!,
-            CancelUrl = Url.Action(nameof(Deposit), "Payment", null, Request.Scheme)!,
+            CancelUrl = Url.Action(nameof(Withdraw), "Payment", null, Request.Scheme)!,
             MetadataPaymentId = payment.Id.ToString()
         };
         
@@ -513,6 +589,11 @@ public class PaymentController : Controller
         return Redirect(session.SessionUrl);
     }
 
+    /// <summary>
+    /// Возвращает текущий баланс пользователя в формате JSON.
+    /// Используется для обновления данных на странице.
+    /// </summary>
+    /// <returns>JSON с текущим балансом.</returns>
     [HttpGet]
     public async Task<IActionResult> GetMyBalance()
     {
@@ -525,7 +606,13 @@ public class PaymentController : Controller
         var balance = await _balanceService.GetAsync(user.Id);
         return Json(new { balance });
     }
-
+    
+    /// <summary>
+    /// Отображает информацию о платеже пользователя.
+    /// Проверяет принадлежность платежа текущему пользователю.
+    /// </summary>
+    /// <param name="id">Идентификатор платежа.</param>
+    /// <returns>Представление с информацией о платеже или ошибку 404/403 при отсутствии доступа.</returns>
     [HttpGet]
     public async Task<IActionResult> Details(int id)
     {

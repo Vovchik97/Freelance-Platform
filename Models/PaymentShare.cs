@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет информацию о распределении оплаты между участниками командного проекта.
+/// </summary>
 public class PaymentShare
 {
     public int Id { get; set; }

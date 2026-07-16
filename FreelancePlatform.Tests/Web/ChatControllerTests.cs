@@ -12,6 +12,11 @@ using Xunit;
 
 namespace FreelancePlatform.FreelancePlatform.Tests.Web;
 
+/// <summary>
+/// Набор тестов для проверки работы ChatController.
+/// Проверяет загрузку чатов, получение непрочитанных сообщений,
+/// загрузку вложений и проверку доступа пользователей к чатам.
+/// </summary>
 public class ChatControllerTests
 {
     private readonly AppDbContext _context;
@@ -33,6 +38,11 @@ public class ChatControllerTests
         _controller = new ChatController(_context, _mockUserManager.Object, _mockBotService.Object, _mockBlacklistService.Object);
     }
 
+    /// <summary>
+    /// Создает имитацию UserManager с настроенными пользователями
+    /// и обработкой получения идентификатора пользователя из ClaimsPrincipal.
+    /// </summary>
+    /// <returns>Настроенный экземпляр Mock<UserManager<IdentityUser>>.</returns>
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()
     {
         var store = new Mock<IUserStore<IdentityUser>>();
@@ -54,6 +64,12 @@ public class ChatControllerTests
         return mock;
     }
     
+    /// <summary>
+    /// Настраивает текущего пользователя контроллера
+    /// через ClaimsPrincipal для выполнения авторизованных запросов.
+    /// </summary>
+    /// <param name="userId">Идентификатор тестового пользователя.</param>
+    /// <param name="role">Роль пользователя в системе. По умолчанию используется роль Client.</param>
     private void SetUser(string userId, string role = "Client")
     {
         var claims = new List<Claim>

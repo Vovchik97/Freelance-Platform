@@ -5,6 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Services;
 
+/// <summary>
+/// Сервис управления рабочими этапами проектов и заказов.
+/// Отвечает за создание, изменение, удаление и получение WorkItem.
+/// </summary>
 public class WorkItemService
 {
     private readonly AppDbContext _context;
@@ -14,6 +18,13 @@ public class WorkItemService
         _context = context;
     }
 
+    /// <summary>
+    /// Создаёт рабочие этапы на основе шаблона задачи.
+    /// </summary>
+    /// <param name="templateId">Идентификатор шаблона.</param>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <param name="orderId">Идентификатор заказа.</param>
+    /// <param name="createdById">Пользователь, создавший этапы.</param>
     public async Task CreateFromTemplateAsync(int templateId, int? projectId, int? orderId, string createdById)
     {
         var template = await _context.TaskTemplates
@@ -44,6 +55,14 @@ public class WorkItemService
         await _context.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Добавляет новый рабочий этап в проект или заказ.
+    /// </summary>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <param name="orderId">Идентификатор заказа.</param>
+    /// <param name="dto">Данные нового этапа.</param>
+    /// <param name="createdById">Пользователь, создавший этап.</param>
+    /// <returns>Созданный рабочий этап.</returns>
     public async Task<WorkItem> AddWorkItemAsync(int? projectId, int? orderId, CreateWorkItemDto dto,
         string createdById)
     {
@@ -69,6 +88,11 @@ public class WorkItemService
         return workItem;
     }
 
+    /// <summary>
+    /// Обновляет статус рабочего этапа.
+    /// </summary>
+    /// <param name="workItemId">Идентификатор этапа.</param>
+    /// <param name="status">Новый статус.</param>
     public async Task UpdateStatusAsync(int workItemId, WorkItemStatus status)
     {
         var item = await _context.WorkItems.FindAsync(workItemId);
@@ -86,6 +110,12 @@ public class WorkItemService
         await _context.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Возвращает процент выполнения проекта или заказа.
+    /// </summary>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <param name="orderId">Идентификатор заказа.</param>
+    /// <returns>Процент выполнения от 0 до 100.</returns>
     public async Task<double> GetProgressAsync(int? projectId, int? orderId)
     {
         var items = await _context.WorkItems
@@ -102,6 +132,10 @@ public class WorkItemService
         return (completed * 100.0) / items.Count;
     }
 
+    /// <summary>
+    /// Удаляет рабочий этап.
+    /// </summary>
+    /// <param name="workItemId">Идентификатор этапа.</param>
     public async Task DeleteAsync(int workItemId)
     {
         var item = await _context.WorkItems.FindAsync(workItemId);
@@ -112,6 +146,12 @@ public class WorkItemService
         }
     }
 
+    /// <summary>
+    /// Возвращает список рабочих этапов проекта или заказа.
+    /// </summary>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <param name="orderId">Идентификатор заказа.</param>
+    /// <returns>Список этапов.</returns>
     public async Task<List<WorkItem>> GetWorkItemsAsync(int? projectId, int? orderId)
     {
         return await _context.WorkItems

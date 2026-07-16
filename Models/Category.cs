@@ -1,7 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿namespace FreelancePlatform.Models;
 
-namespace FreelancePlatform.Models;
-
+/// <summary>
+/// Представляет категорию проектов, услуг и шаблонов задач.
+/// </summary>
 public class Category
 {
     public int Id { get; set; }

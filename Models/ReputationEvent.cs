@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет событие, влияющее на репутацию пользователя.
+/// </summary>
 public class ReputationEvent
 {
     public int Id { get; set; }

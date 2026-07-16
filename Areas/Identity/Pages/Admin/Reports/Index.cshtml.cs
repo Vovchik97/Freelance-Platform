@@ -6,6 +6,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Areas.Identity.Pages.Admin.Reports;
 
+/// <summary>
+/// Модель страницы управления жалобами.
+/// Позволяет администраторам просматривать список пользовательских жалоб
+/// и связанную с ними информацию о заказах и проектах.
+/// </summary>
 [Authorize(Roles = "Admin")]
 public class IndexModel : PageModel
 {
@@ -16,8 +21,12 @@ public class IndexModel : PageModel
         _context = context;
     }
 
-    public List<Report> Reports { get; set; } = [];
+    public List<Report> Reports { get; set; } = new();
 
+    /// <summary>
+    /// Загружает список жалоб вместе со связанными заказами
+    /// и проектами, сортируя их по статусу и дате создания.
+    /// </summary>
     public async Task OnGetAsync()
     {
         Reports = await _context.Reports

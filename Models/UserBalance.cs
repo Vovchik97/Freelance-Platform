@@ -2,6 +2,9 @@
 
 namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет информацию о текущем и замороженном балансе пользователя.
+/// </summary>
 public class UserBalance
 {
     [Key]

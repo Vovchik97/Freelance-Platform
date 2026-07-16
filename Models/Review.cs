@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Identity;
 
 namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет отзыв пользователя о выполненной услуге.
+/// </summary>
 public class Review
 {
     public int Id { get; set; }

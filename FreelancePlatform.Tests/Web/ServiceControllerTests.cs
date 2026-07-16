@@ -16,6 +16,12 @@ using Xunit;
 
 namespace FreelancePlatform.FreelancePlatform.Tests.Web;
 
+/// <summary>
+/// Содержит модульные тесты для проверки работы <see cref="ServiceController"/>.
+/// Проверяет основные сценарии управления услугами:
+/// создание, редактирование, удаление, фильтрацию,
+/// обработку заказов, отзывов и автоматическое назначение категорий.
+/// </summary>
 public class ServiceControllerTests
 {
     private readonly AppDbContext _context;
@@ -41,6 +47,11 @@ public class ServiceControllerTests
         _controller = new ServiceController(_context, _mockUserManager.Object, _categorySuggestionService, _recommendationService, _reputationService, _blacklistService);
     }
     
+    /// <summary>
+    /// Создаёт Mock-объект UserManager с настроенным получением идентификатора текущего пользователя
+    /// из ClaimsPrincipal. Используется для имитации работы ASP.NET Identity в модульных тестах.
+    /// </summary>
+    /// <returns>Настроенный Mock<UserManager<IdentityUser>>.</returns>
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()
     {
         var store = new Mock<IUserStore<IdentityUser>>();
@@ -56,6 +67,13 @@ public class ServiceControllerTests
         return mock;
     }
     
+    /// <summary>
+    /// Устанавливает тестового пользователя в контекст контроллера.
+    /// Позволяет выполнять проверку авторизации и получения данных пользователя
+    /// внутри тестируемых методов контроллера.
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя, который будет добавлен в Claims.</param>
+    /// <param name="role">Роль пользователя в системе. По умолчанию используется роль Freelancer.</param>
     private void SetUser(string userId, string role = "Freelancer")
     {
         var claims = new List<Claim>

@@ -76,21 +76,18 @@
     height: 42px;
 }
 
-/* Глобально для всех форм */
 input.form-input,
 select.form-select,
 textarea.form-input {
     border-radius: 0.75rem !important;
 }
 
-/* Убираем возможные ограничения от группировки */
 .input-group,
 .filters-row,
 .filters-search {
-    border-radius: 0 !important; /* чтобы не мешали */
+    border-radius: 0 !important;
 }
 
-/* Если используется input-group с соседними элементами */
 .input-group > .form-input,
 .input-group > .form-select {
     border-radius: 0.75rem !important;
@@ -100,7 +97,7 @@ textarea.form-input {
     .filters-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1.5rem; /* или больше по вкусу */
+        gap: 1.5rem;
     }
 }
 

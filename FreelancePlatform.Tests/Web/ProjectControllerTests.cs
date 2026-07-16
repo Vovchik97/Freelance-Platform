@@ -15,6 +15,11 @@ using Xunit;
 
 namespace FreelancePlatform.FreelancePlatform.Tests.Web;
 
+/// <summary>
+/// Набор модульных тестов для проверки поведения ProjectController.
+/// Проверяет создание, изменение, удаление проектов,
+/// работу категорий, ставок и изменения статусов проектов.
+/// </summary>
 public class ProjectControllerTests
 {
     private readonly AppDbContext _context;
@@ -52,6 +57,11 @@ public class ProjectControllerTests
             _blacklistService);
     }
     
+    /// <summary>
+    /// Создает имитацию UserManager для выполнения тестов без использования реального Identity.
+    /// Настраивает получение идентификатора пользователя из ClaimsPrincipal.
+    /// </summary>
+    /// <returns>Настроенный экземпляр Mock<UserManager<IdentityUser>>.</returns>
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()
     {
         var store = new Mock<IUserStore<IdentityUser>>();
@@ -67,6 +77,12 @@ public class ProjectControllerTests
         return mock;
     }
     
+    /// <summary>
+    /// Устанавливает тестового пользователя в контекст контроллера.
+    /// Используется для имитации авторизованного пользователя.
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя.</param>
+    /// <param name="role">Роль пользователя в системе.</param>
     private void SetUser(string userId, string role = "Client")
     {
         var claims = new List<Claim>

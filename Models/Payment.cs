@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет информацию о платёжной операции в системе.
+/// </summary>
 public class Payment
 {
     public int Id { get; set; }

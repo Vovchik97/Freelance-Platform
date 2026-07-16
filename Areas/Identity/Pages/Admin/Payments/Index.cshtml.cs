@@ -7,6 +7,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Areas.Identity.Pages.Admin.Payments;
 
+/// <summary>
+/// Модель страницы управления платежами.
+/// Загружает список платежных операций администратора,
+/// включая связанные заказы, проекты и информацию о плательщиках.
+/// </summary>
 [Authorize(Roles = "Admin")]
 public class IndexModel : PageModel
 {
@@ -21,6 +26,10 @@ public class IndexModel : PageModel
 
     public List<(Payment Payment, string? UserEmail)> Payments { get; set; } = new();
 
+    /// <summary>
+    /// Загружает список платежей вместе со связанными сущностями
+    /// и добавляет информацию о пользователях, совершивших платежи.
+    /// </summary>
     public async Task OnGetAsync()
     {
         var payments = await _context.Payments

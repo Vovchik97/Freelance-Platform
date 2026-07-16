@@ -5,6 +5,11 @@ using MimeKit;
 
 namespace FreelancePlatform.Services;
 
+/// <summary>
+/// Сервис отправки email-сообщений через SMTP-сервер.
+/// Реализует стандартный интерфейс ASP.NET Identity для отправки писем
+/// подтверждения регистрации, восстановления пароля и других уведомлений.
+/// </summary>
 public class SmtpEmailSender : IEmailSender
 {
     private readonly IConfiguration _config;
@@ -16,6 +21,13 @@ public class SmtpEmailSender : IEmailSender
         _logger = logger;
     }
 
+    /// <summary>
+    /// Отправляет HTML-письмо пользователю.
+    /// Отправка выполняется в фоновом режиме, чтобы не блокировать основной запрос.
+    /// </summary>
+    /// <param name="toEmail">Email-адрес получателя.</param>
+    /// <param name="subject">Тема письма.</param>
+    /// <param name="bodyHtml">HTML-содержимое письма.</param>
     public Task SendEmailAsync(string toEmail, string subject, string bodyHtml)
     {
         _ = Task.Run(async () =>
@@ -33,6 +45,12 @@ public class SmtpEmailSender : IEmailSender
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Выполняет непосредственную отправку письма через SMTP-сервер.
+    /// </summary>
+    /// <param name="toEmail">Email-адрес получателя.</param>
+    /// <param name="subject">Тема письма.</param>
+    /// <param name="bodyHtml">HTML-содержимое письма.</param>
     public async Task SendInternalAsync(string toEmail, string subject, string bodyHtml)
     {
         if (string.IsNullOrWhiteSpace(toEmail))

@@ -6,6 +6,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Areas.Identity.Pages.Admin.Finance;
 
+/// <summary>
+/// Модель страницы финансовой статистики администратора.
+/// Отображает основные показатели финансовых операций платформы:
+/// платежи, транзакции, балансы пользователей и замороженные средства.
+/// </summary>
 [Authorize(Roles = "Admin")]
 public class DashboardModel : PageModel
 {
@@ -19,11 +24,15 @@ public class DashboardModel : PageModel
     public decimal TotalDeposits { get; set; }
     public decimal TotalWithdrawals { get; set; }
     public decimal TotalRefunds { get; set; }
-    public decimal TotalFrozen{ get; set; }
+    public decimal TotalFrozen { get; set; }
     public decimal TotalUserBalances { get; set; }
     public int PaymentsCount { get; set; }
     public int TransactionsCount { get; set; }
 
+    /// <summary>
+    /// Загружает агрегированную финансовую статистику платформы:
+    /// суммы операций, пользовательские балансы и количество транзакций.
+    /// </summary>
     public async Task OnGetAsync()
     {
         TotalDeposits = await _context.BalanceTransactions

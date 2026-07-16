@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет сообщение в личном чате пользователей.
+/// </summary>
 public class Message
 {
     public int Id { get; set; }

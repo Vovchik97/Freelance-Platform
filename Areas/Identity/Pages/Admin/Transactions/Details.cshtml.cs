@@ -8,10 +8,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Areas.Identity.Pages.Admin.Transactions;
 
+/// <summary>
+/// Модель страницы просмотра подробной информации о транзакции.
+/// Загружает данные операции и информацию о пользователе.
+/// </summary>
 [Authorize(Roles = "Admin")]
 public class DetailsModel : PageModel
 {
-    public readonly AppDbContext _context;
+    private readonly AppDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
     
     public DetailsModel(AppDbContext context, UserManager<IdentityUser> userManager)
@@ -20,9 +24,15 @@ public class DetailsModel : PageModel
         _userManager = userManager;
     }
 
-    public BalanceTransaction Transaction { get; set; } = null!;
+    public BalanceTransaction? Transaction { get; set; }
     public string? UserEmail { get; set; }
 
+    /// <summary>
+    /// Загружает транзакцию по идентификатору
+    /// и получает email пользователя, которому она принадлежит.
+    /// </summary>
+    /// <param name="id">Идентификатор транзакции.</param>
+    /// <returns>Страница с деталями транзакции или 404 если транзакция не найдена.</returns>
     public async Task<IActionResult> OnGetAsync(int id)
     {
         var transaction = await _context.BalanceTransactions

@@ -2,6 +2,9 @@
 
 namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Хранит текущий рейтинг репутации пользователя.
+/// </summary>
 public class UserReputation
 {
     [Key]

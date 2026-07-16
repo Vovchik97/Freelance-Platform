@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
-using Newtonsoft.Json;
 
 namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет услугу, опубликованную фрилансером.
+/// </summary>
 public class Service
 {
     public int Id { get; set; }

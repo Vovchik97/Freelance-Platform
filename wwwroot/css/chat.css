@@ -1,7 +1,4 @@
-﻿/* =====================
-   Пузырь сообщений
-   ===================== */
-.message-bubble {
+﻿.message-bubble {
     max-width: 50%;
     padding: 10px 14px;
     border-radius: 16px;
@@ -10,7 +7,6 @@
     flex-direction: column;
 }
 
-/* Свои сообщения */
 .message-bubble.me {
     background-color: #0dcaf0;
     color: #000;
@@ -18,7 +14,6 @@
     align-self: flex-end;
 }
 
-/* Чужие сообщения */
 .message-bubble.other {
     background-color: #f8d7da;
     color: #000;
@@ -26,7 +21,6 @@
     align-self: flex-start;
 }
 
-/* Время сообщения */
 .message-time {
     font-size: 0.75rem;
     color: #6c757d;
@@ -34,9 +28,6 @@
     text-align: right;
 }
 
-/* =====================
-   Превью вложений
-   ===================== */
 #attachmentsPreview {
     display: flex;
     flex-wrap: wrap;
@@ -99,9 +90,6 @@
     user-select: none;
 }
 
-/* =====================
-   Сетка вложений внутри сообщений
-   ===================== */
 .attachments-grid {
     display: flex;
     flex-wrap: wrap;
@@ -142,9 +130,8 @@
     min-inline-size: clamp(150px, 30%, 50%);
 }
 
-/* Только если сообщение содержит аудио — задаём минимальную ширину */
 .message-bubble:has(.audio-grid) {
-    min-width: 200px; /* Минимум, чтобы аудио влезло */
+    min-width: 200px;
 }
 
 .audio-grid audio {
@@ -161,9 +148,6 @@
     cursor: pointer;
 }
 
-/* =====================
-   Файлы и документы
-   ===================== */
 .file-attachment {
     display: flex;
     align-items: center;
@@ -234,9 +218,6 @@
     overflow: auto;
 }
 
-/* =====================
-   Темная тема
-   ===================== */
 body.dark-theme #attachmentsPreview {
     background-color: rgba(255,255,255,0.1);
 }

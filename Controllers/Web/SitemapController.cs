@@ -6,6 +6,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Controllers.Web;
 
+/// <summary>
+/// Контроллер генерации XML-карты сайта.
+/// Формирует sitemap.xml со статическими страницами,
+/// открытыми проектами, услугами и публичными профилями пользователей.
+/// </summary>
 public class SitemapController : Controller
 {
     private readonly AppDbContext _context;
@@ -15,6 +20,15 @@ public class SitemapController : Controller
         _context = context;
     }
 
+    /// <summary>
+    /// Генерирует XML-карту сайта для поисковых систем.
+    /// В карту включаются статические страницы,
+    /// открытые проекты, доступные услуги и публичные профили пользователей.
+    /// </summary>
+    /// <returns>
+    /// XML-документ sitemap.xml с типом содержимого
+    /// <c>application/xml</c>.
+    /// </returns>
     [HttpGet("/sitemap.xml")]
     public async Task<IActionResult> Index()
     {

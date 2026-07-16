@@ -13,6 +13,10 @@ using Xunit;
 
 namespace FreelancePlatform.FreelancePlatform.Tests.Web;
 
+/// <summary>
+/// Набор модульных тестов для проверки работы BidController.
+/// Проверяет создание, изменение, удаление и получение заявок пользователей.
+/// </summary>
 public class BidControllerTests
 {
     private readonly AppDbContext _context;
@@ -31,6 +35,12 @@ public class BidControllerTests
         _controller = new BidController(_context, emailSender, _mockBlacklistService.Object);
     }
 
+    /// <summary>
+    /// Настраивает тестового пользователя контроллера с указанным идентификатором
+    /// и ролью для имитации авторизованного запроса.
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя, который будет использоваться в Claims.</param>
+    /// <param name="role">Роль пользователя в системе. По умолчанию используется роль Freelancer.</param>
     private void SetUser(string userId, string role = "Freelancer")
     {
         var claims = new List<Claim>

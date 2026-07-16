@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет запись об операции изменения пользовательского баланса.
+/// </summary>
 public class BalanceTransaction
 {
     public int Id { get; set; }

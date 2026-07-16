@@ -1,5 +1,9 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет жалобу пользователя на другого пользователя,
+/// связанную с заказом или проектом.
+/// </summary>
 public class Report
 {
     public int Id { get; set; }

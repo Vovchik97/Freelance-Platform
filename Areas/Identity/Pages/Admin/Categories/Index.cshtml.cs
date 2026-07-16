@@ -7,10 +7,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Areas.Identity.Pages.Admin.Categories;
 
+/// <summary>
+/// Модель страницы управления категориями.
+/// Позволяет администраторам просматривать категории,
+/// изменять их статус активности и удалять неиспользуемые категории.
+/// </summary>
 [Authorize(Roles = "Admin")]
 public class IndexModel : PageModel
 {
-    public readonly AppDbContext _context;
+    private readonly AppDbContext _context;
 
     public IndexModel(AppDbContext context)
     {
@@ -21,6 +26,10 @@ public class IndexModel : PageModel
     public Dictionary<int, int> ProjectCounts { get; set; } = new();
     public Dictionary<int, int> ServiceCounts { get; set; } = new();
 
+    /// <summary>
+    /// Загружает список категорий и статистику их использования
+    /// в проектах и услугах платформы.
+    /// </summary>
     public async Task OnGetAsync()
     {
         Categories = await _context.Categories
@@ -40,6 +49,13 @@ public class IndexModel : PageModel
             .ToDictionaryAsync(x => x.CategoryId, x => x.Count);
     }
 
+    /// <summary>
+    /// Изменяет статус активности категории.
+    /// Активная категория доступна для использования,
+    /// неактивная скрывается из выбора пользователей.
+    /// </summary>
+    /// <param name="id">Идентификатор категории.</param>
+    /// <returns>Перенаправление на текущую страницу или 404 если категория не найдена.</returns>
     public async Task<IActionResult> OnPostToggleActiveAsync(int id)
     {
         var category = await _context.Categories.FindAsync(id);
@@ -58,6 +74,12 @@ public class IndexModel : PageModel
         return RedirectToPage();
     }
 
+    /// <summary>
+    /// Удаляет категорию, если она не используется
+    /// в проектах или услугах пользователей.
+    /// </summary>
+    /// <param name="id">Идентификатор категории.</param>
+    /// <returns>Перенаправление на текущую страницу или 404 если категория не найдена.</returns>
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
         var category = await _context.Categories

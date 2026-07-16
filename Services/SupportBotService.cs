@@ -1,5 +1,10 @@
 ﻿namespace FreelancePlatform.Services;
 
+/// <summary>
+/// Сервис автоматической поддержки пользователей.
+/// Обрабатывает часто задаваемые вопросы и определяет,
+/// требуется ли передача диалога администратору.
+/// </summary>
 public class SupportBotService
 {
     private readonly Dictionary<string, string> _faq = new(StringComparer.OrdinalIgnoreCase)
@@ -31,6 +36,11 @@ public class SupportBotService
         "не помогло", "не решилось", "хочу с админом", "свяжите с админом", "перекинуть к админу", "надо админ"
     };
 
+    /// <summary>
+    /// Формирует ответ бота на сообщение пользователя.
+    /// </summary>
+    /// <param name="userMessage">Сообщение пользователя.</param>
+    /// <returns>Кортеж с текстом ответа и признаком необходимости передачи диалога администратору.</returns>
     public (string reply, bool escalated) GetReply(string userMessage)
     {
         if (string.IsNullOrWhiteSpace(userMessage))

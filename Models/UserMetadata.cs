@@ -2,6 +2,9 @@
 
 namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Содержит служебную информацию о пользователе.
+/// </summary>
 public class UserMetadata
 {
     [Key]

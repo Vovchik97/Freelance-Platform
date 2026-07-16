@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет запись журнала активности по проекту.
+/// </summary>
 public class ProjectActivityLog
 {
     public int Id { get; set; }

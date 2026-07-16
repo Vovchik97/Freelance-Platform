@@ -3,6 +3,9 @@ using Microsoft.Build.Framework;
 
 namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет отдельный этап выполнения заказа или проекта.
+/// </summary>
 public class WorkItem
 {
     public int Id { get; set; }

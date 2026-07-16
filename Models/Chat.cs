@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет диалог между пользователями или чат службы поддержки.
+/// </summary>
 public class Chat
 {
     public int Id { get; set; }

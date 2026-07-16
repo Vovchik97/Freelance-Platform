@@ -10,6 +10,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Controllers.Web;
 
+/// <summary>
+/// Контроллер управления пользовательскими чатами.
+/// Обеспечивает создание и отображение личных чатов,
+/// работу с чатом поддержки, загрузку вложений
+/// и обработку непрочитанных сообщений.
+/// </summary>
 [Authorize]
 public class ChatController : Controller
 {
@@ -30,9 +36,21 @@ public class ChatController : Controller
         _blacklistService = blacklistService;
     }
 
+    /// <summary>
+    /// Отображает список чатов текущего пользователя.
+    /// При отсутствии создаёт чат поддержки с ботом.
+    /// Также исключает чаты с заблокированными пользователями
+    /// и формирует данные для отображения в интерфейсе.
+    /// </summary>
+    /// <returns>Страница со списком доступных пользователю чатов.</returns>
     public async Task<IActionResult> Index()
     {
         var userId = _userManager.GetUserId(User);
+
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
         
         var supportChat = await _context.Chats
             .Include(c => c.Messages)
@@ -45,12 +63,12 @@ public class ChatController : Controller
                 IsSupport = true,
                 IsBotActive = true,
                 ClientId = userId!,
-                FreelancerId = userId!, // placeholder: в UI будем показывать "Техподдержка"
+                FreelancerId = userId!,
             };
             _context.Chats.Add(supportChat);
             await _context.SaveChangesAsync();
 
-            var (reply, escalate) = _botService.GetReply("");
+            var (reply, _) = _botService.GetReply("");
             var botMessage = new Message
             {
                 ChatId = supportChat.Id,
@@ -80,7 +98,6 @@ public class ChatController : Controller
             .Concat(chats.Where(c => c.IsSupport))
             .ToList();
         
-        // Создаем список с дополнительной информацией о чатах
         var chatViewModels = new List<ChatDto>();
         foreach (var chat in chats)
         {
@@ -107,6 +124,13 @@ public class ChatController : Controller
         return View(chatViewModels);
     }
 
+    /// <summary>
+    /// Отображает сообщения выбранного чата.
+    /// Проверяет права доступа пользователя,
+    /// блокировки и отмечает непрочитанные сообщения как прочитанные.
+    /// </summary>
+    /// <param name="chatId">Идентификатор открываемого чата.</param>
+    /// <returns>Страница чата или ошибка 404, если чат недоступен.</returns>
     public async Task<IActionResult> Chat(int chatId)
     {
         var chat = await _context.Chats
@@ -159,6 +183,11 @@ public class ChatController : Controller
         return View(chat);
     }
     
+    /// <summary>
+    /// Возвращает количество чатов
+    /// с непрочитанными сообщениями текущего пользователя.
+    /// </summary>
+    /// <returns>JSON объект с количеством непрочитанных чатов.</returns>
     [HttpGet]
     public async Task<IActionResult> GetUnreadChatsCount()
     {
@@ -173,6 +202,12 @@ public class ChatController : Controller
         return Json(new { count = unreadChatCount });
     }
     
+    /// <summary>
+    /// Загружает вложения сообщений чата
+    /// и возвращает информацию о сохранённых файлах.
+    /// </summary>
+    /// <param name="files">Список загружаемых файлов.</param>
+    /// <returns>JSON с информацией о сохранённых вложениях.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UploadAttachment(List<IFormFile> files)

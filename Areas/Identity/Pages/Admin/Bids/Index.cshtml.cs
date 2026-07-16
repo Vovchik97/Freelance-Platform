@@ -7,6 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Areas.Identity.Pages.Admin.Bids;
 
+/// <summary>
+/// Модель страницы администрирования заявок на проекты.
+/// Позволяет просматривать и удалять заявки пользователей.
+/// </summary>
 [Authorize(Roles = "Admin")]
 public class IndexModel : PageModel
 {
@@ -17,8 +21,12 @@ public class IndexModel : PageModel
         _context = context;
     }
 
-    public List<Bid> Bids { get; set; } = [];
+    public List<Bid> Bids { get; set; } = new();
 
+    /// <summary>
+    /// Загружает список заявок вместе с информацией
+    /// о проекте, заказчике и исполнителе.
+    /// </summary>
     public async Task OnGetAsync()
     {
         Bids = await _context.Bids
@@ -28,10 +36,18 @@ public class IndexModel : PageModel
             .ToListAsync();
     }
 
+    /// <summary>
+    /// Удаляет заявку из системы.
+    /// </summary>
+    /// <param name="id">Идентификатор удаляемой заявки.</param>
+    /// <returns>Перенаправление на текущую страницу или 404 если заявка не найдена.</returns>
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
         var bid = await _context.Bids.FindAsync(id);
-        if (bid is null) return NotFound();
+        if (bid is null)
+        {
+            return NotFound();
+        }
 
         _context.Bids.Remove(bid);
         await _context.SaveChangesAsync();

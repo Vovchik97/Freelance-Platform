@@ -12,6 +12,11 @@ using Xunit;
 
 namespace FreelancePlatform.FreelancePlatform.Tests.Web;
 
+/// <summary>
+/// Набор модульных тестов для проверки работы OrderController.
+/// Проверяет создание, изменение, удаление и получение заказов,
+/// а также проверяет обработку пользовательских прав доступа.
+/// </summary>
 public class OrderControllerTests
 {
     private readonly AppDbContext _context;
@@ -45,6 +50,11 @@ public class OrderControllerTests
             _mockBlacklistService.Object);
     }
     
+    /// <summary>
+    /// Создает тестовую реализацию UserManager с настроенным получением
+    /// текущего пользователя из ClaimsPrincipal.
+    /// </summary>
+    /// <returns>Настроенный Mock<UserManager<IdentityUser>>.</returns>
     private static Mock<UserManager<IdentityUser>> GetMockUserManager()
     {
         var store = new Mock<IUserStore<IdentityUser>>();
@@ -66,6 +76,12 @@ public class OrderControllerTests
         return mock;
     }
     
+    /// <summary>
+    /// Устанавливает тестового пользователя в контекст контроллера
+    /// для имитации авторизованного запроса.
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя.</param>
+    /// <param name="role">Роль пользователя в системе. По умолчанию используется Client.</param>
     private void SetUser(string userId, string role = "Client")
     {
         var claims = new List<Claim>

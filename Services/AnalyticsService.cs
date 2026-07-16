@@ -1,12 +1,19 @@
 ﻿namespace FreelancePlatform.Services;
 
+/// <summary>
+/// Предоставляет методы аналитики и прогнозирования показателей платформы,
+/// включая прогнозирование, поиск аномалий, анализ удержания пользователей
+/// и расчет интегральных показателей эффективности.
+/// </summary>
 public class AnalyticsService
 {
-    // ============================================================
-    // 1. ЭКСПОНЕНЦИАЛЬНОЕ СГЛАЖИВАНИЕ (прогноз оборота)
-    // alpha = 0.3 означает: 30% вес новых данных, 70% история
-    // Чем меньше alpha — тем более "инертный" прогноз
-    // ============================================================
+    /// <summary>
+    /// Выполняет экспоненциальное сглаживание временного ряда и строит прогноз.
+    /// </summary>
+    /// <param name="data">Исходный временной ряд.</param>
+    /// <param name="forecastSteps">Количество прогнозируемых периодов.</param>
+    /// <param name="alpha">Коэффициент сглаживания.</param>
+    /// <returns>Массив прогнозируемых значений.</returns>
     public decimal[] ExponentialSmoothing(decimal[] data, int forecastSteps, double alpha = 0.3)
     {
         if (data.Length == 0)
@@ -45,12 +52,13 @@ public class AnalyticsService
         return forecast;
     }
     
-    // ============================================================
-    // 2. Z-SCORE АНОМАЛИЙ
-    // Z = (значение - среднее) / стандартное_отклонение
-    // |Z| > 2.0 = подозрительно (выходит за 95% доверительный интервал)
-    // |Z| > 3.0 = аномалия (выходит за 99.7%)
-    // ============================================================
+    /// <summary>
+    /// Выполняет поиск аномальных значений методом Z-score.
+    /// </summary>
+    /// <param name="data">Исходные значения.</param>
+    /// <param name="labels">Подписи значений.</param>
+    /// <param name="threshold">Пороговое значение Z-score.</param>
+    /// <returns>Коллекция найденных аномалий.</returns>
     public List<AnomalyPoint> DetectAnomalies(decimal[] data, string[] labels, double threshold = 2.0)
     {
         var anomalies = new List<AnomalyPoint>();
@@ -90,11 +98,12 @@ public class AnalyticsService
         return anomalies;
     }
     
-    // ============================================================
-    // 3. RETENTION RATE (удержание пользователей)
-    // Считает % пользователей каждой когорты которые вернулись
-    // Когорта = группа пользователей зарегистрировавшихся в одном месяце
-    // ============================================================
+    /// <summary>
+    /// Рассчитывает показатели удержания и оттока пользователей.
+    /// </summary>
+    /// <param name="registrationsByMonth">Количество регистраций по месяцам.</param>
+    /// <param name="activeByMonth">Количество активных пользователей по месяцам.</param>
+    /// <returns>Результат расчета удержания пользователей.</returns>
     public RetentionData CalculateRetention(Dictionary<int, int> registrationsByMonth,
         Dictionary<int, int> activeByMonth)
     {
@@ -131,23 +140,13 @@ public class AnalyticsService
         };
     }
     
-    // ============================================================
-    // 4. ГАУССОВ АНАЛИЗ РОСТА ПОЛЬЗОВАТЕЛЕЙ
-    //
-    // Идея: месячные приросты моделируются нормальным распределением
-    //       N(μ, σ²), где μ — средний прирост, σ — его разброс.
-    //
-    // Это обосновано центральной предельной теоремой: сумма многих
-    // независимых факторов (маркетинг, сарафанное радио, сезонность)
-    // даёт нормально распределённый результат.
-    //
-    // Доверительные интервалы прогноза:
-    //   Базовый:       μ        (50% вероятность)
-    //   Оптимист:      μ + σ    (верхняя граница нормы, ~84%)
-    //   Пессимист:     μ - σ    (нижняя граница нормы, ~16%)
-    //   Верхний 95%:   μ + 2σ
-    //   Нижний 95%:    μ - 2σ
-    // ============================================================
+    /// <summary>
+    /// Выполняет прогноз роста пользовательской базы с использованием
+    /// нормального распределения приростов.
+    /// </summary>
+    /// <param name="usersByMonth">Количество пользователей по месяцам.</param>
+    /// <param name="targetUsers">Целевое количество пользователей.</param>
+    /// <returns>Результаты анализа роста пользователей.</returns>
     public GaussianGrowthAnalysis AnalyzeUserGrowthWithGaussian(int[] usersByMonth, int targetUsers = 500)
     {
         if (usersByMonth == null || usersByMonth.Length < 2)
@@ -203,13 +202,13 @@ public class AnalyticsService
             // Неопределённость растёт пропорционально √t
             // Это стандартный результат для случайного блуждания
             double uncertainty = sigma * Math.Sqrt(i + 1);
-            double base_val = currentUsers + mu * (i + 1);
+            double baseValue = currentUsers + mu * (i + 1);
 
-            forecastBase[i] = (int)Math.Max(0, Math.Round(base_val));
-            forecastHigh95[i] = (int)Math.Max(0, Math.Round(base_val + 2 * uncertainty));
-            forecastLow95[i] = (int)Math.Max(0, Math.Round(base_val - 2 * uncertainty));
-            forecastOptimist[i] = (int)Math.Max(0, Math.Round(base_val + uncertainty));
-            forecastPessimist[i] = (int)Math.Max(0, Math.Round(base_val - uncertainty));
+            forecastBase[i] = (int)Math.Max(0, Math.Round(baseValue));
+            forecastHigh95[i] = (int)Math.Max(0, Math.Round(baseValue + 2 * uncertainty));
+            forecastLow95[i] = (int)Math.Max(0, Math.Round(baseValue - 2 * uncertainty));
+            forecastOptimist[i] = (int)Math.Max(0, Math.Round(baseValue + uncertainty));
+            forecastPessimist[i] = (int)Math.Max(0, Math.Round(baseValue - uncertainty));
         }
         
         // 4. Оцениваем каждый прошедший месяц по Z-score
@@ -326,11 +325,12 @@ public class AnalyticsService
         };
     }
     
-    // ============================================================
-    // 5. ИНДЕКС ЗДОРОВЬЯ ПЛАТФОРМЫ
-    // Взвешенная сумма нормализованных метрик
-    // Каждая метрика нормализуется в диапазон 0-100
-    // ============================================================
+    /// <summary>
+    /// Рассчитывает интегральный индекс здоровья платформы
+    /// на основе ключевых бизнес-показателей.
+    /// </summary>
+    /// <param name="input">Исходные аналитические данные.</param>
+    /// <returns>Индекс состояния платформы.</returns>
     public PlatformHealthIndex CalculateHealthIndex(HealthInputData input)
     {
         // --- Конверсия проектов (% завершённых от всех) ---
@@ -355,13 +355,13 @@ public class AnalyticsService
         }
         
         // --- Retention (удержание) ---
-        double retenrionScore = input.RetentionRate;
+        double retentionScore = input.RetentionRate;
         
         // --- Итоговый индекс (взвешенная сумма) ---
         double healthIndex = conversionScore * 0.30 
                              + revenueGrowthScore * 0.30 
                              + activityScore * 0.20
-                             + retenrionScore * 0.20;
+                             + retentionScore * 0.20;
 
         healthIndex = Math.Round(healthIndex, 1);
 
@@ -377,11 +377,15 @@ public class AnalyticsService
             ConversionScore = Math.Round(conversionScore, 1),
             RevenueGrowthScore = Math.Round(revenueGrowthScore, 1),
             ActivityScore = Math.Round(activityScore, 1),
-            RetentionScore = Math.Round(retenrionScore, 1)
+            RetentionScore = Math.Round(retentionScore, 1)
         };
     }
     
-    // Стандартное отклонение выборки
+    /// <summary>
+    /// Вычисляет стандартное отклонение для набора значений.
+    /// </summary>
+    /// <param name="data">Массив числовых значений.</param>
+    /// <returns>Стандартное отклонение выборки.</returns>
     private double StandardDeviation(double[] data)
     {
         if (data.Length < 2)
@@ -394,8 +398,13 @@ public class AnalyticsService
         return Math.Sqrt(variance);
     }
     
-    // Функция нормального (Гауссово) распределения CDF: P(X <= x) для N(mu, sigma)
-    // Используется для расчёта вероятности достижения цели
+    /// <summary>
+    /// Вычисляет значение функции распределения (CDF) нормального распределения.
+    /// </summary>
+    /// <param name="x">Исследуемое значение.</param>
+    /// <param name="mu">Математическое ожидание распределения.</param>
+    /// <param name="sigma">Стандартное отклонение распределения.</param>
+    /// <returns>Вероятность того, что случайная величина не превышает указанное значение.</returns>
     private double GaussianCdf(double x, double mu, double sigma)
     {
         if (sigma < 1e-10)
@@ -407,7 +416,12 @@ public class AnalyticsService
         return 0.5 * (1.0 + Erf(z));
     }
 
-    // Функция ошибок (аппроксимация Абрамовича и Стегана, точность ~1.5e-7)
+    /// <summary>
+    /// Вычисляет значение функции ошибок (Erf),
+    /// используемой при расчете функции нормального распределения.
+    /// </summary>
+    /// <param name="x">Аргумент функции.</param>
+    /// <returns>Значение функции ошибок.</returns>
     private double Erf(double x)
     {
         double t = 1.0 / (1.0 + 0.3275911 * Math.Abs(x));
@@ -421,6 +435,9 @@ public class AnalyticsService
     }
 }
 
+/// <summary>
+/// Представляет информацию об обнаруженной аномалии.
+/// </summary>
 public class AnomalyPoint
 {
     public string Label { get; set; } = "";
@@ -430,6 +447,9 @@ public class AnomalyPoint
     public string Severity { get; set; } = "";
 }
 
+/// <summary>
+/// Содержит результаты анализа удержания пользователей.
+/// </summary>
 public class RetentionData
 {
     public double[] RetentionRates { get; set; } = [];
@@ -437,6 +457,9 @@ public class RetentionData
     public double AverageRetention { get; set; }
 }
 
+/// <summary>
+/// Содержит результаты анализа роста пользовательской базы.
+/// </summary>
 public class GaussianGrowthAnalysis
 {
     // --- Параметры нормального распределения приростов ---
@@ -483,6 +506,9 @@ public class GaussianGrowthAnalysis
     public string MethodDescription { get; set; } = "";
 }
 
+/// <summary>
+/// Представляет оценку изменения пользовательской базы за отдельный период.
+/// </summary>
 public class MonthGrowthAssessment
 {
     public int MonthIndex { get; set; }
@@ -494,6 +520,9 @@ public class MonthGrowthAssessment
     public bool IsDrop { get; set; }
 }
 
+/// <summary>
+/// Содержит входные данные для расчета индекса здоровья платформы.
+/// </summary>
 public class HealthInputData
 {
     public int TotalProjects { get; set; }
@@ -506,6 +535,9 @@ public class HealthInputData
     public double RetentionRate { get; set; }
 }
 
+/// <summary>
+/// Представляет рассчитанный индекс состояния платформы.
+/// </summary>
 public class PlatformHealthIndex
 {
     public double Score { get; set; }

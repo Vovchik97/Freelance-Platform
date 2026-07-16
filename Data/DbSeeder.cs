@@ -4,11 +4,27 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Data;
+
+/// <summary>
+/// Класс для первоначального заполнения базы данных тестовыми и демонстрационными данными.
+/// Создает роли пользователей, учетные записи, проекты, заявки, услуги,
+/// заказы, категории и шаблоны задач.
+/// </summary>
 public static class DbSeeder
 {
+    
+    /// <summary>
+    /// Выполняет заполнение базы данных начальными данными приложения.
+    /// Создает необходимые роли Identity, администратора,
+    /// тестовых клиентов и исполнителей, а также основные сущности платформы.
+    /// </summary>
+    /// <param name="context">Контекст базы данных приложения.</param>
+    /// <param name="userManager">Менеджер пользователей ASP.NET Identity для создания пользователей и назначения ролей.</param>
+    /// <param name="roleManager">Менеджер ролей ASP.NET Identity для управления ролями пользователей.</param>
+    /// <returns>Асинхронная операция заполнения базы данных.</returns>
     public static async Task SeedAsync(AppDbContext context, UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
     {
-        // Create roles
+        // Создаем роли
         string[] rolesName = { "Client", "Freelancer", "Admin" };
         foreach (var roleName in rolesName)
         {
@@ -18,7 +34,7 @@ public static class DbSeeder
             }
         }
     
-        // Create admin
+        // Создаем админа
         var adminEmail = "admin@example.com";
         var adminUser = await userManager.FindByEmailAsync(adminEmail);
         if (adminUser == null)
@@ -845,6 +861,13 @@ public static class DbSeeder
         }
     }
     
+    /// <summary>
+    /// Заполняет базу демонстрационными аналитическими данными.
+    /// Создает исторические заявки, заказы и данные регистрации пользователей
+    /// для отображения статистики в административной панели.
+    /// </summary>
+    /// <param name="context">Контекст базы данных приложения.</param>
+    /// <returns>Асинхронная операция генерации аналитических данных.</returns>
     public static async Task SeedAnalyticsDataAsync(AppDbContext context)
     {
         // Удаляем только исторические записи если они уже есть
@@ -866,12 +889,18 @@ public static class DbSeeder
 
         var monthlyRevenueTargets = new[]
         {
-            new { MonthOffset = -5, OrderRevenue = 3200m, BidRevenue = 1800m },
-            new { MonthOffset = -4, OrderRevenue = 4100m, BidRevenue = 2200m },
-            new { MonthOffset = -3, OrderRevenue = 3600m, BidRevenue = 1900m },
-            new { MonthOffset = -2, OrderRevenue = 5200m, BidRevenue = 2800m },
-            new { MonthOffset = -1, OrderRevenue = 6300m, BidRevenue = 3100m },
-            new { MonthOffset =  0, OrderRevenue = 7100m, BidRevenue = 3600m },
+            new { MonthOffset = -11, OrderRevenue = 18_400m,  BidRevenue = 9_200m  },
+            new { MonthOffset = -10, OrderRevenue = 22_100m,  BidRevenue = 11_300m },
+            new { MonthOffset = -9,  OrderRevenue = 25_800m,  BidRevenue = 12_700m },
+            new { MonthOffset = -8,  OrderRevenue = 29_500m,  BidRevenue = 14_900m },
+            new { MonthOffset = -7,  OrderRevenue = 27_200m,  BidRevenue = 13_400m },
+            new { MonthOffset = -6,  OrderRevenue = 31_600m,  BidRevenue = 15_800m },
+            new { MonthOffset = -5,  OrderRevenue = 38_900m,  BidRevenue = 19_200m },
+            new { MonthOffset = -4,  OrderRevenue = 44_300m,  BidRevenue = 22_100m },
+            new { MonthOffset = -3,  OrderRevenue = 51_700m,  BidRevenue = 25_600m },
+            new { MonthOffset = -2,  OrderRevenue = 58_200m,  BidRevenue = 28_900m },
+            new { MonthOffset = -1,  OrderRevenue = 67_400m,  BidRevenue = 33_500m },
+            new { MonthOffset =  0,  OrderRevenue = 74_800m,  BidRevenue = 37_200m },
         };
 
         var servicePrices = new Dictionary<int, decimal>
@@ -893,7 +922,6 @@ public static class DbSeeder
 
         foreach (var target in monthlyRevenueTargets)
         {
-            // ← ИСПРАВЛЕНИЕ: создаём UTC дату
             var monthDate = DateTime.SpecifyKind(
                 new DateTime(now.Year, now.Month, 1), 
                 DateTimeKind.Utc
@@ -936,10 +964,10 @@ public static class DbSeeder
 
             while (bidSum < target.BidRevenue)
             {
-                decimal bidAmount = 500m + (freelancerIdx % 7) * 200m;
+                decimal bidAmount = 800m + (freelancerIdx % 19) * 200m;
 
-                if (bidSum + bidAmount > target.BidRevenue + 1700m)
-                    bidAmount = 500m;
+                if (bidSum + bidAmount > target.BidRevenue + 4500m)
+                    bidAmount = 800m;
 
                 var createdAt = monthDate.AddDays((dayOffset % 27) + 1)
                                          .AddHours((dayOffset + 3) % 12);
@@ -975,12 +1003,18 @@ public static class DbSeeder
 
         var registrationsByMonth = new[]
         {
-            new { MonthOffset = -5, Count = 3  },
-            new { MonthOffset = -4, Count = 5  },
-            new { MonthOffset = -3, Count = 4  },
-            new { MonthOffset = -2, Count = 8  },
-            new { MonthOffset = -1, Count = 11 },
-            new { MonthOffset =  0, Count = 14 },
+            new { MonthOffset = -11, ClientCount = 18,  FreelancerCount = 14  }, 
+            new { MonthOffset = -10, ClientCount = 22,  FreelancerCount = 17  }, 
+            new { MonthOffset = -9,  ClientCount = 27,  FreelancerCount = 21  }, 
+            new { MonthOffset = -8,  ClientCount = 31,  FreelancerCount = 24  }, 
+            new { MonthOffset = -7,  ClientCount = 29,  FreelancerCount = 22  }, 
+            new { MonthOffset = -6,  ClientCount = 35,  FreelancerCount = 27  }, 
+            new { MonthOffset = -5,  ClientCount = 44,  FreelancerCount = 34  }, 
+            new { MonthOffset = -4,  ClientCount = 52,  FreelancerCount = 39  }, 
+            new { MonthOffset = -3,  ClientCount = 61,  FreelancerCount = 46  }, 
+            new { MonthOffset = -2,  ClientCount = 70,  FreelancerCount = 52  }, 
+            new { MonthOffset = -1,  ClientCount = 81,  FreelancerCount = 60  }, 
+            new { MonthOffset =  0,  ClientCount = 74,  FreelancerCount = 55  }, 
         };
 
         foreach (var item in registrationsByMonth)
@@ -991,7 +1025,7 @@ public static class DbSeeder
                 DateTimeKind.Utc
             ).AddMonths(item.MonthOffset);
 
-            for (int i = 0; i < item.Count; i++)
+            for (int i = 0; i < item.ClientCount; i++)
             {
                 var fakeUserId = $"historical_user_{item.MonthOffset}_{i}";
 
@@ -1001,7 +1035,25 @@ public static class DbSeeder
                 newMeta.Add(new UserMetadata
                 {
                     UserId       = fakeUserId,
-                    RegisteredAt = monthDate.AddDays(i % 28).AddHours(i % 12)
+                    RegisteredAt = monthDate
+                        .AddDays(i % 28)
+                        .AddHours((i * 3) % 23)
+                        .AddMinutes((i * 7) % 59)
+                });
+            }
+            
+            for (int i = 0; i < item.FreelancerCount; i++)
+            {
+                var fakeUserId = $"historical_user_f_{item.MonthOffset}_{i}";
+                if (existingMeta.Contains(fakeUserId)) continue;
+
+                newMeta.Add(new UserMetadata
+                {
+                    UserId       = fakeUserId,
+                    RegisteredAt = monthDate
+                        .AddDays(i % 28)
+                        .AddHours((i * 5) % 23)
+                        .AddMinutes((i * 11) % 59)
                 });
             }
         }

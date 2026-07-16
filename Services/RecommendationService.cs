@@ -5,6 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Services;
 
+/// <summary>
+/// Сервис формирования рекомендаций проектов и услуг
+/// на основе истории активности пользователей.
+/// </summary>
 public class RecommendationService
 {
     private readonly AppDbContext _context;
@@ -14,6 +18,12 @@ public class RecommendationService
         _context = context;
     }
 
+    /// <summary>
+    /// Получает список рекомендованных проектов для фрилансера
+    /// на основе его услуг, категорий и предыдущих откликов.
+    /// </summary>
+    /// <param name="freelancerId">Идентификатор пользователя-фрилансера.</param>
+    /// <returns>Список проектов с рассчитанным рейтингом соответствия и причинами рекомендации.</returns>
     public async Task<List<RecommendationDto>> GetRecommendedProjectsForFreelancerAsync(string freelancerId)
     {
         var freelancerServices = await _context.Services
@@ -161,7 +171,13 @@ public class RecommendationService
 
         return scored.OrderByDescending(r => r.Score).Take(6).ToList();
     }
-
+    
+    /// <summary>
+    /// Получает список рекомендованных услуг для клиента
+    /// на основе его проектов и истории заказов.
+    /// </summary>
+    /// <param name="clientId">Идентификатор пользователя-клиента.</param>
+    /// <returns>Список услуг с рассчитанным рейтингом соответствия и причинами рекомендации. </returns>
     public async Task<List<RecommendationDto>> GetRecommendedServicesForClientAsync(string clientId)
     {
         var clientProjects = await _context.Projects

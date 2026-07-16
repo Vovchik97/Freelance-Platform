@@ -9,6 +9,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FreelancePlatform.Areas.Identity.Pages.Admin.Reports;
 
+/// <summary>
+/// Модель страницы просмотра и обработки жалобы.
+/// Позволяет администраторам просматривать детали жалобы,
+/// изменять её статус, применять санкции и обновлять репутацию пользователя.
+/// </summary>
 [Authorize(Roles = "Admin")]
 public class DetailsModel : PageModel
 {
@@ -35,6 +40,12 @@ public class DetailsModel : PageModel
     [BindProperty] public bool ApplyReputation { get; set; }
     [BindProperty] public bool BanUser { get; set; }
 
+    /// <summary>
+    /// Загружает данные жалобы по идентификатору,
+    /// включая информацию о заказе, проекте и пользователях.
+    /// </summary>
+    /// <param name="id">Идентификатор жалобы.</param>
+    /// <returns>Страница с деталями жалобы или 404 если жалоба не найдена.</returns>
     public async Task<IActionResult> OnGetAsync(int id)
     {
         Report = await _context.Reports
@@ -58,6 +69,13 @@ public class DetailsModel : PageModel
         return Page();
     }
 
+    /// <summary>
+    /// Обрабатывает жалобу:
+    /// обновляет статус, сохраняет комментарий администратора,
+    /// при необходимости изменяет репутацию и блокирует пользователя.
+    /// </summary>
+    /// <param name="id">Идентификатор жалобы.</param>
+    /// <returns>Перенаправление на страницу списка жалоб или 404 если жалоба не найдена.</returns>
     public async Task<IActionResult> OnPostResolveAsync(int id)
     {
         Report = await _context.Reports.FindAsync(id);
@@ -70,31 +88,55 @@ public class DetailsModel : PageModel
         Report.AdminComment = AdminComment;
         Report.UpdatedAt = DateTime.UtcNow;
 
-        if (ApplyReputation)
-        {
-            await _reputationService.AddEventAsync(
-                Report.ReportedId,
-                ReputationEventType.ReportResolved,
-                Report.OrderId,
-                Report.ProjectId,
-                AdminComment
-            );
-        }
+        await ApplyReputationAsync(Report);
 
-        if (BanUser)
-        {
-            var userToBan = await _userManager.FindByIdAsync(Report.ReportedId);
-            if (userToBan != null)
-            {
-                userToBan.LockoutEnabled = true;
-                userToBan.LockoutEnd = DateTimeOffset.UtcNow.AddYears(100);
-                await _userManager.UpdateAsync(userToBan);
-            }
-        }
+        await BanReportedUserAsync(Report.ReportedId);
         
         await _context.SaveChangesAsync();
         TempData["SuccessMessage"] = "Жалоба обновлена";
 
         return RedirectToPage("Index");
+    }
+
+    /// <summary>
+    /// Применяет штраф репутации к пользователю, если администратор выбрал эту опцию.
+    /// Сохраняет событие в историю репутации с типом "ReportResolved".
+    /// </summary>
+    /// <param name="report">Обработанная жалоба с информацией о пользователе и комментарием.</param>
+    private async Task ApplyReputationAsync(Report report)
+    {
+        if (!ApplyReputation)
+        {
+            return;
+        }
+        
+        await _reputationService.AddEventAsync(
+            report.ReportedId,
+            ReputationEventType.ReportResolved,
+            report.OrderId,
+            report.ProjectId,
+            AdminComment
+        );
+    }
+
+    /// <summary>
+    /// Блокирует пользователя бесконечно, если администратор выбрал эту опцию.
+    /// Устанавливает LockoutEnd на максимально возможное значение.
+    /// </summary>
+    /// <param name="userId">Идентификатор блокируемого пользователя.</param>
+    private async Task BanReportedUserAsync(string userId)
+    {
+        if (!BanUser)
+        {
+            return;
+        }
+        
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user != null)
+        {
+            user.LockoutEnabled = true;
+            user.LockoutEnd = DateTimeOffset.MaxValue;
+            await _userManager.UpdateAsync(user);
+        }
     }
 }

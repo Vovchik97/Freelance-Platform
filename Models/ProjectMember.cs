@@ -1,5 +1,8 @@
 ﻿namespace FreelancePlatform.Models;
 
+/// <summary>
+/// Представляет участника командного проекта.
+/// </summary>
 public class ProjectMember
 {
     public int Id { get; set; }
