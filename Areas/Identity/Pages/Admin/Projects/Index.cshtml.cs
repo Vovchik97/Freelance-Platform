@@ -85,6 +85,16 @@ public class IndexModel : PageModel
         {
             return NotFound();
         }
+        
+        var workItems = await _context.WorkItems
+            .Where(w => w.ProjectId == id)
+            .ToListAsync();
+        _context.WorkItems.RemoveRange(workItems);
+
+        var payments = await _context.Payments
+            .Where(p => p.ProjectId == id)
+            .ToListAsync();
+        _context.Payments.RemoveRange(payments);
 
         _context.Projects.Remove(project);
         await _context.SaveChangesAsync();

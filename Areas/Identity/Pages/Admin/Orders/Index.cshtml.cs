@@ -50,6 +50,10 @@ public class IndexModel : PageModel
             return NotFound();
         }
 
+        var payments = await _context.Payments
+            .Where(p => p.OrderId == id).ToListAsync();
+        _context.Payments.RemoveRange(payments);
+
         _context.Orders.Remove(order);
         await _context.SaveChangesAsync();
         return RedirectToPage();

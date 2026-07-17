@@ -120,8 +120,8 @@ public class PublicProfileControllerTests
         var user = new IdentityUser { Id = "u1", UserName = "testUser" };
         
         userManager.Setup(m => m.FindByIdAsync("u1")).ReturnsAsync(user);
-        userManager.Setup(m => m.GetRolesAsync(user))
-            .ReturnsAsync(new List<string> { "Freelancer" });
+        userManager.Setup(m => m.IsInRoleAsync(user, "Freelancer")).ReturnsAsync(true);
+        userManager.Setup(m => m.IsInRoleAsync(user, "Client")).ReturnsAsync(false);
         
         db.UserProfiles.Add(new UserProfile { UserId = "u1", AboutMe = "testAboutMe" });
         

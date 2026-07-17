@@ -91,6 +91,13 @@ public class DetailsModel : PageModel
         }
 
         var amount = payment.AmountMinor / 100m;
+        var balance = await _context.UserBalances.FirstAsync(b => b.UserId == payment.PayerId);
+        
+        if (balance.Balance < amount)
+        {
+            ErrorMessage = "Возврат невозможен. Средства уже были списаны из замороженного баланса.";
+            return RedirectToPage(new { id });
+        }
 
         if (payment.OrderId.HasValue)
         {
